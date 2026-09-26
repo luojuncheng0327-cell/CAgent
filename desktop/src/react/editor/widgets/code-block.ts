@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 import { EditorView, WidgetType, Decoration } from '@codemirror/view';
 import type { DecoRange } from '../md-decorations';
 
@@ -115,7 +116,7 @@ export class CodeBlockToolbarWidget extends WidgetType {
         button.setAttribute('aria-label', t('attach.copy'));
         label.textContent = t('attach.copy');
       };
-      const writePromise = navigator.clipboard?.writeText?.(this.text);
+      const writePromise = copyTextToClipboard(this.text);
       if (!writePromise) return;
       writePromise
         .then(() => {

@@ -54,7 +54,10 @@ describe("auto-updater", () => {
   function writeChannelFile(home: string, contents: unknown) {
     fs.writeFileSync(
       path.join(home, "update-channel.json"),
-      typeof contents === "string" ? contents : JSON.stringify(contents),
+      typeof contents === "string" ? contents : JSON.stringify({
+        repository: "https://gitee.com/luo-juncheng666/cagent",
+        ...(contents as Record<string, unknown>),
+      }),
       "utf-8",
     );
   }
@@ -128,42 +131,42 @@ describe("auto-updater", () => {
   it("should configure autoUpdater correctly", () => {
     initWithMockWindow();
     expect(mockAutoUpdater.setFeedURL).toHaveBeenCalledWith({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
     expect(mockAutoUpdater.autoDownload).toBe(false);
     expect(mockAutoUpdater.autoInstallOnAppQuit).toBe(false);
   });
 
-  it("resolves GitHub as the only public update feed", () => {
+  it("resolves the user Gitee repository as the only public update feed", () => {
     const config = mod.resolveUpdateFeedConfig({});
     expect(config.feedURL).toEqual({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
     expect(config).not.toHaveProperty("fallbackConfigs");
   });
 
-  it.each(["gitcode", "atomgit"])("ignores legacy public source selector %s and keeps GitHub", (source) => {
+  it.each(["gitcode", "atomgit"])("ignores legacy public source selector %s and keeps Gitee", (source) => {
     const config = mod.resolveUpdateFeedConfig({ HANA_UPDATE_SOURCE: source });
     expect(config.feedURL).toEqual({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
     expect(mod.buildReleaseDigestUrl("0.425.4", config)).toBe(
-      "https://github.com/liliMozi/openhanako/releases/download/v0.425.4/release-digest.v1.json",
+      "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/v0.425.4/release-digest.v1.json",
     );
   });
 
-  it("can force GitHub as the only update feed", () => {
+  it("does not restore upstream GitHub from an old source selector", () => {
     const config = mod.resolveUpdateFeedConfig({ HANA_UPDATE_SOURCE: "github" });
     expect(config.feedURL).toEqual({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
     expect(config).not.toHaveProperty("fallbackConfigs");
   });
@@ -177,6 +180,18 @@ describe("auto-updater", () => {
     expect(mod.buildReleaseDigestUrl("0.425.4", config)).toBe(
       "https://updates.example.com/hana/stable/release-digest.v1.json",
     );
+  });
+
+  it("does not inherit an active upstream invitation channel into the Gitee fork", async () => {
+    const home = createTempHome();
+    const legacy = JSON.stringify({ version: 1, active: true, feedUrl: "https://updates.example.com/upstream" });
+    fs.writeFileSync(path.join(home, "update-channel.json"), legacy);
+    initWithMockWindow({ hanakoHome: home });
+    expect(mod.resolveUpdateFeedConfig({}).feedURL.url).toBe(
+      "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+    );
+    await expect(ipcHandlers["invite:status"]()).resolves.toMatchObject({ configured: false, active: false });
+    expect(fs.readFileSync(path.join(home, "update-channel.json"), "utf8")).toBe(legacy);
   });
 
   it("pins the NSIS install directory to the running exe directory on Windows", async () => {
@@ -235,14 +250,14 @@ describe("auto-updater", () => {
       error: "connect ETIMEDOUT github.com",
     }));
     expect(mockAutoUpdater.setFeedURL).toHaveBeenLastCalledWith({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
     expect(mod.getState().updateSource).toEqual({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "gitee",
+      owner: "luo-juncheng666",
+      repo: "cagent",
     });
   });
 
@@ -265,16 +280,16 @@ describe("auto-updater", () => {
     mod.setUpdateChannel("beta");
     expect(mockAutoUpdater.allowPrerelease).toBe(true);
     expect(mockAutoUpdater.setFeedURL).toHaveBeenLastCalledWith({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
     mod.setUpdateChannel("stable");
     expect(mockAutoUpdater.allowPrerelease).toBe(false);
     expect(mockAutoUpdater.setFeedURL).toHaveBeenLastCalledWith({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
   });
 
@@ -503,9 +518,9 @@ describe("auto-updater", () => {
 
     const config = mod.resolveUpdateFeedConfig({});
     expect(config.feedURL).toEqual({
-      provider: "github",
-      owner: "liliMozi",
-      repo: "openhanako",
+      provider: "generic",
+      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
+      useMultipleRangeRequest: false,
     });
     expect(config.channel).toBe("default");
     expect(config.channelError).toBeNull();
@@ -551,9 +566,9 @@ describe("auto-updater", () => {
     const home = createTempHome();
     initWithMockWindow({ hanakoHome: home });
 
-    // 2026-08-20 起内置默认端点随版发布：无任何覆盖时通道即视为已配置。
+    // This fork does not activate the upstream invitation service.
     await expect(ipcHandlers["invite:status"]()).resolves.toEqual(expect.objectContaining({
-      configured: true,
+      configured: false,
       active: false,
       channel: "default",
     }));

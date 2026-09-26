@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../utils/clipboard';
 /**
  * SessionList — 侧边栏 session 列表 React 组件
  *
@@ -1824,11 +1825,7 @@ const SessionContextMenu = memo(function SessionContextMenu({
           useStore.getState().addToast(t('session.copyIdUnavailable'), 'error', 5000);
           return;
         }
-        if (!navigator.clipboard?.writeText) {
-          useStore.getState().addToast(t('session.copyIdFailed'), 'error', 5000);
-          return;
-        }
-        void navigator.clipboard.writeText(sessionId)
+        void copyTextToClipboard(sessionId)
           .then(() => useStore.getState().addToast(t('session.copyIdDone'), 'info', 2500))
           .catch(() => useStore.getState().addToast(t('session.copyIdFailed'), 'error', 5000));
       },

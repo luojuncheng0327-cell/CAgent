@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { isJsonRpcServerRequest, methodNotFoundResponse } from "./jsonrpc.ts";
+import { isJsonRpcResponse, isJsonRpcServerRequest, methodNotFoundResponse } from "./jsonrpc.ts";
 
 // The handshake-based revision this client speaks. Known limitation: the
 // stateless revision changes stdio substantially — no initialize, per-request
@@ -16,12 +16,14 @@ export const MCP_PROTOCOL_VERSION = "2025-11-25";
 // then SIGKILL. Kept here so both stop() timers read one source of truth.
 const STDIO_GRACEFUL_MS = 2_000;
 const STDIO_FORCE_MS = 3_000;
+export const MAX_MCP_STDIO_LINE_BYTES = 8 * 1024 * 1024;
 
 export class McpStdioClient {
   declare _closed: any;
   declare _nextId: any;
   declare _pending: any;
   declare _stdoutBuffer: any;
+  private _stdoutBufferBytes = 0;
   declare _stopping: any;
   declare log: any;
   declare onClose: any;
@@ -55,6 +57,8 @@ export class McpStdioClient {
 
     this._closed = false;
     this._stopping = false;
+    this._stdoutBuffer = "";
+    this._stdoutBufferBytes = 0;
     const spawnSpec = resolveMcpStdioSpawnSpec(this.server);
     this.process = spawn(spawnSpec.command, spawnSpec.args, {
       cwd: this.server.cwd || undefined,
@@ -108,37 +112,52 @@ export class McpStdioClient {
     return Array.isArray(result?.tools) ? result.tools : [];
   }
 
-  async callTool(name, args) {
+  async callTool(name, args, { signal }: { signal?: AbortSignal } = {}) {
     return this.request("tools/call", {
       name,
       arguments: args || {},
-    }, { timeout: requestTimeoutMs(this.server) });
+    }, { timeout: requestTimeoutMs(this.server), signal });
   }
 
   async readResource(uri) {
     return this.request("resources/read", { uri }, { timeout: requestTimeoutMs(this.server) });
   }
 
-  request(method, params: any = {}, { timeout = 30_000 } = {}) {
+  request(method, params: any = {}, { timeout = 30_000, signal }: { timeout?: number; signal?: AbortSignal } = {}) {
+    signal?.throwIfAborted();
     if (!this.running) throw new Error("MCP server is not running");
     const id = this._nextId++;
     const payload = { jsonrpc: "2.0", id, method, params };
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const cleanup = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
         this._pending.delete(id);
+      };
+      const onAbort = () => {
+        cleanup();
+        try { this.notify("notifications/cancelled", { requestId: id, reason: "Client canceled" }); } catch {}
+        reject(signal.reason);
+      };
+      const timer = setTimeout(() => {
+        cleanup();
         reject(new Error(`MCP request "${method}" timed out`));
       }, timeout);
       this._pending.set(id, {
         resolve: (value) => {
-          clearTimeout(timer);
+          cleanup();
           resolve(value);
         },
         reject: (err) => {
-          clearTimeout(timer);
+          cleanup();
           reject(err);
         },
       });
-      this._send(payload);
+      signal?.addEventListener("abort", onAbort, { once: true });
+      try { this._send(payload); } catch (error) {
+        cleanup();
+        reject(error);
+      }
     });
   }
 
@@ -151,6 +170,8 @@ export class McpStdioClient {
     // Mark intent first so the exit handler treats this as an expected close,
     // never an unexpected disconnect that would trigger a reconnect.
     this._stopping = true;
+    for (const pending of this._pending.values()) pending.reject(new Error("MCP client stopped"));
+    this._pending.clear();
     if (!this.process) {
       this._closed = true;
       return;
@@ -158,6 +179,7 @@ export class McpStdioClient {
     const proc = this.process;
     this.process = null;
     this._closed = true;
+    if (proc.exitCode != null) return;
     try { proc.stdin.end(); } catch {}
     await new Promise<void>((resolve) => {
       let settled = false;
@@ -206,12 +228,28 @@ export class McpStdioClient {
   }
 
   _onStdout(chunk) {
-    this._stdoutBuffer += chunk;
+    if (this._closed) return;
+    let rest = String(chunk);
     while (true) {
-      const idx = this._stdoutBuffer.indexOf("\n");
+      const idx = rest.indexOf("\n");
+      const part = idx === -1 ? rest : rest.slice(0, idx);
+      this._stdoutBufferBytes += Buffer.byteLength(part, "utf8");
+      if (this._stdoutBufferBytes > MAX_MCP_STDIO_LINE_BYTES) {
+        const error = new Error(`MCP stdio line exceeds ${MAX_MCP_STDIO_LINE_BYTES} bytes`);
+        this._stdoutBuffer = "";
+        this._stdoutBufferBytes = 0;
+        for (const pending of this._pending.values()) pending.reject(error);
+        this._pending.clear();
+        this.log.warn?.(`[mcp:${this.server.id}] ${error.message}; stopping connector`);
+        void this.stop().catch((err) => this.log.warn?.(`[mcp:${this.server.id}] stop failed: ${err.message}`));
+        return;
+      }
+      this._stdoutBuffer += part;
       if (idx === -1) return;
-      const line = this._stdoutBuffer.slice(0, idx).trim();
-      this._stdoutBuffer = this._stdoutBuffer.slice(idx + 1);
+      const line = this._stdoutBuffer.trim();
+      this._stdoutBuffer = "";
+      this._stdoutBufferBytes = 0;
+      rest = rest.slice(idx + 1);
       if (!line) continue;
       let message;
       try {
@@ -232,7 +270,7 @@ export class McpStdioClient {
       this._rejectServerRequest(message);
       return;
     }
-    if (message?.id == null) return;
+    if (!isJsonRpcResponse(message)) return;
     const pending = this._pending.get(message.id);
     if (!pending) return;
     this._pending.delete(message.id);

@@ -271,14 +271,19 @@ function extractResponsesText(data) {
   };
 }
 
-async function readCodexResponsesStream(body) {
+async function readCodexResponsesStream(body: ReadableStream<Uint8Array>, signal?: AbortSignal) {
   const reader = body.getReader();
   const decoder = new TextDecoder();
-  const events = [];
   const textDeltas = [];
   let doneText = "";
   let completedResponse = null;
+  let usage = null;
+  let terminal = false;
+  let closed = false;
+  let receivedBytes = 0;
   let buffer = "";
+  const cancel = () => { void reader.cancel().catch(() => {}); };
+  signal?.addEventListener("abort", cancel, { once: true });
 
   const consumeBlock = (block) => {
     const data = block
@@ -287,57 +292,79 @@ async function readCodexResponsesStream(body) {
       .map((line) => line.slice(5).trimStart())
       .join("\n")
       .trim();
-    if (!data || data === "[DONE]") return;
+    if (!data) return;
+    if (data === "[DONE]") { terminal = true; return; }
 
     let event;
     try {
       event = JSON.parse(data);
     } catch {
-      return;
+      throw new SyntaxError("LLM returned malformed SSE JSON");
     }
-    events.push(event);
+    const eventType = event.type || block.split(/\r?\n/).find((line) => line.startsWith("event:"))?.slice(6).trim();
+    usage = event.response?.usage || event.usage || usage;
 
-    if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
+    if (eventType === "response.output_text.delta" && typeof event.delta === "string") {
       textDeltas.push(event.delta);
-    } else if (event.type === "response.output_text.done" && typeof event.text === "string") {
+    } else if (eventType === "response.output_text.done" && typeof event.text === "string") {
       doneText = event.text;
-    } else if (event.type === "response.completed") {
+    } else if (eventType === "response.completed") {
       completedResponse = event.response || event;
+      terminal = true;
+    } else if (eventType === "response.failed" || eventType === "response.incomplete" || eventType === "error" || event.error) {
+      completedResponse = {
+        ...(event.response || {}),
+        status: eventType === "response.incomplete" ? "incomplete" : "failed",
+        error: event.response?.error || event.error || { message: event.message || eventType },
+      };
+      terminal = true;
     }
   };
 
-  while (true) {
-    const { value, done } = await reader.read();
-    if (value) buffer += decoder.decode(value, { stream: !done });
-    let sep;
-    while ((sep = buffer.search(/\r?\n\r?\n/)) !== -1) {
-      const block = buffer.slice(0, sep);
-      buffer = buffer.slice(buffer[sep] === "\r" ? sep + 4 : sep + 2);
-      consumeBlock(block);
+  try {
+    signal?.throwIfAborted();
+    while (!terminal) {
+      const { value, done } = await reader.read();
+      signal?.throwIfAborted();
+      closed = done;
+      if (value) {
+        receivedBytes += value.byteLength;
+        if (receivedBytes > 8 * 1024 * 1024) throw new Error("LLM utility stream exceeds 8 MiB");
+        buffer += decoder.decode(value, { stream: true });
+      }
+      if (done) buffer += decoder.decode();
+      let sep;
+      while (!terminal && (sep = buffer.search(/\r?\n\r?\n/)) !== -1) {
+        const block = buffer.slice(0, sep);
+        buffer = buffer.slice(buffer[sep] === "\r" ? sep + 4 : sep + 2);
+        consumeBlock(block);
+      }
+      if (done) {
+        if (!terminal && buffer.trim()) consumeBlock(buffer);
+        break;
+      }
     }
-    if (done) break;
+    if (!terminal) throw new Error("LLM stream ended before completion");
+  } finally {
+    signal?.removeEventListener("abort", cancel);
+    if (!closed) cancel();
+    reader.releaseLock();
   }
-  buffer += decoder.decode();
-  if (buffer.trim()) consumeBlock(buffer);
 
-  const outputText = textDeltas.join("").trim() || doneText.trim();
-  const usage = completedResponse?.usage || events.find((event) => event?.usage)?.usage || null;
-  if (outputText) {
-    return {
-      output_text: outputText,
-      ...(usage ? { usage } : {}),
-    };
+  if (completedResponse?.error || ["failed", "incomplete"].includes(completedResponse?.status)) {
+    return { ...completedResponse, ...(usage ? { usage } : {}) };
   }
-  if (completedResponse) return completedResponse;
+  const outputText = extractResponsesText(completedResponse).text || textDeltas.join("").trim() || doneText.trim();
   return {
-    output: events,
+    ...(completedResponse || {}),
+    ...(outputText ? { output_text: outputText } : {}),
     ...(usage ? { usage } : {}),
   };
 }
 
 function throwAbortOrTimeout(err, signal, modelId): never {
-  if (err.name === "AbortError" || err.name === "TimeoutError") {
-    if (signal?.aborted) throw createUserAbortError();
+  if (signal?.aborted) throw createUserAbortError();
+  if (err?.name === "AbortError" || err?.name === "TimeoutError") {
     throw new AppError('LLM_TIMEOUT', { context: { model: modelId }, cause: err });
   }
   throw err;
@@ -418,6 +445,7 @@ export async function callText({
   usageContext,
   usageLedger,
 }: CallTextOptions) {
+  if (signal?.aborted) throw createUserAbortError();
   // 同时接受完整 model 对象和裸 id。modelObj 用于 provider-compat 决策；modelId 入 payload。
   const modelObj = typeof model === "object" && model !== null ? model : null;
   const modelId = modelObj ? String(modelObj.id || "") : String(model || "");
@@ -587,8 +615,7 @@ export async function callText({
   let data;
   try {
     if (res.ok && api === "openai-codex-responses" && res.body && typeof res.body.getReader === "function") {
-      data = await readCodexResponsesStream(res.body);
-      rawText = JSON.stringify(data);
+      data = await readCodexResponsesStream(res.body, combinedSignal);
     } else {
       rawText = await res.text();
     }
@@ -601,10 +628,14 @@ export async function callText({
     try {
       data = rawText ? JSON.parse(rawText) : null;
     } catch {
-      throw new Error(`LLM returned invalid JSON (status=${res.status})`);
+      // Gateways often return HTML/text on failure. Preserve HTTP error
+      // classification instead of hiding an auth/rate-limit/server failure.
+      if (res.ok) throw new Error(`LLM returned invalid JSON (status=${res.status})`);
     }
   }
   observedUsagePayload = data?.usage ?? null;
+  if (signal?.aborted) throw createUserAbortError();
+  if (timeoutSignal.aborted) throw new AppError('LLM_TIMEOUT', { context: { model: modelId } });
 
   if (!res.ok) {
     const message = providerErrorMessage(data, rawText, res.status);
@@ -622,7 +653,15 @@ export async function callText({
     if (res.status === 429) {
       throw new AppError('LLM_RATE_LIMITED', { message, context });
     }
+    if (res.status === 408) throw new AppError('LLM_TIMEOUT', { message, context });
+    if (res.status >= 500) throw new AppError('FETCH_SERVER_ERROR', { message, context });
     throw new AppError('UNKNOWN', { message, context });
+  }
+  if (data?.error || data?.status === "failed" || data?.status === "incomplete") {
+    throw new AppError('UNKNOWN', {
+      message: data?.error?.message || data?.incomplete_details?.reason || `LLM response ${data.status || "failed"}`,
+      context: { model: modelId, provider, api, stopReason: data.status || "error" },
+    });
   }
 
   // ── 6. 提取文本 ──

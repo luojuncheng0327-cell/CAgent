@@ -459,6 +459,26 @@ function assertInstallEntryHealthy(entry: any) {
   }
 }
 
+/** Public plugin metadata shared by list and install responses. Runtime state
+ * contains contexts, instances and timers that must never cross the HTTP boundary.
+ */
+function serializePlugin(p: any) {
+  return {
+    id: p.id, name: p.name, version: p.version,
+    pluginKey: p.pluginKey || `${p.source || "community"}:${p.id}`,
+    description: p.description, status: p.status,
+    shadowedBy: p.shadowedBy || null,
+    shadowedByPluginKey: p.shadowedByPluginKey || null,
+    shadows: Array.isArray(p.shadows) ? p.shadows : [],
+    activationState: p.activationState || null,
+    activationEvents: Array.isArray(p.activationEvents) ? p.activationEvents : [],
+    activationError: p.activationError || null,
+    source: p.source || "community", trust: p.trust || "restricted",
+    contributions: p.contributions,
+    error: p.error || null,
+  };
+}
+
 async function restoreAfterFailedInstall({ engine, pm, backup, targetDir, desc }: { engine: any; pm: any; backup: any; targetDir: string; desc: any }) {
   if (backup && restorePluginInstallBackup(backup, targetDir)) {
     try {
@@ -553,7 +573,7 @@ async function installPluginFromPath({
     });
 
     return {
-      ...entry,
+      ...serializePlugin(entry),
       ...(sourceFile ? { sourceFile } : {}),
     };
   } finally {
@@ -766,20 +786,7 @@ export function createPluginsRoute(engine: any) {
     reconcileMissingPluginDirectories(engine, pm);
     let plugins = pm.listPlugins().filter((p: any) => !p.hidden);
     if (opts.source) plugins = plugins.filter((p: any) => p.source === opts.source);
-    return plugins.map(p => ({
-      id: p.id, name: p.name, version: p.version,
-      pluginKey: p.pluginKey || `${p.source || "community"}:${p.id}`,
-      description: p.description, status: p.status,
-      shadowedBy: p.shadowedBy || null,
-      shadowedByPluginKey: p.shadowedByPluginKey || null,
-      shadows: Array.isArray(p.shadows) ? p.shadows : [],
-      activationState: p.activationState || null,
-      activationEvents: Array.isArray(p.activationEvents) ? p.activationEvents : [],
-      activationError: p.activationError || null,
-      source: p.source || "community", trust: p.trust || "restricted",
-      contributions: p.contributions,
-      error: p.error || null,
-    }));
+    return plugins.map(serializePlugin);
   }
 
   // ── Management API (specific routes first) ──

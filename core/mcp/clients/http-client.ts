@@ -284,8 +284,9 @@ function responseHeader(response, name) {
 async function responseText(response) {
   try {
     return await response.text();
-  } catch {
-    return "";
+  } catch (error) {
+    if (response.ok === false) return "";
+    throw error;
   }
 }
 
@@ -308,18 +309,11 @@ function resolveEndpoint(endpoint, baseUrl) {
 }
 
 async function fetchWithTimeout(fetchImpl, url, init, timeoutMs) {
-  if (!timeoutMs) return fetchImpl(url, init);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  const originalSignal = init?.signal;
-  const abortFromOriginal = () => controller.abort();
-  originalSignal?.addEventListener?.("abort", abortFromOriginal, { once: true });
-  try {
-    return await fetchImpl(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-    originalSignal?.removeEventListener?.("abort", abortFromOriginal);
-  }
+  // The deadline must cover reading the body too, not only response headers.
+  const signals = [init?.signal, timeoutMs ? AbortSignal.timeout(Math.ceil(timeoutMs)) : null].filter(Boolean);
+  const signal = signals.length ? AbortSignal.any(signals) : undefined;
+  signal?.throwIfAborted();
+  return fetchImpl(url, { ...init, ...(signal ? { signal } : {}) });
 }
 
 function requestTimeoutMs(server) {
@@ -548,22 +542,24 @@ export class McpStreamableHttpClient {
   // inputResponses/requestState carry a previous round's answers back to the
   // server. The server keeps no state of its own between rounds, so the retry
   // must repeat the original arguments and echo the opaque state verbatim.
-  async callTool(name, args, { inputResponses = null, requestState = "" }: any = {}) {
+  async callTool(name, args, { inputResponses = null, requestState = "", signal }: any = {}) {
     const params: any = { name, arguments: args || {} };
     if (inputResponses) params.inputResponses = inputResponses;
     if (requestState) params.requestState = requestState;
-    return this.request("tools/call", params);
+    return this.request("tools/call", params, { signal });
   }
 
   async readResource(uri) {
     return this.request("resources/read", { uri });
   }
 
-  async request(method, params: any = {}, opts = {}) {
+  async request(method, params: any = {}, opts: { signal?: AbortSignal } = {}) {
+    opts.signal?.throwIfAborted();
     if (!this.running) throw new Error("MCP connector is not running");
     try {
       return await this._request(method, params, opts);
     } catch (err) {
+      if (opts.signal?.aborted) throw opts.signal.reason;
       // The error we ultimately surface. A 401 refresh may replace it with a more
       // specific cause; we track that on a local instead of reassigning the catch
       // binding `err` (no-ex-assign).
@@ -587,6 +583,7 @@ export class McpStreamableHttpClient {
       // invalid_grant). Tear the session down and report it so the runtime can run
       // backoff reconnect; auth-terminal failures additionally flag needsAuth for
       // the OAuth self-heal / re-auth. This never silently swallows the error.
+      if (opts.signal?.aborted) throw opts.signal.reason;
       this._failLiveSession(failure);
       throw failure;
     }
@@ -638,11 +635,12 @@ export class McpStreamableHttpClient {
     }
   }
 
-  async _request(method, params: any = {}, { initializing = false, retryOnSessionExpired = true } = {}) {
+  async _request(method, params: any = {}, { initializing = false, retryOnSessionExpired = true, signal }: { initializing?: boolean; retryOnSessionExpired?: boolean; signal?: AbortSignal } = {}) {
+    signal?.throwIfAborted();
     const id = this._nextId++;
     const payload = { jsonrpc: "2.0", id, method, params };
     try {
-      return await this._postJsonRpc(payload, { initializing });
+      return await this._postJsonRpc(payload, { initializing, signal });
     } catch (err) {
       if (
         retryOnSessionExpired &&
@@ -653,7 +651,7 @@ export class McpStreamableHttpClient {
         this._initialized = false;
         await this.initialize();
         this._initialized = true;
-        return this._request(method, params, { initializing: false, retryOnSessionExpired: false });
+        return this._request(method, params, { initializing: false, retryOnSessionExpired: false, signal });
       }
       throw err;
     }
@@ -731,7 +729,7 @@ export class McpStreamableHttpClient {
     });
   }
 
-  async _postJsonRpc(payload, { initializing = false, era = this.era } = {}) {
+  async _postJsonRpc(payload, { initializing = false, era = this.era, signal }: { initializing?: boolean; era?: any; signal?: AbortSignal } = {}) {
     // Validate what the caller handed us, so a diagnostic points at the caller's
     // own field path rather than at protocol metadata we added underneath.
     assertValidUnicodeBoundary(payload);
@@ -742,6 +740,7 @@ export class McpStreamableHttpClient {
       method: "POST",
       headers: await this._headers({ initializing, era, payload: body }),
       body: JSON.stringify(body),
+      signal,
     }, requestTimeoutMs(this.server));
     if (initializing) {
       const sessionId = responseHeader(response, "MCP-Session-Id");
@@ -857,28 +856,30 @@ export class McpLegacySseClient {
     return Array.isArray(result?.tools) ? result.tools : [];
   }
 
-  async callTool(name, args) {
+  async callTool(name, args, { signal }: { signal?: AbortSignal } = {}) {
     return this.request("tools/call", {
       name,
       arguments: args || {},
-    });
+    }, { signal });
   }
 
   async readResource(uri) {
     return this.request("resources/read", { uri });
   }
 
-  async request(method, params: any = {}, { timeout = 30_000 } = {}) {
+  async request(method, params: any = {}, { timeout = 30_000, signal }: { timeout?: number; signal?: AbortSignal } = {}) {
+    signal?.throwIfAborted();
     if (!this.running) throw new Error("MCP connector is not running");
     try {
-      return await this._sendRequest(method, params, timeout);
+      return await this._sendRequest(method, params, timeout, signal);
     } catch (err) {
+      if (signal?.aborted) throw signal.reason;
       // 401 OAuth self-heal (方案 A, single retry). Force a token refresh and, if
       // it yields a new token, replay the request once with a fresh id. A second
       // 401 or no refresh rethrows. No loop.
       if (err instanceof McpHttpError && err.status === 401 && this.refreshAuthToken) {
         const newToken = stringOrEmpty(await this.refreshAuthToken());
-        if (newToken) return this._sendRequest(method, params, timeout);
+        if (newToken) return this._sendRequest(method, params, timeout, signal);
       }
       if (isSessionExpiredHttpError(err)) {
         this._failLiveSession(err);
@@ -887,7 +888,8 @@ export class McpLegacySseClient {
     }
   }
 
-  _sendRequest(method, params, timeout) {
+  _sendRequest(method, params, timeout, signal?: AbortSignal) {
+    signal?.throwIfAborted();
     const id = this._nextId++;
     const payload = { jsonrpc: "2.0", id, method, params };
     const queued = this._queued.get(id);
@@ -896,23 +898,29 @@ export class McpLegacySseClient {
       return Promise.resolve(rpcResult(queued));
     }
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const cleanup = () => {
+        clearTimeout(timer);
         this._pending.delete(id);
+        signal?.removeEventListener("abort", onAbort);
+      };
+      const onAbort = () => { cleanup(); reject(signal.reason); };
+      const timer = setTimeout(() => {
+        cleanup();
         reject(new Error(`MCP request "${method}" timed out`));
       }, timeout);
       this._pending.set(id, {
         resolve: (value) => {
-          clearTimeout(timer);
+          cleanup();
           resolve(value);
         },
         reject: (err) => {
-          clearTimeout(timer);
+          cleanup();
           reject(err);
         },
       });
-      this._postMessage(payload).catch((err) => {
-        this._pending.delete(id);
-        clearTimeout(timer);
+      signal?.addEventListener("abort", onAbort, { once: true });
+      this._postMessage(payload, signal).catch((err) => {
+        cleanup();
         reject(err);
       });
     });
@@ -1070,12 +1078,13 @@ export class McpLegacySseClient {
     });
   }
 
-  async _postMessage(payload) {
+  async _postMessage(payload, signal?: AbortSignal) {
     assertValidUnicodeBoundary(payload);
     const response = await fetchWithTimeout(this.fetchImpl, this.messageEndpoint, {
       method: "POST",
       headers: await this._headers({ accept: "application/json", includeJson: true }),
       body: JSON.stringify(payload),
+      signal,
     }, requestTimeoutMs(this.server));
     if (!response.ok) {
       const body = await responseText(response);

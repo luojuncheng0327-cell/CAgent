@@ -45,7 +45,7 @@
  * write bytes to an artifacts directory without a human in the loop.
  *
  * Gate order (both entry points), each short-circuits the rest on failure:
- *   fetch the GitHub channel manifest once (ETag-cached for checkOnce,
+ *   fetch the Gitee channel manifest once (ETag-cached for checkOnce,
  *   ETag-bypassed for downloadAndApplyArtifacts)
  *     -> ed25519 verify + schema validate happens INSIDE the fetch step
  *        above (one atomic call into the protected artifact-core
@@ -120,7 +120,7 @@
  * orderings is negligible.
  *
  * Public channel lookup deliberately has one source and one bounded
- * attempt: GitHub. A failed round is recorded and returned to the UI so a
+ * attempt: Gitee. A failed round is recorded and returned to the UI so a
  * person can press Retry again; the transport never performs a hidden
  * source switch or an internal retry loop. Detached signature verification,
  * ETag handling, and the trusted archive URLs inside a verified manifest
@@ -204,20 +204,20 @@ const DOWNLOAD_ATTEMPT_DEADLINE_MS = 60 * 60 * 1000;
 const MAX_MANIFEST_BYTES = 256 * 1024; // generous for a schema-1 manifest + mirrors array
 const MAX_SIG_BYTES = 4 * 1024; // raw ed25519 sig is 64 bytes; PEM-wrapped is still tiny
 // Kept as an exported compatibility alias for consumers that used the old
-// constant name. There is no separate race budget anymore: the one GitHub
+// constant name. There is no separate race budget anymore: the one Gitee
 // attempt uses the ordinary bounded manifest timeout.
 const ORIGIN_MANIFEST_RACE_TIMEOUT_MS = MANIFEST_REQUEST_TIMEOUT_MS;
 
 // ── channel pointer URLs: clients poll ONLY these static asset
-//    URLs, never the GitHub API ───────────────────────────────────────────
-const GITHUB_CHANNEL_BASE = "https://github.com/liliMozi/openhanako/releases/download/channels";
+//    URLs, never the Gitee API ───────────────────────────────────────────
+const { channelManifestBaseUrl } = require("../release-source.cjs");
 
 /**
  * One-element array retained for compatibility with existing callers.
- * @returns {[string]} the GitHub channel manifest URL.
+ * @returns {[string]} the CAgent Gitee channel manifest URL.
  */
 function channelManifestUrls(channel) {
-  return [`${GITHUB_CHANNEL_BASE}/${channel}.json`];
+  return [`${channelManifestBaseUrl}/${channel}.json`];
 }
 
 // ── low-level https transport: manual redirect following, injectable for
@@ -395,7 +395,7 @@ async function downloadToFile(url, destPath, opts = {}) {
   return { statusCode, headers, bytesWritten: total };
 }
 
-// ── channel manifest fetch (one GitHub source, ETag cache, dev bypass) ──
+// ── channel manifest fetch (one Gitee source, ETag cache, dev bypass) ──
 
 function fetchDevOverrideManifest(devOverride, keyset, log) {
   if (/^https?:\/\//i.test(devOverride)) {
@@ -417,7 +417,7 @@ function fetchDevOverrideManifest(devOverride, keyset, log) {
   const sigBytes = fs.readFileSync(`${devOverride}.sig`);
   const manifest = manifestModule.verifyManifest(manifestBytes, sigBytes, keyset);
   // Dev bypass reads a single local fixture and uses the same provenance
-  // shape as the public GitHub path.
+  // shape as the public Gitee path.
   return { manifest, etag: null, sourceUrl: devOverride, sourceKind: "origin", originUnreachable: false, localDir: path.dirname(devOverride) };
 }
 
@@ -457,13 +457,13 @@ function tryVerifyManifestCandidate(fetchResult, keyset, log) {
   try {
     return manifestModule.verifyManifest(fetchResult.manifestBytes, fetchResult.sigBytes, keyset);
   } catch (err) {
-    log(`[ota] GitHub channel manifest failed verification: ${err.message}`);
+    log(`[ota] Gitee channel manifest failed verification: ${err.message}`);
     return null;
   }
 }
 
 /**
- * Fetches this round's channel manifest from GitHub exactly once. A failed
+ * Fetches this round's channel manifest from Gitee exactly once. A failed
  * round returns an error to the caller; retrying is a separate user action.
  * @param {{channel: string, keyset: Array<{keyId:string, publicKey:string}>,
  *   cachedEtags?: {origin?: string|null},
@@ -493,11 +493,11 @@ async function fetchChannelManifest({ channel, keyset, cachedEtags = {}, log = (
   if (originResult.status === "fetched") sourceEtagUpdate.origin = originResult.etag;
   if (originResult.status === "not-modified") return { notModified: true, sourceEtagUpdate };
   if (originResult.status === "error") {
-    throw new Error(`artifact-ota: GitHub channel manifest request failed: ${originResult.error.message}`);
+    throw new Error(`artifact-ota: Gitee channel manifest request failed: ${originResult.error.message}`);
   }
 
   const verified = tryVerifyManifestCandidate(originResult, keyset, log);
-  if (!verified) throw new Error("artifact-ota: GitHub channel manifest failed signature or schema verification");
+  if (!verified) throw new Error("artifact-ota: Gitee channel manifest failed signature or schema verification");
 
   return {
     manifest: verified,
@@ -511,7 +511,7 @@ async function fetchChannelManifest({ channel, keyset, cachedEtags = {}, log = (
 }
 
 /**
- * GitHub ETag cache merge. Legacy state may still carry extra source keys;
+ * Gitee ETag cache merge. Legacy state may still carry extra source keys;
  * reading it is safe, while every successful new write normalizes the
  * persisted shape back to the single `origin` key.
  */
@@ -900,10 +900,10 @@ async function checkOnce(opts) {
   if (!platformArch) throw new Error("artifact-ota: platformArch is required");
 
   const priorChannelState = (await readOtaState(homeDir))[channel] || {};
-  // Read the old multi-source state safely, but only carry GitHub's ETag
+  // Read the old multi-source state safely, but only carry Gitee's ETag
   // forward. Legacy extra keys are ignored and disappear on the next
   // successful state write, so an old backup-source token can never be
-  // sent to GitHub by mistake.
+  // sent to Gitee by mistake.
   const cachedEtags = cachedGithubEtags(priorChannelState);
 
   try {
@@ -1138,7 +1138,7 @@ async function downloadAndApplyArtifacts(opts) {
   if (!currentShellVersion) throw new Error("artifact-ota: currentShellVersion is required");
   if (!platformArch) throw new Error("artifact-ota: platformArch is required");
 
-  // The apply fetch itself bypasses ETag, but keep the last GitHub token in
+  // The apply fetch itself bypasses ETag, but keep the last Gitee token in
   // bookkeeping if this manually triggered round does not return a new one.
   const priorCachedEtags = cachedGithubEtags((await readOtaState(homeDir))[channel] || {});
 
@@ -1374,7 +1374,7 @@ async function downloadAndApplyArtifacts(opts) {
  * the same human-in-the-loop rule `downloadAndApplyArtifacts` carries; no
  * timer, daemon, or background code may ever call this.
  *
- * Gates kept from the desktop pipeline (same semantics): signed GitHub
+ * Gates kept from the desktop pipeline (same semantics): signed Gitee
  * manifest fetch, channel namespace
  * assertion, renderer version already-current short-circuit, train
  * monotonic, version never goes backward, quarantine — plus the
@@ -1440,7 +1440,7 @@ async function downloadAndApplyRendererArtifact(opts) {
   if (!Array.isArray(keyset) || keyset.length === 0) throw new Error("artifact-ota: keyset is required");
   if (!Number.isInteger(serverProtocolVersion)) throw new Error("artifact-ota: serverProtocolVersion is required");
 
-  // Same GitHub-only ETag bookkeeping as downloadAndApplyArtifacts.
+  // Same Gitee-only ETag bookkeeping as downloadAndApplyArtifacts.
   const priorCachedEtags = cachedGithubEtags((await readOtaState(homeDir))[channel] || {});
 
   try {

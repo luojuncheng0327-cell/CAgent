@@ -15,8 +15,10 @@ export const DEFAULT_RUN_LIMITS = {
   nodeTimeoutMs: 15 * 60_000,
   idleTimeoutMs: 10 * 60_000,
   totalTimeoutMs: 4 * 60 * 60_000,
-  maxConcurrent: 16,
-  nodeRetries: 2,
+  // Conservative desktop defaults; explicitly configured workflows can raise
+  // these limits without changing the orchestration or permission contracts.
+  maxConcurrent: 4,
+  nodeRetries: 1,
 };
 
 export type RunLimits = typeof DEFAULT_RUN_LIMITS;

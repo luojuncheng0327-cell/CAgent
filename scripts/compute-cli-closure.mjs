@@ -94,6 +94,7 @@
  * (all lists are sorted; no timestamps are embedded).
  */
 import fs from "node:fs";
+import { optionalServerDependencyRoots } from "./optional-server-dependencies.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
@@ -868,7 +869,8 @@ export async function traceNftRoot({ rootDir, root }) {
       );
     }
     const { nodeFileTrace } = await import("@vercel/nft");
-    const { fileList, warnings } = await nodeFileTrace([scratchPath], {
+    const optionalRoots = root.id === "nft-server-bundle" ? optionalServerDependencyRoots(rootDir) : [];
+    const { fileList, warnings } = await nodeFileTrace([scratchPath, ...optionalRoots], {
       base: rootDir,
       conditions: ["node", "import"],
       analysis: { emitGlobs: false },

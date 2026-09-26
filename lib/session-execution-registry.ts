@@ -90,6 +90,9 @@ export function wrapWithSessionExecutionCancellation(tools: any[] = [], deps: an
       execute: async (toolCallId, params, signal, onUpdate, ctx) => {
         const runtimeCtx = ctx || (!isAbortSignalLike(signal) ? signal : null);
         const upstreamSignal = isAbortSignalLike(signal) ? signal : null;
+        // Cancellation is enforced before dispatch, including legacy/no-session
+        // tools which may not inspect the signal themselves.
+        upstreamSignal?.throwIfAborted();
         const sessionPath = getToolSessionPath(runtimeCtx)
           || runtimeCtx?.sessionPath
           || deps.getSessionRef?.()?.sessionPath
@@ -115,6 +118,7 @@ export function wrapWithSessionExecutionCancellation(tools: any[] = [], deps: an
           signal: upstreamSignal,
         });
         try {
+          execution.signal.throwIfAborted();
           return await tool.execute(toolCallId, params, execution.signal, onUpdate, enrichedRuntimeCtx);
         } finally {
           execution.release();

@@ -15,6 +15,8 @@ import { createModuleLogger } from "../debug-log.ts";
 const log = createModuleLogger("memory-search");
 
 const CHANNEL_SESSION_PREFIX = "channel-";
+export const MEMORY_SEARCH_MAX_CHARS = 12_000;
+const MEMORY_FACT_MAX_CHARS = 2_000;
 
 /**
  * 会话作用域过滤：频道 phone 会话默认看不到「其它频道」的事实。
@@ -68,6 +70,12 @@ export function createMemorySearchTool(factStore, opts: any = {}) {
     }),
     execute: async (_toolCallId, params) => {
       try {
+        if (opts.getMemoryMasterEnabled?.() === false) {
+          return {
+            content: [{ type: "text", text: t("welcome.memoryDisabled") }],
+            details: { disabled: true, resultCount: 0 },
+          };
+        }
         const t0 = performance.now();
 
         if (factStore.size === 0) {
@@ -137,15 +145,31 @@ export function createMemorySearchTool(factStore, opts: any = {}) {
         }
 
         // 格式化输出
-        const lines = results.map((r, i) => {
+        const lines: string[] = [];
+        let remaining = MEMORY_SEARCH_MAX_CHARS;
+        let truncated = false;
+        for (const r of results) {
+          if (remaining < 2) { truncated = true; break; }
           const tagsStr = r.tags.length > 0 ? ` (${r.tags.join(", ")})` : "";
           const timeStr = r.time ? ` — ${r.time}` : "";
-          return `${i + 1}. ${r.fact}${tagsStr}${timeStr}`;
-        });
+          const line = `${lines.length + 1}. ${r.fact}${tagsStr}${timeStr}`;
+          const limit = Math.min(MEMORY_FACT_MAX_CHARS, remaining - (lines.length ? 1 : 0));
+          const excerpt = line.length > limit ? `${line.slice(0, limit - 1)}…` : line;
+          truncated ||= line.length > limit;
+          remaining -= excerpt.length + (lines.length ? 1 : 0);
+          lines.push(excerpt);
+        }
 
         return {
           content: [{ type: "text", text: lines.join("\n") }],
-          details: { resultCount: results.length },
+          details: {
+            resultCount: lines.length,
+            totalMatches: results.length,
+            truncated,
+            // Keep provenance separate from display text; full facts remain in
+            // the local store rather than being copied into every model turn.
+            sources: results.slice(0, lines.length).map((r) => ({ id: r.id, sessionId: r.session_id || null })),
+          },
         };
       } catch (err) {
         return {

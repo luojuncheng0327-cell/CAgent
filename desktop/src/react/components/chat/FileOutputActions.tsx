@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { isMarkdownFileName } from '../../utils/file-kind';
@@ -106,7 +107,7 @@ export function FileOutputActions({ filePath, displayName, downloadUrl, download
   }, [filePath]);
 
   const copyPath = useCallback(() => {
-    navigator.clipboard?.writeText?.(filePath).catch(() => {});
+    copyTextToClipboard(filePath).catch(() => {});
   }, [filePath]);
 
   const shareScreenshot = useCallback(() => {

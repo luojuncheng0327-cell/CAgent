@@ -19,7 +19,7 @@ const mockWsConstructorArgs: any[] = [];
 let registeredHandlers: any = {};
 let mockWsInstances = [];
 
-vi.mock("@larksuiteoapi/node-sdk", () => {
+vi.mock("../lib/bridge/optional-sdks.ts", () => {
   class MockEventDispatcher {
     register(handlers) {
       registeredHandlers = handlers;
@@ -85,13 +85,13 @@ vi.mock("@larksuiteoapi/node-sdk", () => {
     }
   }
 
-  return {
+  return { loadFeishuSdk: () => ({
     Client: MockClient,
     Domain: { Feishu: 0, Lark: 1 },
     EventDispatcher: MockEventDispatcher,
     WSClient: MockWSClient,
     LoggerLevel: { warn: "warn" },
-  };
+  }) };
 });
 
 const moduleLoggerMock = vi.hoisted(() => ({

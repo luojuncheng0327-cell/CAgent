@@ -7,6 +7,20 @@ import {
 } from "../lib/session-execution-registry.ts";
 
 describe("SessionExecutionRegistry", () => {
+  it.each([true, false])("does not dispatch pre-canceled tools (session identity: %s)", async (hasSession) => {
+    const registry = new SessionExecutionRegistry();
+    const execute = vi.fn(async () => "should not run");
+    const controller = new AbortController();
+    controller.abort();
+    const [wrapped] = wrapWithSessionExecutionCancellation([{ name: "write", execute }], {
+      registry,
+      ...(hasSession ? { getSessionRef: () => ({ sessionId: "session-1" }) } : {}),
+    });
+    await expect(wrapped.execute("call-1", {}, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    expect(execute).not.toHaveBeenCalled();
+    expect(registry.activeCount("session-1")).toBe(0);
+  });
+
   it("aborts every active tool execution owned by one session", async () => {
     const registry = new SessionExecutionRegistry();
     const observedSignals: AbortSignal[] = [];

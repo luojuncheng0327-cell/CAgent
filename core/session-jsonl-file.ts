@@ -1,7 +1,11 @@
 import fs from "fs";
 import path from "path";
+import { atomicWriteSync } from "../shared/safe-fs.ts";
+import { createModuleLogger } from "../lib/debug-log.ts";
 import { isSessionJsonlFilename } from "../lib/session-jsonl.ts";
 import { stripAllInlineMediaForHistory } from "./message-sanitizer.ts";
+
+const persistenceLog = createModuleLogger("session-persistence");
 
 export const DEFAULT_SESSION_JSONL_MAX_LINE_BYTES = 1024 * 1024;
 const DEFAULT_SESSION_JSONL_MAX_STRING_CHARS = 8192;
@@ -283,19 +287,38 @@ export function repairOversizedSessionEntriesInFile(sessionPath, opts: { maxLine
   const backupPath = `${sessionPath}.repair.json`;
   try {
     if (!fs.existsSync(backupPath)) fs.copyFileSync(sessionPath, backupPath);
-    writeSessionEntriesFile(sessionPath, repairedEntries.entries);
+    writeSessionEntriesFile(sessionPath, repairedEntries.entries, { expectedRaw: raw });
   } catch {
     return { repaired: false, projected: 0, skipped: 0, backupPath: null };
   }
   return { repaired: true, projected: repairedEntries.projected, skipped, backupPath };
 }
 
-/**
- * @param {string} sessionPath
- * @param {Array} entries
- */
-export function writeSessionEntriesFile(sessionPath, entries) {
-  fs.writeFileSync(sessionPath, serializeSessionEntries(entries));
+function readSnapshotBytes(sessionPath) {
+  try {
+    return fs.readFileSync(sessionPath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function staleSnapshotError(sessionPath) {
+  return Object.assign(new Error(`Refusing stale session snapshot: ${path.basename(sessionPath)}`), {
+    code: "SESSION_SNAPSHOT_STALE",
+  });
+}
+
+export function writeSessionEntriesFile(sessionPath, entries, {
+  expectedRaw,
+}: { expectedRaw?: string | null } = {}) {
+  // Serialize fully before touching the destination. A bad later entry or an
+  // interrupted write must never truncate an otherwise recoverable history.
+  const serialized = serializeSessionEntries(entries);
+  if (expectedRaw !== undefined && readSnapshotBytes(sessionPath) !== expectedRaw) {
+    throw staleSnapshotError(sessionPath);
+  }
+  atomicWriteSync(sessionPath, serialized);
 }
 
 function hasAssistantEntry(entries) {
@@ -318,7 +341,26 @@ export function flushSessionManagerSnapshot(sessionManager, {
   const entries = Array.isArray(sessionManager.fileEntries) ? sessionManager.fileEntries : null;
   if (!entries?.length) return false;
   if (preAssistantOnly && hasAssistantEntry(entries)) return false;
-  sessionManager._rewriteFile();
+  if (sessionManager.isPersisted?.() === false) return false;
+  const sessionPath = sessionManager.getSessionFile?.();
+  if (sessionPath) {
+    const original = readSnapshotBytes(sessionPath);
+    if (original?.trim()) {
+      // Use strict parsing here: a lossy reader is suitable for recovery but
+      // cannot authorize replacing the only complete copy of a session.
+      const diskEntries = original.split("\n").filter(line => line.trim()).map(line => JSON.parse(line));
+      const ids = new Set(entries.slice(1).map(entry => entry.id));
+      if (diskEntries[0]?.type !== "session"
+        || diskEntries[0].id !== entries[0]?.id
+        || diskEntries.slice(1).some(entry => !entry.id || !ids.has(entry.id))) {
+        throw staleSnapshotError(sessionPath);
+      }
+    }
+    writeSessionEntriesFile(sessionPath, entries, { expectedRaw: original });
+  } else {
+    // Lightweight in-memory adapters may not expose a filesystem path.
+    sessionManager._rewriteFile();
+  }
   if ("flushed" in sessionManager) sessionManager.flushed = true;
   return true;
 }
@@ -330,8 +372,9 @@ export function schedulePreAssistantSessionManagerFlush(sessionManager) {
   enqueue(() => {
     try {
       flushSessionManagerSnapshot(sessionManager, { preAssistantOnly: true });
-    } catch {
+    } catch (error) {
       // Best-effort lifecycle persistence must not change prompt behavior.
+      persistenceLog.warn(`pre-assistant snapshot was not saved: ${error?.message || String(error)}`);
     }
   });
 }

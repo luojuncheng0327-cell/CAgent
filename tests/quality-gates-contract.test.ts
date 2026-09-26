@@ -86,16 +86,16 @@ describe("quality gates", () => {
     const build = readYaml(".github/workflows/build.yml");
 
     expect(packageJson.engines.node).toBe(">=24.12.0 <25");
-    expect(buildServerPhases).toContain('DEFAULT_NODE_VERSION = "v24.15.0"');
+    expect(buildServerPhases).toContain('DEFAULT_NODE_VERSION = "v24.19.0"');
     expect(buildServerPhases).toContain("--target=node24");
     expect(serverConfig).toContain('target: "node24"');
     expect(mainConfig).toContain('target: "node24"');
     expect(preloadConfig).toContain('target: "node24"');
-    expect(ci.jobs.test.strategy.matrix["node-version"]).toEqual(["24.15.0"]);
+    expect(ci.jobs.test.strategy.matrix["node-version"]).toEqual(["24.19.0"]);
     expect(build.jobs.build.steps).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          with: expect.objectContaining({ "node-version": "24.15.0" }),
+          with: expect.objectContaining({ "node-version": "24.19.0" }),
         }),
       ]),
     );

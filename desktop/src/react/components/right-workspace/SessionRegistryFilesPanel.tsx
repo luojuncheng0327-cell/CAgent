@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useStore } from '../../stores';
@@ -196,7 +197,7 @@ function copyPaths(files: readonly FileRef[]): void {
     .map(file => nativePathForFile(file))
     .filter((path): path is string => !!path);
   if (paths.length === 0) return;
-  navigator.clipboard?.writeText?.(paths.join('\n')).catch(() => {});
+  copyTextToClipboard(paths.join('\n')).catch(() => {});
 }
 
 function previewFile(file: FileRef, sessionPath: string | null): void {

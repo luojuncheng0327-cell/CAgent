@@ -54,16 +54,20 @@ export class SlashCommandDispatcher {
 
     // 纪律 #4：ctx 冻结，防 handler 篡改回传对象或经由 prototype 注入
     // 注意：仅浅冻结，nested objects（engine/hub/sessionRef）仍可被 handler 修改；Phase 1 接受此限制
-    const fullCtx = Object.freeze({
+    const fullCtx = Object.freeze(Object.defineProperties({
       ...ctx,
       rawText: text,
       commandName: parsed.commandName,
       args: parsed.args,
       senderRole: role,
-      hub: this._hub,
-      engine: this._engine,
-      sessionOps: this._sessionOps,
-    });
+    }, {
+      // Plugins may serialize/spread the command metadata for a subprocess.
+      // Runtime services contain timers, sockets and private configuration;
+      // retain direct access without including them in that data boundary.
+      hub: { value: this._hub, enumerable: false },
+      engine: { value: this._engine, enumerable: false },
+      sessionOps: { value: this._sessionOps, enumerable: false },
+    }));
 
     // 纪律 #5：Promise.race 超时保护，即使 handler 永远 pending 也能恢复
     let timer;
@@ -89,6 +93,7 @@ export class SlashCommandDispatcher {
         }
       }
     } catch (err) {
+      try { log.error(`/${parsed.commandName} failed: ${err?.stack || err?.message || String(err)}`); } catch {}
       const base = t("slash.commandError", { message: err?.message || String(err) });
       const full = def.usage ? `${base}\n${t("slash.usage", { usage: def.usage })}` : base;
       try { await ctx.reply(full); } catch {}

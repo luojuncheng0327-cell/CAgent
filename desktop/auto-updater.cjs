@@ -11,6 +11,7 @@ const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const releaseSource = require("../shared/release-source.cjs");
 
 const CHECK_INTERVAL = 4 * 60 * 60 * 1000; // 4 小时
 const DIGEST_ASSET_NAME = "release-digest.v1.json";
@@ -19,9 +20,7 @@ const UPDATE_CHANNEL_VERSION = 1;
 // 邀请核销服务地址。服务已于 2026-08-20 上线（Cloudflare Worker），地址
 // 非秘密——邀请码才是凭证，端点按 IP 限速。留空即"通道未配置"、设置页
 // 不渲染邀请入口；HANA_INVITE_API_URL 可临时覆盖。
-const DEFAULT_INVITE_API_URL = "https://alpha-invite-gate.hanaagent.workers.dev";
-const DEFAULT_GITHUB_OWNER = "liliMozi";
-const DEFAULT_GITHUB_REPO = "openhanako";
+const DEFAULT_INVITE_API_URL = "";
 
 let _mainWindow = null;
 let _setIsUpdating = null;  // 由 main.cjs 注入
@@ -41,19 +40,19 @@ function ensureTrailingSlash(value) {
   return trimmed ? `${trimmed}/` : "";
 }
 
-function createGithubFeedConfig(digestBaseUrl = "") {
+function createGiteeFeedConfig(digestBaseUrl = "") {
   return {
     feedURL: {
-      provider: "github",
-      owner: DEFAULT_GITHUB_OWNER,
-      repo: DEFAULT_GITHUB_REPO,
+      provider: "generic",
+      url: releaseSource.feedUrl,
+      useMultipleRangeRequest: false,
     },
     source: {
-      provider: "github",
-      owner: DEFAULT_GITHUB_OWNER,
-      repo: DEFAULT_GITHUB_REPO,
+      provider: "gitee",
+      owner: releaseSource.owner,
+      repo: releaseSource.repo,
     },
-    digestBaseUrl: digestBaseUrl || `https://github.com/${DEFAULT_GITHUB_OWNER}/${DEFAULT_GITHUB_REPO}/releases/download`,
+    digestBaseUrl: digestBaseUrl || releaseSource.feedUrl,
     channel: "default",
     channelError: null,
   };
@@ -115,6 +114,7 @@ function readUpdateChannelRecord() {
 }
 
 function writeUpdateChannelRecord(record) {
+  record = { ...record, repository: releaseSource.repositoryUrl };
   const updateChannelFilePath = updateChannelFilePathOrNull();
   if (!updateChannelFilePath) {
     throw new Error("the data home is not ready; the update channel cannot be persisted");
@@ -173,20 +173,21 @@ function resolveUpdateFeedConfig(env = process.env) {
   if (!channelError
     && record
     && record.active === true
+    && record.repository === releaseSource.repositoryUrl
     && typeof record.feedUrl === "string"
     && record.feedUrl) {
     return createInviteChannelFeedConfig(record.feedUrl, digestBaseUrl);
   }
 
-  // 公开 stable/beta 固定使用 GitHub。旧环境里即使还留着其它 source 值，
+  // 公开 stable/beta 固定使用此用户的 Gitee 仓库。旧环境里即使还留着其它 source 值，
   // 也不再触发第二个公共更新源；只有上面的显式 feed URL 和邀请通道可以改源。
-  const defaultConfig = createGithubFeedConfig(digestBaseUrl);
+  const defaultConfig = createGiteeFeedConfig(digestBaseUrl);
   return { ...defaultConfig, channelError: channelError || null };
 }
 
 function feedSourceLabel(config) {
   const source = config?.source || {};
-  if (source.provider === "github") return `github:${source.owner}/${source.repo}`;
+  if (source.provider === "gitee") return `gitee:${source.owner}/${source.repo}`;
   if (source.feedUrl) return `${source.provider}:${source.feedUrl}`;
   return source.provider || "unknown";
 }
@@ -675,6 +676,7 @@ function inviteStatus() {
   const { record, error } = readUpdateChannelRecord();
   const active = !error
     && record?.active === true
+    && record.repository === releaseSource.repositoryUrl
     && typeof record.feedUrl === "string"
     && Boolean(record.feedUrl);
   const inviteCodes = !error && Array.isArray(record?.inviteCodes)

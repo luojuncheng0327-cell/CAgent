@@ -1203,9 +1203,9 @@ describe("plugin management API", () => {
         expect(installRes.status).toBe(200);
         expect(await installRes.json()).toMatchObject({
           id: "demo",
-          installedManifestExists: true,
         });
         expect(installPlugin).toHaveBeenCalled();
+        expect(fs.existsSync(path.join(tmp, "plugins", "demo", "manifest.json"))).toBe(true);
       } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
       }
@@ -1615,6 +1615,52 @@ describe("plugin management API", () => {
   });
 
   describe("POST /plugins/install", () => {
+    it("returns public plugin metadata when lifecycle state contains circular runtime objects", async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hana-plugin-response-"));
+      const timer = setInterval(() => {}, 60_000);
+      try {
+        const sourceDir = path.join(tmpDir, "source");
+        fs.mkdirSync(sourceDir);
+        fs.writeFileSync(path.join(sourceDir, "manifest.json"), JSON.stringify({
+          id: "lifecycle-plugin", name: "Lifecycle Plugin", version: "1.0.0",
+        }));
+        const runtime: any = { timer, privateState: "must not leave the host" };
+        runtime.self = runtime;
+        const entry = {
+          id: "lifecycle-plugin", name: "Lifecycle Plugin", version: "1.0.0",
+          status: "loaded", activationState: "activated", source: "community",
+          trust: "full-access", contributions: ["lifecycle"], ctx: runtime,
+          instance: runtime, _disposables: [() => {}], _loadTimeout: timer,
+        };
+        const engine = mockEngine({
+          plugins: [entry],
+          pm: {
+            getUserPluginsDir: () => path.join(tmpDir, "plugins"),
+            installPlugin: vi.fn(async () => entry),
+          },
+        });
+        const app = createApp(engine);
+        const res = await app.request("/api/plugins/install", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: sourceDir }),
+        });
+
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        const listed = await (await app.request("/api/plugins")).json();
+        expect(data).toEqual(listed[0]);
+        expect(data).toMatchObject({ id: entry.id, status: "loaded", activationState: "activated" });
+        expect(data).not.toHaveProperty("ctx");
+        expect(data).not.toHaveProperty("instance");
+        expect(data).not.toHaveProperty("_loadTimeout");
+        expect(engine.recordPluginInstall).toHaveBeenCalledOnce();
+      } finally {
+        clearInterval(timer);
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    });
+
     it("returns 400 when path is missing", async () => {
       const engine = mockEngine();
       const app = createApp(engine);

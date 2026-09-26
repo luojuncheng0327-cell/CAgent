@@ -19,6 +19,8 @@ export default [
       'desktop/native/**/.build/**',
       '.claude/**',
       '.cache/**',
+      'build/.cli-closure-*/**',
+      'build/.cli-closure-*.mjs',
       // .docs/ 不入版本控制、CI 不可见；lint 覆盖它会造成本地/CI 语义不对称
       '.docs/**',
       '**/*.cjs',

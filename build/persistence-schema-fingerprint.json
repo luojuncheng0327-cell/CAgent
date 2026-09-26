@@ -668,7 +668,7 @@
     ],
     "version": 3
   },
-  "payloadFingerprint": "sha256:1729dd12d237b06b3e11fe680d59ec326c52fdcfc019ad77bfe406e3b4bdc657",
+  "payloadFingerprint": "sha256:a37c9ee9586accaa35fed7ecee32098aa31422610e04f795b89968af8f36dc58",
   "registry": [
     {
       "affectedByEpochMigration": true,
@@ -3122,8 +3122,8 @@
   ],
   "review": {
     "classification": "compatible",
-    "compatibilityReason": "Executable-source drift only: desktop/auto-updater.cjs now kicks an immediate update check when the invite channel is activated, and shared/artifact-core/ota-core.cjs resolves an apply that races an already-caught-up machine as a graceful already-current outcome instead of an error. Neither change alters any persisted record shape: update-channel.json keeps its exact fields, and ota-state.json continues to use its existing lastError/available fields (only the writing semantics on one code path changed). No store, path ownership, or exemption changed.",
-    "payloadFingerprint": "sha256:1729dd12d237b06b3e11fe680d59ec326c52fdcfc019ad77bfe406e3b4bdc657"
+    "compatibilityReason": "CAgent reliability changes preserve existing JSON/SQLite record shapes and DATA_EPOCH=1. MCP cancellation signals and task schedule ownership are runtime-only; terminal task states reject late callbacks without adding status values. The shared atomic-write primitive owns a unique temporary file and removes only that file on failure, adding one generic-safe-fs cleanup site. No persisted field, store ownership, or data path changes. GitHub issue fixes change only plugin load/unload timing, generation ownership, public HTTP response projection, and desktop clipboard IPC. Installed plugin paths/manifests/receipts, download cache naming, desktop window/version state, SQLite schemas, write-site ownership, and DATA_EPOCH=1 remain unchanged. Reviewed source digest changes: desktop/main.cjs, core/plugin-manager.ts, server/routes/plugins.ts. Session snapshot safety keeps the same JSONL entry schema and branch IDs. Full rewrites now serialize before atomic replacement and refuse snapshots missing on-disk entries; repair writes check the previously read bytes. The session-jsonl writer changes from write-file to atomic-write with unchanged store ownership, paths, SQLite schemas, 787 write sites, and DATA_EPOCH=1. Reviewed session-jsonl-file.ts and session-inline-media-prune.ts source digest changes. CAgent update sources now use the owner Gitee repository. The optional update-channel JSON gains a repository ownership marker so legacy upstream invitation records are ignored; old records remain readable and unmodified until an explicit channel activation. No required fields, database schemas, store ownership, or DATA_EPOCH changes.",
+    "payloadFingerprint": "sha256:a37c9ee9586accaa35fed7ecee32098aa31422610e04f795b89968af8f36dc58"
   },
   "schemas": [
     {
@@ -3306,7 +3306,7 @@
       "contract": "update channel record version, device identifier, activation flag, update feed address, activation time, and held invite codes",
       "kind": "runtime-contract",
       "module": "desktop/auto-updater.cjs",
-      "sourceHash": "sha256:c55d64f0b00c7ea454b2f7adaba35633703702b3625985f3994fd8501271151f",
+      "sourceHash": "sha256:0b5a0416cf746e0030a979ba2f490d11db31738512ed60c79599caaf4f9bdb22",
       "storeId": "desktop-update-channel"
     },
     {
@@ -3320,7 +3320,7 @@
       "contract": "desktop window bounds, release announcement bookmark, and update cache version marker readers",
       "kind": "directory-contract",
       "module": "desktop/main.cjs",
-      "sourceHash": "sha256:01d8babd69c27000a9b45b9b97d00e9b70cde6c87367b24a062fec154ab02d1b",
+      "sourceHash": "sha256:fd717f945544813328aa41e17c4dfa48145bedf948c225540b2a4275838cd71f",
       "storeId": "desktop-window-version-state"
     },
     {
@@ -3383,7 +3383,7 @@
       "contract": "installed manifest, install receipt, backup, and source-package directory protocols",
       "kind": "directory-contract",
       "module": "core/plugin-manager.ts",
-      "sourceHash": "sha256:78098ac67519299dd169da7eab6abef5f960141551fb63a5266c3d36210d9497",
+      "sourceHash": "sha256:27d1bec3e9fa916f49b26c403ba0725d7e220eb7097f45bbf067647e808438d1",
       "storeId": "installed-plugins"
     },
     {
@@ -3425,7 +3425,7 @@
       "contract": "normalizeMcpConfig read-time normalization (servers/connectors alias, auth and OAuth field defaults, per-connector permission policy defaults, deferred-loading defaults)",
       "kind": "runtime-contract",
       "module": "core/mcp/manager.ts",
-      "sourceHash": "sha256:cbd5857f080b687f62e61aa43f046cc9d2b8122e40f1d9711237738ec237304c",
+      "sourceHash": "sha256:6c7430b4578b8ebf3fa83d1618b5c4f27e13e9d23986121535d4afa4ab1f1bd6",
       "storeId": "mcp-config"
     },
     {
@@ -3453,7 +3453,7 @@
       "contract": "verified plugin release ZIP naming by pluginId/version and expected sha256",
       "kind": "directory-contract",
       "module": "server/routes/plugins.ts",
-      "sourceHash": "sha256:7aca9bf305209962b8db0710cd36df12ff761c41715c85b0965b5088a6a97bac",
+      "sourceHash": "sha256:80a278c3826b7747d7e688a4a9a129f213ab7bcb2569de3d233c0793e60f8e54",
       "storeId": "plugin-download-cache"
     },
     {
@@ -3466,7 +3466,7 @@
       "contract": "TaskRegistry task/schedule normalization and persistence serializer",
       "kind": "runtime-contract",
       "module": "lib/task-registry.ts",
-      "sourceHash": "sha256:c61d9b6038a8f21aa4d8c66a1efd2d4c5830b2fb9a3c74115780923387e9d971",
+      "sourceHash": "sha256:57eee63ea8f3d57e40967cf559dfd6f9208b9b6f610a3ba218b2d04c1c60ea59",
       "storeId": "plugin-task-registry"
     },
     {
@@ -3544,12 +3544,12 @@
         {
           "contract": "core/session-coordinator.ts Hana metadata extensions",
           "module": "core/session-coordinator.ts",
-          "sourceHash": "sha256:9bd93a7f479b160a2a4133f29769531e23037442d6adada445c43bedd2017922"
+          "sourceHash": "sha256:69bff247c13105c95f7f9ac6c0ab34ad92095ca1bc77c3d41b1e291c22a60673"
         },
         {
           "contract": "core/session-jsonl-file.ts repair contract",
           "module": "core/session-jsonl-file.ts",
-          "sourceHash": "sha256:6a311935b1a95c7b6af0c3f2980869de4923fdb9b307cecb8475e400b389af12"
+          "sourceHash": "sha256:ed69a92ab61a6add3a543aa8f7d8a52a969ee7eede216defb23432d209038aaf"
         }
       ],
       "kind": "external-versioned",
@@ -5797,7 +5797,7 @@
     },
     {
       "exemptionId": null,
-      "kind": "copy-file",
+      "kind": "atomic-write",
       "ordinal": 0,
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "sourceFile": "core/session-jsonl-file.ts",
@@ -5805,7 +5805,7 @@
     },
     {
       "exemptionId": null,
-      "kind": "write-file",
+      "kind": "copy-file",
       "ordinal": 0,
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "sourceFile": "core/session-jsonl-file.ts",
@@ -9886,6 +9886,14 @@
     {
       "exemptionId": "generic-safe-fs-primitives",
       "kind": "mkdir",
+      "ordinal": 0,
+      "reason": "Shared atomic-write primitives have no store ownership; callers are scanned and assigned to concrete descriptors.",
+      "sourceFile": "shared/safe-fs.ts",
+      "storeId": null
+    },
+    {
+      "exemptionId": "generic-safe-fs-primitives",
+      "kind": "remove-path",
       "ordinal": 0,
       "reason": "Shared atomic-write primitives have no store ownership; callers are scanned and assigned to concrete descriptors.",
       "sourceFile": "shared/safe-fs.ts",

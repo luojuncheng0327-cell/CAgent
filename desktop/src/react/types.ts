@@ -533,6 +533,7 @@ export interface PlatformApi {
   getServerPort(): Promise<string>;
   getServerToken(): Promise<string>;
   runEditCommand?(command: 'cut' | 'copy' | 'paste' | 'selectAll'): Promise<boolean>;
+  writeClipboardText?(text: string): Promise<void>;
   openSettings(tab?: string): void;
   openBrowserViewer(target?: string | BrowserViewerOpenTarget): void;
   selectFolder(): Promise<string | null>;

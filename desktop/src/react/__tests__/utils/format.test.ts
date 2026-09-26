@@ -122,6 +122,7 @@ describe('injectCopyButtons', () => {
     window.t = ((key: string) => {
       if (key === 'attach.copy') return '复制';
       if (key === 'attach.copied') return '已复制';
+      if (key === 'attach.copyFailed') return '复制失败';
       return key;
     }) as typeof window.t;
     const writeText = vi.fn(async () => undefined);
@@ -195,6 +196,47 @@ describe('injectCopyButtons', () => {
     wrapBtn.click();
     expect(wrapper.dataset.wrap).toBe('false');
     expect(wrapBtn.dataset.active).toBe('false');
+  });
+
+  it('copies code through the desktop bridge when browser focus is elsewhere', async () => {
+    const writeClipboardText = vi.fn(async () => undefined);
+    const previousPlatform = window.platform;
+    Object.defineProperty(window, 'platform', { configurable: true, value: { writeClipboardText } });
+    try {
+      const container = document.createElement('div');
+      container.innerHTML = '<pre><code>const answer = 42;</code></pre>';
+      injectCopyButtons(container);
+      const button = container.querySelector<HTMLButtonElement>('[data-code-block-action="copy"]')!;
+      button.click();
+      await Promise.resolve();
+      expect(writeClipboardText).toHaveBeenCalledWith('const answer = 42;');
+      expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+      expect(button.dataset.copied).toBe('true');
+    } finally {
+      Object.defineProperty(window, 'platform', { configurable: true, value: previousPlatform });
+    }
+  });
+
+  it('shows a copy failure without marking the code as copied', async () => {
+    const previousPlatform = window.platform;
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    Object.defineProperty(window, 'platform', {
+      configurable: true,
+      value: { writeClipboardText: vi.fn(async () => { throw new Error('native failure'); }) },
+    });
+    try {
+      const container = document.createElement('div');
+      container.innerHTML = '<pre><code>code</code></pre>';
+      injectCopyButtons(container);
+      const button = container.querySelector<HTMLButtonElement>('[data-code-block-action="copy"]')!;
+      button.click();
+      await vi.waitFor(() => expect(button.title).toBe('复制失败'));
+      expect(button.dataset.copied).toBe('false');
+      expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(window, 'platform', { configurable: true, value: previousPlatform });
+      warning.mockRestore();
+    }
   });
 
   it('.mermaid-source 的 pre 不被包裹、不加按钮', () => {

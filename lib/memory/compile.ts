@@ -351,6 +351,7 @@ export async function compileToday(summaryManager, outputPath, resolvedModel, op
     return "compiled";
   }
 
+  const assertCurrent = captureMemoryWriteGuard([outputPath, statePath, path.join(memoryDir, "reset.json")]);
   const previousDraft = normalizeCompiledSectionBody(safeReadFile(outputPath, ""));
   const isZh = _isZh();
   const delta = formatTimelineEventsForCompile(events, {
@@ -373,6 +374,7 @@ export async function compileToday(summaryManager, outputPath, resolvedModel, op
     "compile_today",
   );
 
+  assertCurrent();
   atomicWrite(outputPath, normalizeCompiledLLMResult(result, "compileToday"));
   if (nextWatermark) writeTodayState(statePath, logicalDate, nextWatermark);
   return "compiled";
@@ -443,6 +445,10 @@ export async function compileDaily(summaryManager, dailyDir, logicalDate, resolv
     if (fs.readFileSync(fpPath, "utf-8").trim() === fp && fs.existsSync(outputPath)) return "skipped";
   } catch {}
 
+  const assertCurrent = captureMemoryWriteGuard([
+    outputPath, fpPath, path.join(path.dirname(dailyDir), "reset.json"),
+    ...(opts.todayDraftPath && timelineEvents.length === 0 ? [opts.todayDraftPath] : []),
+  ]);
   const promptSpec = buildCompileDailyPrompt(getLocale());
   const result = await _compactLLM(
     input,
@@ -455,6 +461,7 @@ export async function compileDaily(summaryManager, dailyDir, logicalDate, resolv
   );
 
   const body = normalizeCompiledLLMResult(result, "compileDaily");
+  assertCurrent();
   atomicWrite(outputPath, body ? `## ${logicalDate}\n\n${body}\n` : "");
   fs.writeFileSync(fpPath, fp);
   return "compiled";
@@ -660,6 +667,7 @@ export async function compileLongterm(content, longtermPath, resolvedModel) {
     if (fs.readFileSync(fpPath, "utf-8").trim() === fp && fs.existsSync(longtermPath)) return "skipped";
   } catch {}
 
+  const assertCurrent = captureMemoryWriteGuard([longtermPath, fpPath, path.join(path.dirname(longtermPath), "reset.json")]);
   const prevLongterm = safeReadFile(longtermPath, "").trim();
 
   const isZh = _isZh();
@@ -679,6 +687,7 @@ export async function compileLongterm(content, longtermPath, resolvedModel) {
     "compile_longterm",
   );
 
+  assertCurrent();
   atomicWrite(longtermPath, normalizeCompiledLLMResult(result, "compileLongterm"));
   fs.writeFileSync(fpPath, fp);
   return "compiled";
@@ -985,6 +994,7 @@ export async function compileEditableFacts(summaryManager, outputPath, resolvedM
     return "compiled";
   }
 
+  const assertCurrent = captureMemoryWriteGuard([outputPath, statePath, path.join(path.dirname(outputPath), "reset.json")]);
   const prevFacts = normalizeCompiledSectionBody(safeReadFile(outputPath, ""));
   const newFacts = factParts.join("\n");
   const isZh = _isZh();
@@ -1003,6 +1013,7 @@ export async function compileEditableFacts(summaryManager, outputPath, resolvedM
     "compile_editable_facts",
   );
 
+  assertCurrent();
   atomicWrite(outputPath, normalizeCompiledLLMResult(result, "compileEditableFacts"));
   if (nextWatermark) writeEditableFactsState(statePath, nextWatermark);
   return "compiled";
@@ -1108,6 +1119,29 @@ function computeFingerprint(keys) {
 
 function atomicWrite(filePath, content) {
   atomicWriteSync(filePath, content);
+}
+
+/**
+ * Model requests yield control to edits, reset and other compilers. Commit only
+ * against the files we read; a conflict leaves watermarks/fingerprints untouched
+ * so the next normal tick can recompute from current data. No hidden retry.
+ */
+function captureMemoryWriteGuard(paths: string[]) {
+  const read = (filePath: string) => {
+    try { return fs.readFileSync(filePath, "utf8"); }
+    catch (error) {
+      if (error?.code === "ENOENT") return null;
+      throw error;
+    }
+  };
+  const before = paths.map(read);
+  return () => {
+    if (paths.some((filePath, index) => read(filePath) !== before[index])) {
+      throw Object.assign(new Error("Memory changed during compilation; stale output was discarded"), {
+        code: "memory_write_conflict",
+      });
+    }
+  };
 }
 
 function readEditableFactsState(statePath) {

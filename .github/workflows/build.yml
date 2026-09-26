@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.15.0"
+          node-version: "24.19.0"
           cache: npm
 
       - name: Install dependencies
@@ -75,7 +75,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.15.0"
+          node-version: "24.19.0"
           cache: npm
 
       - name: Install dependencies
@@ -357,7 +357,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.15.0"
+          node-version: "24.19.0"
 
       # 所有 Release 默认 pre-release，手动在 GitHub 上将稳定版本标记为 latest
 
@@ -540,7 +540,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.15.0"
+          node-version: "24.19.0"
 
       # Same materialization as the build job's "Materialize seed signing key" step:
       # HANA_SIGN_KEY secret content is the PEM text itself, written to a runner-temp
@@ -623,7 +623,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24.15.0"
+          node-version: "24.19.0"
 
       - name: Mirror published release to AtomGit
         env:

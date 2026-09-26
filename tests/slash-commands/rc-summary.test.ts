@@ -226,7 +226,7 @@ describe("summarizeSessionForRc — 3-tier fallback", () => {
     expect(system).not.toContain("40 字以内");
   });
 
-  it("repairs an overlong tier result without falling through to the next tier", async () => {
+  it("keeps an overlong but complete result without another paid cosmetic request", async () => {
     const p = writeSessionFile([
       makeUserMsg("帮我检查远程控制的摘要为什么太短"),
       makeAssistantMsg("我正在查看 /rc 接管后的摘要生成逻辑，准备调整提示词。", ["read"]),
@@ -245,14 +245,14 @@ describe("summarizeSessionForRc — 3-tier fallback", () => {
 
     const r = await summarizeSessionForRc(engine, makeAgent(), p);
 
-    expect(r).toBe("正在调整 /rc 摘要提示词，补足当前进展和下一步线索。");
-    expect(callText).toHaveBeenCalledTimes(2);
-    expect((callText as any).mock.calls[1][0]).toMatchObject({
+    expect(r).toBe(overlong);
+    expect(callText).toHaveBeenCalledTimes(1);
+    expect((callText as any).mock.calls[0][0]).toMatchObject({
       api: "openai",
       model: "u",
       apiKey: "k",
       baseUrl: "https://x",
     });
-    expect((callText as any).mock.calls[1][0]).not.toHaveProperty("maxTokens");
+    expect((callText as any).mock.calls[0][0]).not.toHaveProperty("maxTokens");
   });
 });

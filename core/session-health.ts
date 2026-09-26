@@ -213,7 +213,7 @@ export function repairOrphanToolResultEntriesInFile(sessionPath) {
   if (removed === 0) return { repaired: false, removed: 0 };
 
   try {
-    writeSessionEntriesFile(sessionPath, repaired);
+    writeSessionEntriesFile(sessionPath, repaired, { expectedRaw: loaded.raw });
   } catch {
     // 写失败：保持原文件不变，运行时兜底（provider-compat/tool-pairing）仍会防 400。
     return { repaired: false, removed: 0 };

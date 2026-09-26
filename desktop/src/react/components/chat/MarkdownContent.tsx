@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 /**
  * MarkdownContent — 渲染预处理好的 markdown HTML
  *
@@ -190,8 +191,8 @@ export const MarkdownContent = memo(function MarkdownContent({ html, className, 
       const pre = wrapper.querySelector('pre');
       const code = pre?.querySelector('code');
       const text = code ? code.textContent : pre?.textContent;
-      const copyPromise = navigator.clipboard?.writeText?.(text || '');
-      void copyPromise?.then(() => {
+      const copyPromise = copyTextToClipboard(text || '');
+      void copyPromise.then(() => {
         button.dataset.copied = 'true';
         button.title = toolbarLabels.copied;
         button.setAttribute('aria-label', toolbarLabels.copied);
@@ -200,6 +201,10 @@ export const MarkdownContent = memo(function MarkdownContent({ html, className, 
           button.title = toolbarLabels.copy;
           button.setAttribute('aria-label', toolbarLabels.copy);
         }, 1500);
+      }).catch((error: unknown) => {
+        console.warn('[clipboard] copy code block failed:', error);
+        button.title = window.t?.('attach.copyFailed') || 'Copy failed';
+        button.setAttribute('aria-label', button.title);
       });
       return true;
     }

@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
+const python = process.env.PYTHON || (process.platform === "win32" ? "python" : "python3");
 const exampleDir = path.join(root, "examples", "plugins", "sdk-showcase");
 const bundledSdkDir = path.join(root, "skills2set", "hana-plugin-creator", "assets", "sdk");
 
@@ -19,7 +20,7 @@ function readBundledSdkFile(tarballName: string, fileName: string) {
 describe("plugin SDK examples and docs", () => {
   it("uses an absolute file URL for workspace SDK dependencies across Windows drives", () => {
     const scriptPath = path.join(root, "skills2set", "hana-plugin-creator", "scripts", "create_hana_plugin.py");
-    const result = execFileSync("python3", [
+    const result = execFileSync(python, [
       "-c",
       [
         "from pathlib import PureWindowsPath",
@@ -169,7 +170,7 @@ describe("plugin SDK examples and docs", () => {
   it("bundles protocol with runtime templates because runtime reuses protocol resource contracts", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hana-full-bundled-scaffold-"));
     try {
-      execFileSync("python3", [
+      execFileSync(python, [
         path.join(root, "skills2set", "hana-plugin-creator", "scripts", "create_hana_plugin.py"),
         "Runtime Resource Plugin",
         "--path",
@@ -201,7 +202,7 @@ describe("plugin SDK examples and docs", () => {
   it("scaffolds provider contribution plugins with explicit media capabilities", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hana-provider-scaffold-"));
     try {
-      execFileSync("python3", [
+      execFileSync(python, [
         path.join(root, "skills2set", "hana-plugin-creator", "scripts", "create_hana_plugin.py"),
         "Jimeng Provider",
         "--path",
@@ -242,7 +243,7 @@ describe("plugin SDK examples and docs", () => {
   it("scaffolds React UI plugins for host-served assets without source maps", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hana-ui-scaffold-"));
     try {
-      execFileSync("python3", [
+      execFileSync(python, [
         path.join(root, "skills2set", "hana-plugin-creator", "scripts", "create_hana_plugin.py"),
         "SDK Panel",
         "--path",
@@ -275,7 +276,7 @@ describe("plugin SDK examples and docs", () => {
   it("scaffolds direct UI helpers with plugin API surface-session fetch support", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hana-direct-ui-scaffold-"));
     try {
-      execFileSync("python3", [
+      execFileSync(python, [
         path.join(root, "skills2set", "hana-plugin-creator", "scripts", "create_hana_plugin.py"),
         "Direct API Panel",
         "--path",

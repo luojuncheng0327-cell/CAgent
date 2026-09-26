@@ -4245,7 +4245,7 @@ export class SessionCoordinator {
       if (session.model?.provider && session.model?.id) {
         manager.appendModelChange(session.model.provider, session.model.id);
       }
-      (manager as any)._rewriteFile?.();
+      flushSessionManagerSnapshot(manager);
       this._syncSessionBranchHeadQuiet(createdSessionPath, manager, "deleted_agent_continue_append");
 
       await this.writeSessionMeta(createdSessionPath, {
@@ -4268,7 +4268,7 @@ export class SessionCoordinator {
         compactionError = error?.message || String(error);
       }
       await this.setSessionPinned(sourceSessionPath, false);
-      (manager as any)._rewriteFile?.();
+      flushSessionManagerSnapshot(manager);
       return {
         session,
         sessionPath: createdSessionPath,
@@ -4789,7 +4789,7 @@ export class SessionCoordinator {
       manager._buildIndex?.();
       if (selectedLeafId == null) manager.resetLeaf?.();
       else if (manager.getEntry?.(selectedLeafId)) manager.branch?.(selectedLeafId);
-      manager._rewriteFile?.();
+      flushSessionManagerSnapshot(manager);
       log.warn(
         `session turn: ${path.basename(sessionPath || manager.getSessionFile?.() || "session")} `
         + `projected ${result.projected} oversized JSONL entries`

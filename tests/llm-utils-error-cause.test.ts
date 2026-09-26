@@ -11,7 +11,7 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { summarizeTitle } from "../core/llm-utils.ts";
+import { summarizeActivity, summarizeTitle } from "../core/llm-utils.ts";
 
 function makeProxyCauseError() {
   const cause: any = new Error("connect ECONNREFUSED 127.0.0.1:7890");
@@ -24,6 +24,14 @@ function makeProxyCauseError() {
   fetchErr.cause = cause;
   return fetchErr;
 }
+
+it("returns the activity fallback even when the provider fails", async () => {
+  vi.spyOn(globalThis, "fetch").mockRejectedValue(makeProxyCauseError());
+  const emitDevLog = vi.fn();
+  await expect(summarizeActivity({
+    utility_large: "fixture", large_api: "openai-completions", large_api_key: "test", large_base_url: "https://unused.invalid",
+  }, null, emitDevLog, { userText: "task", assistantText: "result", toolCalls: [] })).resolves.toBeNull();
+});
 
 function makeOpaqueFetchError() {
   // Simulate OpenAI SDK wrapping: only top-level message, no cause

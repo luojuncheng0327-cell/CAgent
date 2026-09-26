@@ -398,6 +398,179 @@ describe("loadAll", () => {
     expect(pm.getPlugin("static-only").instance).toBeNull();
   });
 
+  it("finishes failed startup even when onload and onunload wait on the same unresolved work", async () => {
+    const stuck = path.join(pluginsDir, "a-stuck-cleanup");
+    fs.mkdirSync(stuck, { recursive: true });
+    fs.writeFileSync(path.join(stuck, "index.js"), `
+      export default class Stuck {
+        pending = new Promise(() => {});
+        async onload() {
+          this.register(() => { globalThis.__stuckCleanupDisposed = true; });
+          globalThis.__stuckCleanupStarted();
+          await this.pending;
+        }
+        async onunload() { await this.pending; }
+      }
+    `);
+    const good = path.join(pluginsDir, "z-after-cleanup");
+    fs.mkdirSync(good, { recursive: true });
+    fs.writeFileSync(path.join(good, "manifest.json"), JSON.stringify({ id: "z-after-cleanup" }));
+    const pm = new PluginManager({ pluginsDir, dataDir, bus: await makeBus(), lifecycleTimeoutMs: 50 } as any);
+    pm.scan();
+    const started = new Promise<void>((resolve) => { globalThis.__stuckCleanupStarted = resolve; });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      let finished = false;
+      const loading = pm.loadAll().then(() => { finished = true; });
+      // Start the clock only after the fixture is inside onload. Import speed
+      // under a full parallel suite must not decide which failure is exercised.
+      await started;
+      await vi.advanceTimersByTimeAsync(101);
+      expect(finished).toBe(true);
+      await loading;
+      expect(pm.getPlugin("a-stuck-cleanup").status).toBe("failed");
+      expect(pm.getPlugin("a-stuck-cleanup").error).toMatch(/timed out/i);
+      expect(globalThis.__stuckCleanupDisposed).toBe(true);
+      expect(pm.getPlugin("z-after-cleanup").status).toBe("loaded");
+    } finally {
+      vi.useRealTimers();
+      delete globalThis.__stuckCleanupDisposed;
+      delete globalThis.__stuckCleanupStarted;
+    }
+  });
+
+  it("releases the operation queue after an unload hook never settles", async () => {
+    const stuck = path.join(pluginsDir, "stuck-unload");
+    fs.mkdirSync(stuck, { recursive: true });
+    fs.writeFileSync(path.join(stuck, "manifest.json"), JSON.stringify({
+      id: "stuck-unload", trust: "full-access",
+    }));
+    fs.writeFileSync(path.join(stuck, "index.js"), `
+      export default class Stuck { async onunload() { await new Promise(() => {}); } }
+    `);
+    const pm = new PluginManager({ pluginsDir, dataDir, bus: await makeBus(), lifecycleTimeoutMs: 50 } as any);
+    await pm.installPlugin(stuck, { source: "dev", allowFullAccess: true });
+    expect(pm.getPlugin("stuck-unload").activationState).toBe("activated");
+    const next = path.join(pluginsDir, "next-plugin");
+    fs.mkdirSync(next);
+    fs.writeFileSync(path.join(next, "manifest.json"), JSON.stringify({ id: "next-plugin" }));
+    let deadline: ReturnType<typeof setTimeout>;
+    try {
+      const result = await Promise.race([
+        Promise.all([pm.disablePlugin("stuck-unload"), pm.installPlugin(next)]).then(() => "finished"),
+        new Promise((resolve) => { deadline = setTimeout(() => resolve("hung"), 1_000); }),
+      ]);
+      expect(result).toBe("finished");
+      expect(pm.getPlugin("stuck-unload").status).toBe("disabled");
+      expect(pm.getPlugin("next-plugin").status).toBe("loaded");
+    } finally {
+      clearTimeout(deadline!);
+    }
+  });
+
+  it("does not revive timed-out lifecycle state when onload eventually finishes", async () => {
+    const dir = path.join(pluginsDir, "late-onload");
+    fs.mkdirSync(dir, { recursive: true });
+    let release: () => void;
+    globalThis.__lateOnloadGate = new Promise<void>((resolve) => { release = resolve; });
+    fs.writeFileSync(path.join(dir, "index.js"), `
+      export default class Late {
+        async onload() { await globalThis.__lateOnloadGate; }
+      }
+    `);
+    const pm = new PluginManager({ pluginsDir, dataDir, bus: await makeBus(), lifecycleTimeoutMs: 50 } as any);
+    try {
+      pm.scan();
+      await pm.loadAll();
+      expect(pm.getPlugin("late-onload").status).toBe("failed");
+      release!();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(pm.getPlugin("late-onload").activationState).not.toBe("activated");
+      expect(pm.getPlugin("late-onload").instance).toBeNull();
+    } finally {
+      release!();
+      delete globalThis.__lateOnloadGate;
+    }
+  });
+
+  it.each(["tools", "commands", "routes", "extensions", "providers"])(
+    "ignores late %s imports after a timed-out plugin is replaced",
+    async (kind) => {
+      const dir = path.join(pluginsDir, "late-import");
+      fs.mkdirSync(path.join(dir, kind), { recursive: true });
+      fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify({
+        id: "late-import", trust: "full-access",
+      }));
+      const source = (value: string) => ({
+        tools: `export const name = '${value}'; export const description = 'test'; export function execute() { return '${value}'; }`,
+        commands: `export const name = '${value}'; export function execute() { return '${value}'; }`,
+        routes: `export function register(app) { app.get('/state', (c) => c.text('${value}')); }`,
+        extensions: `export default function () { return '${value}'; }`,
+        providers: `export const id = '${value}';`,
+      }[kind]);
+      let release: () => void;
+      globalThis.__latePluginImportGate = new Promise<void>((resolve) => { release = resolve; });
+      const entryPath = path.join(dir, kind, "entry.js");
+      fs.writeFileSync(entryPath, `await globalThis.__latePluginImportGate;\n${source("old")}`);
+      const pm = new PluginManager({
+        pluginsDirs: [path.join(tmpHome, "builtin"), pluginsDir],
+        dataDir, bus: await makeBus(), lifecycleTimeoutMs: 100,
+        preferencesManager: { getDisabledPlugins: () => [], getAllowFullAccessPlugins: () => true },
+      } as any);
+      try {
+        pm.scan();
+        await pm.loadAll();
+        expect(pm.getPlugin("late-import").status).toBe("failed");
+        fs.writeFileSync(entryPath, source("new"));
+        await pm.installPlugin(dir);
+        expect(pm.getPlugin("late-import").status).toBe("loaded");
+        release!();
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        if (kind === "tools") expect(pm.getAllTools().map((tool) => tool.name)).toEqual(["late-import_new"]);
+        if (kind === "commands") expect(pm.getAllCommands().map((command) => command.name)).toEqual(["late-import.new"]);
+        if (kind === "routes") expect(await (await pm.getRouteApp("late-import").request("/state")).text()).toBe("new");
+        if (kind === "extensions") expect(pm.getExtensionFactories().map((factory) => factory())).toEqual(["new"]);
+        if (kind === "providers") expect(pm.getProviderPlugins().map((provider) => provider.id)).toEqual(["new"]);
+      } finally {
+        release!();
+        delete globalThis.__latePluginImportGate;
+      }
+    },
+  );
+
+  it('can re-enable a timed-out lifecycle without a late completion corrupting the new activation', async () => {
+    const dir = path.join(pluginsDir, 'late-enable');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ id: 'late-enable', trust: 'full-access' }));
+    let release: () => void;
+    globalThis.__lateEnableGate = new Promise<void>((resolve) => { release = resolve; });
+    fs.writeFileSync(path.join(dir, 'index.js'), `
+      export default class Late { async onload() { await globalThis.__lateEnableGate; } }
+    `);
+    const pm = new PluginManager({
+      pluginsDirs: [path.join(tmpHome, 'builtin'), pluginsDir],
+      dataDir, bus: await makeBus(), lifecycleTimeoutMs: 100,
+      preferencesManager: {
+        getDisabledPlugins: () => [], setDisabledPlugins: () => {}, getAllowFullAccessPlugins: () => true,
+      },
+    } as any);
+    try {
+      pm.scan();
+      await pm.loadAll();
+      expect(pm.getPlugin('late-enable').status).toBe('failed');
+      fs.writeFileSync(path.join(dir, 'index.js'), 'export default class Ready { async onload() {} }');
+      await pm.enablePlugin('late-enable');
+      expect(pm.getPlugin('late-enable').status).toBe('loaded');
+      release!();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(pm.getPlugin('late-enable').activationState).toBe('activated');
+      expect(pm.getPlugin('late-enable').activationError).toBeNull();
+    } finally {
+      release!();
+      delete globalThis.__lateEnableGate;
+    }
+  });
+
   it("keeps lifecycle inactive until matching tool activation event", async () => {
     const dir = path.join(pluginsDir, "lazy-tool");
     fs.mkdirSync(path.join(dir, "tools"), { recursive: true });

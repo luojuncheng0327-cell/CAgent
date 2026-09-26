@@ -1,0 +1,217 @@
+{
+  "schema_version": "ecc.agent-architecture-audit.report.v1",
+  "executive_verdict": {
+    "overall_health": "improved_with_validation_limits",
+    "primary_failure_mode": "Unbounded or repeated work, incomplete cancellation, and stale asynchronous state updates",
+    "most_urgent_fix": "Changes implemented; remaining environment and live-service validation is documented separately"
+  },
+  "scope": {
+    "target_name": "CAgent fork of openhanako 1d3ef308",
+    "model_stack": [
+      "Pi SDK 0.80.3 adapter",
+      "Hana buffered HTTP client",
+      "MCP stdio/HTTP/SSE"
+    ],
+    "layers_to_audit": [
+      "prompt",
+      "session_history",
+      "memory",
+      "distillation",
+      "recall",
+      "tool_selection",
+      "tool_execution",
+      "tool_interpretation",
+      "answer_shaping",
+      "transport",
+      "repair_loops",
+      "persistence"
+    ],
+    "ui_constraint": "No desktop source, layout, color, assets or style changes",
+    "comparison_matrix": "docs/backend-comparison.md",
+    "review_depth": "Capability inventory plus targeted entrypoint/contract review and regression tests; not a line-by-line review of every backend file"
+  },
+  "findings": [
+    {
+      "severity": "high",
+      "title": "Canceled tools could still dispatch",
+      "mechanism": "The wrapper passed an already-aborted signal to implementations that need not check it.",
+      "source_layer": "tool_execution",
+      "root_cause": "No pre-dispatch check",
+      "evidence_refs": [
+        "lib/session-execution-registry.ts:95"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Enforce cancellation before dispatch",
+      "status": "implemented"
+    },
+    {
+      "severity": "high",
+      "title": "A deleted or disabled schedule could reappear",
+      "mechanism": "A stale handler completion wrote its old schedule back into the registry.",
+      "source_layer": "persistence",
+      "root_cause": "Unconditional asynchronous writeback",
+      "evidence_refs": [
+        "lib/task-registry.ts:506"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Fence schedule ownership and make task terminal states sticky",
+      "status": "implemented"
+    },
+    {
+      "severity": "medium",
+      "title": "Cosmetic repair multiplied model calls",
+      "mechanism": "Length formatting silently allowed two additional requests and discarded explicit output budgets.",
+      "source_layer": "repair_loops",
+      "root_cause": "Default repair budget and cap stripping",
+      "evidence_refs": [
+        "core/output-length-contract.ts:153"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Use one request by default and preserve explicit budgets",
+      "status": "implemented"
+    },
+    {
+      "severity": "high",
+      "title": "Stream errors could look like successful partial text",
+      "mechanism": "SSE failures, malformed frames and missing completion were not authoritative termination conditions.",
+      "source_layer": "transport",
+      "root_cause": "Delta accumulation without complete terminal validation",
+      "evidence_refs": [
+        "tests/llm-transport-reliability.test.ts:1"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Require terminal markers, propagate errors and release readers",
+      "status": "implemented"
+    },
+    {
+      "severity": "high",
+      "title": "Memory compilation overwrote newer edits",
+      "mechanism": "A response generated against an old file was committed after an edit or reset.",
+      "source_layer": "memory",
+      "root_cause": "No post-await version guard",
+      "evidence_refs": [
+        "lib/memory/compile.ts:1129"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Check outputs, reset marker and bookkeeping before committing",
+      "status": "implemented"
+    },
+    {
+      "severity": "high",
+      "title": "Failed fact extraction could become a successful checkpoint",
+      "mechanism": "Repeated failures were marked processed, dropping pending information.",
+      "source_layer": "distillation",
+      "root_cause": "Retry exhaustion conflated with success",
+      "evidence_refs": [
+        "lib/memory/deep-memory.ts:235"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Keep the source dirty, isolate claims by store and back off",
+      "status": "implemented"
+    },
+    {
+      "severity": "medium",
+      "title": "Small contexts could repeatedly compact",
+      "mechanism": "Fixed 16K reserve and 20K recent history were unsuitable for smaller windows.",
+      "source_layer": "session_history",
+      "root_cause": "Budgets could exceed the model window",
+      "evidence_refs": [
+        "core/session-compaction-runtime.ts:54"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Scale reserve and recent context; cool down failed automatic compaction",
+      "status": "implemented"
+    },
+    {
+      "severity": "medium",
+      "title": "Memory recall could consume excessive context",
+      "mechanism": "Returned facts had no text budget and the advertised memory switch was not enforced at execution.",
+      "source_layer": "recall",
+      "root_cause": "Unbounded response formatting and missing live gate",
+      "evidence_refs": [
+        "lib/memory/memory-search.ts:149"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Bound excerpts, attach provenance and enforce the live switch",
+      "status": "implemented"
+    },
+    {
+      "severity": "high",
+      "title": "MCP cancellation and body deadlines were incomplete",
+      "mechanism": "Signals were discarded between tool publication and transports, and HTTP timeout ended at headers.",
+      "source_layer": "tool_execution",
+      "root_cause": "Missing propagation and premature timer cleanup",
+      "evidence_refs": [
+        "tests/backend-boundaries.test.ts:1"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Propagate abort signals, settle pending requests and cover body reads",
+      "status": "implemented"
+    },
+    {
+      "severity": "medium",
+      "title": "MCP stdout could grow without a complete frame",
+      "mechanism": "An unterminated stdout line accumulated indefinitely.",
+      "source_layer": "transport",
+      "root_cause": "No framing budget",
+      "evidence_refs": [
+        "core/mcp/clients/stdio-client.ts:237"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Reject frames above 8 MiB and close the connector",
+      "status": "implemented"
+    },
+    {
+      "severity": "medium",
+      "title": "Atomic writers shared one temp file",
+      "mechanism": "Separate writers could overwrite or rename the same .tmp file.",
+      "source_layer": "persistence",
+      "root_cause": "Non-unique staging path",
+      "evidence_refs": [
+        "shared/safe-fs.ts:63"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Use an exclusive per-writer temp file and clean it on failure",
+      "status": "implemented"
+    },
+    {
+      "severity": "medium",
+      "title": "Unused bridge SDKs loaded at startup",
+      "mechanism": "Reading Bridge metadata eagerly initialized Telegram and Feishu dependency trees.",
+      "source_layer": "tool_selection",
+      "root_cause": "Module-level SDK imports",
+      "evidence_refs": [
+        "lib/bridge/optional-sdks.ts:1"
+      ],
+      "confidence": 0.99,
+      "recommended_fix": "Lazy-load SDKs while explicitly retaining their packaged dependency closure",
+      "status": "implemented"
+    }
+  ],
+  "ordered_fix_plan": [
+    {
+      "order": 1,
+      "goal": "Bound execution and preserve cancellation",
+      "why_now": "Avoid duplicate effects and late state updates",
+      "expected_effect": "Canceled work cannot dispatch new operations"
+    },
+    {
+      "order": 2,
+      "goal": "Bound model and memory overhead",
+      "why_now": "Match the lightweight desktop goal",
+      "expected_effect": "Fewer cosmetic calls and bounded recall/compaction"
+    },
+    {
+      "order": 3,
+      "goal": "Preserve data and optional dependency closure",
+      "why_now": "Runtime fixes must survive packaging and concurrent edits",
+      "expected_effect": "Stable formats and reproducible builds"
+    },
+    {
+      "order": 4,
+      "goal": "Verify and disclose remaining limits",
+      "why_now": "Do not equate mocks with live services",
+      "expected_effect": "Reproducible regression suite and honest validation record"
+    }
+  ]
+}

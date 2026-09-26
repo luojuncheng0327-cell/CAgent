@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import styles from './FloatingActions.module.css';
 import { COVER_GALLERY_ITEMS, type CoverGalleryItem } from './cover-gallery-assets';
@@ -231,13 +232,15 @@ export function FloatingActions({
   }, [contentType, coverTarget]);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(content).then(() => {
+    copyTextToClipboard(content).then(() => {
       const _t = window.t ?? ((p: string) => p);
       setCopyLabel(_t('attach.copied'));
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setCopyLabel(null), 1500);
+    }).catch(() => {
+      useStore.getState().addToast(t('attach.copyFailed'), 'error');
     });
-  }, [content]);
+  }, [content, t]);
 
   const handleScreenshot = useCallback(async () => {
     const { takeArticleScreenshot } = await import('../../utils/screenshot');

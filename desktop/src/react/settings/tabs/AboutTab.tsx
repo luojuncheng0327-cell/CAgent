@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 import React, { useState, useCallback, useEffect } from 'react';
 import { useSettingsStore } from '../store';
 import { autoSaveConfig, t } from '../helpers';
@@ -291,7 +292,9 @@ function InviteChannelSection() {
 
   const copyInviteCode = useCallback(async (value: string) => {
     if (!value) return;
-    await navigator.clipboard?.writeText(value);
+    await copyTextToClipboard(value).catch(() => {
+      useSettingsStore.getState().showToast(t('attach.copyFailed'), 'error');
+    });
   }, []);
 
   const handleRedeem = useCallback(async () => {

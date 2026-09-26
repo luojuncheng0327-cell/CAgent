@@ -515,7 +515,8 @@
   "attach": {
     "folder": "폴더",
     "copy": "복사",
-    "copied": "복사됨 ✓"
+    "copied": "복사됨 ✓",
+    "copyFailed": "복사 실패"
   },
   "codeBlock": {
     "wordWrap": "자동 줄 바꿈"

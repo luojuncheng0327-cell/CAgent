@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../utils/clipboard';
 import {
   PLUGIN_UI_CAPABILITY,
   type PluginResourceOpenInput,
@@ -132,7 +133,7 @@ async function openExternal(_ctx: PluginUiRequestContext, payload: unknown): Pro
 
 async function writeClipboardText(_ctx: PluginUiRequestContext, payload: unknown): Promise<unknown> {
   const { text } = payload as { text: string };
-  await navigator.clipboard.writeText(text);
+  await copyTextToClipboard(text);
   return { written: true };
 }
 

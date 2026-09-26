@@ -515,7 +515,8 @@
   "attach": {
     "folder": "フォルダ",
     "copy": "コピー",
-    "copied": "コピーしました ✓"
+    "copied": "コピーしました ✓",
+    "copyFailed": "コピーに失敗しました"
   },
   "codeBlock": {
     "wordWrap": "折り返し"

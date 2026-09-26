@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from './clipboard';
 /**
  * 纯工具函数，从 modules/utils.js 平移为 TS module
  */
@@ -266,7 +267,7 @@ export function injectCopyButtons(container: HTMLElement): void {
       if (!pre) return;
       const code = pre.querySelector('code');
       const text = code ? code.textContent : pre.textContent;
-      navigator.clipboard.writeText(text || '').then(() => {
+      copyTextToClipboard(text || '').then(() => {
         copyBtn.dataset.copied = 'true';
         copyBtn.title = labels.copied;
         copyBtn.setAttribute('aria-label', labels.copied);
@@ -275,6 +276,10 @@ export function injectCopyButtons(container: HTMLElement): void {
           copyBtn.title = labels.copy;
           copyBtn.setAttribute('aria-label', labels.copy);
         }, 1500);
+      }).catch((error: unknown) => {
+        console.warn('[clipboard] copy code block failed:', error);
+        copyBtn.title = window.t?.('attach.copyFailed') || 'Copy failed';
+        copyBtn.setAttribute('aria-label', copyBtn.title);
       });
     });
   }

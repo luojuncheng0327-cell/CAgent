@@ -26,13 +26,13 @@ export async function teardownSessionResources({ session, unsub, label, warn }) 
   }
 
   try {
-    unsub?.();
+    await unsub?.();
   } catch (err) {
     warn?.(`${label}: unsub failed: ${err.message}`);
   }
 
   try {
-    session?.dispose?.();
+    await session?.dispose?.();
   } catch (err) {
     warn?.(`${label}: session.dispose failed: ${err.message}`);
   }

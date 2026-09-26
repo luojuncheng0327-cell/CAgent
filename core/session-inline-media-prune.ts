@@ -9,6 +9,7 @@
 
 import { stripAllInlineMediaForHistory } from "./message-sanitizer.ts";
 import {
+  flushSessionManagerSnapshot,
   readSessionEntriesFile,
   writeSessionEntriesFile,
 } from "./session-jsonl-file.ts";
@@ -39,7 +40,7 @@ function pruneSessionManagerEntries(sessionManager) {
   }
 
   if (changed && typeof sessionManager?._rewriteFile === "function") {
-    sessionManager._rewriteFile();
+    flushSessionManagerSnapshot(sessionManager);
   }
 
   return result;
@@ -95,7 +96,7 @@ export function repairSessionInlineMediaEntriesInFile(sessionPath) {
   if (stripped === 0) return empty();
 
   try {
-    writeSessionEntriesFile(sessionPath, entries);
+    writeSessionEntriesFile(sessionPath, entries, { expectedRaw: loaded.raw });
   } catch {
     return empty();
   }

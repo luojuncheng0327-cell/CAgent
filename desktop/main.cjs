@@ -8,7 +8,7 @@
  * 4. 关闭 splash，显示主窗口
  * 5. 优雅关闭
  */
-const { app, BrowserWindow, WebContentsView, globalShortcut, ipcMain, dialog, session, shell, nativeTheme, Tray, Menu, nativeImage, systemPreferences, Notification, webContents, screen, powerSaveBlocker } = require("electron");
+const { app, BrowserWindow, WebContentsView, globalShortcut, ipcMain, dialog, session, shell, clipboard, nativeTheme, Tray, Menu, nativeImage, systemPreferences, Notification, webContents, screen, powerSaveBlocker } = require("electron");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
@@ -29,6 +29,7 @@ const { createWorkspaceWatchRegistry } = require("./workspace-watch-registry.cjs
 const { readTextFileSnapshot, writeTextFileIfUnchanged } = require("./file-text-io.cjs");
 const chokidar = require("chokidar");
 const { wrapIpcHandler, wrapIpcBestEffortHandler, wrapIpcOn } = require('./ipc-wrapper.cjs');
+const { registerClipboardIpc } = require('./clipboard.cjs');
 const themeRegistry = require('./src/shared/theme-registry.cjs');
 const {
   completeOnboardingAndOpenMain,
@@ -5163,6 +5164,11 @@ const loadUpdateDigestHistory = createUpdateDigestHistoryLoader({
 wrapIpcHandler("get-update-digest-history", () => loadUpdateDigestHistory());
 
 // ── IPC ──
+registerClipboardIpc({
+  handle: wrapIpcHandler,
+  clipboard,
+  preloadPath: path.join(__dirname, "preload.bundle.cjs"),
+});
 wrapIpcHandler("get-server-port", () => serverPort);
 wrapIpcHandler("get-server-token", () => serverToken);
 wrapIpcHandler("run-edit-command", (event, command) => {

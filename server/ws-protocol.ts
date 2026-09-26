@@ -43,9 +43,8 @@
 
 /** 安全地发送 JSON 消息到 WebSocket */
 export function wsSend(ws, msg) {
-  if (ws.readyState === 1) { // OPEN
-    ws.send(JSON.stringify(msg));
-  }
+  if (ws.readyState !== 1) return false;
+  return wsSendSerialized(ws, JSON.stringify(msg));
 }
 
 /**
@@ -54,15 +53,23 @@ export function wsSend(ws, msg) {
  * 一次再复用，避免对每个 client 重复序列化。
  */
 export function wsSendSerialized(ws, payload) {
-  if (ws.readyState === 1) { // OPEN
+  if (ws.readyState !== 1) return false;
+  try {
     ws.send(payload);
+    return true;
+  } catch {
+    // A peer can close between readyState and send. Isolate that client from
+    // the shared event bus; replay on reconnect remains owned by stream-store.
+    return false;
   }
 }
 
 /** 安全地解析 WebSocket 消息（兼容 Buffer / string / ArrayBuffer） */
 export function wsParse(data) {
   try {
-    const str = typeof data === "string" ? data : (data?.toString?.() ?? String(data));
+    const str = typeof data === "string" ? data
+      : data instanceof ArrayBuffer || ArrayBuffer.isView(data) ? new TextDecoder().decode(data)
+      : (data?.toString?.() ?? String(data));
     return JSON.parse(str);
   } catch {
     return null;

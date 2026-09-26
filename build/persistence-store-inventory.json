@@ -4821,8 +4821,8 @@
     },
     {
       "sourceFile": "core/session-jsonl-file.ts",
-      "kind": "copy-file",
-      "excerpt": "fs.copyFileSync(sessionPath, backupPath)",
+      "kind": "atomic-write",
+      "excerpt": "atomicWriteSync(sessionPath, serialized)",
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "storeId": "session-jsonl",
       "exemptionId": null,
@@ -4830,8 +4830,8 @@
     },
     {
       "sourceFile": "core/session-jsonl-file.ts",
-      "kind": "write-file",
-      "excerpt": "fs.writeFileSync(sessionPath, serializeSessionEntries(entries))",
+      "kind": "copy-file",
+      "excerpt": "fs.copyFileSync(sessionPath, backupPath)",
       "reason": "Creates, repairs, archives, restores, or appends session JSONL locators.",
       "storeId": "session-jsonl",
       "exemptionId": null,
@@ -9447,6 +9447,15 @@
     },
     {
       "sourceFile": "shared/safe-fs.ts",
+      "kind": "remove-path",
+      "excerpt": "fs.unlinkSync(tmp)",
+      "reason": "Shared atomic-write primitives have no store ownership; callers are scanned and assigned to concrete descriptors.",
+      "storeId": null,
+      "exemptionId": "generic-safe-fs-primitives",
+      "ordinal": 0
+    },
+    {
+      "sourceFile": "shared/safe-fs.ts",
       "kind": "rename",
       "excerpt": "fs.renameSync(bakDst, dst)",
       "reason": "Shared atomic-write primitives have no store ownership; callers are scanned and assigned to concrete descriptors.",
@@ -9484,7 +9493,7 @@
     {
       "sourceFile": "shared/safe-fs.ts",
       "kind": "write-file",
-      "excerpt": "fs.writeFileSync(tmp, content, mode !== undefined ? { encoding: \"utf-8\", mode } : \"utf-8\")",
+      "excerpt": "fs.writeFileSync(tmp, content, { encoding: \"utf-8\", flag: \"wx\", ...(mode !== undefined ? { mode } : {}) })",
       "reason": "Shared atomic-write primitives have no store ownership; callers are scanned and assigned to concrete descriptors.",
       "storeId": null,
       "exemptionId": "generic-safe-fs-primitives",

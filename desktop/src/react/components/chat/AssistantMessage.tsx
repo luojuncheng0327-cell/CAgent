@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 /**
  * AssistantMessage — 助手消息，遍历 ContentBlock 按类型渲染
  */
@@ -120,7 +121,7 @@ export const AssistantMessage = memo(function AssistantMessage({
       text = extractTextBlockPlainText(textBlocks);
     }
     if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
+    copyTextToClipboard(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }).catch(() => {});

@@ -39,6 +39,7 @@ dist-standalone/
 desktop/dist-splash/
 dist-server-bundle/
 dist-computer-use/
+dist-sandbox/
 dist-open-export/
 desktop/main.bundle.cjs
 desktop/preload.bundle.cjs

@@ -16,6 +16,7 @@
  * seed packing) that are not part of this module at all.
  */
 import fs from "fs";
+import { optionalServerDependencyRoots } from "./optional-server-dependencies.mjs";
 import path from "path";
 import { createHash } from "crypto";
 import { execSync } from "child_process";
@@ -35,13 +36,13 @@ import { pruneRuntimeDeadFiles } from "./build-server-prune.mjs";
 
 // ── Node.js runtime ──────────────────────────────────────────────────────
 
-export const DEFAULT_NODE_VERSION = "v24.15.0";
+export const DEFAULT_NODE_VERSION = "v24.19.0";
 export const DEFAULT_NODE_RUNTIME_SHA256 = {
-  [`node-${DEFAULT_NODE_VERSION}-darwin-arm64.tar.gz`]: "372331b969779ab5d15b949884fc6eaf88d5afe87bde8ba881d6400b9100ffc4",
-  [`node-${DEFAULT_NODE_VERSION}-darwin-x64.tar.gz`]: "ffd5ee293467927f3ee731a553eb88fd1f48cf74eebc2d74a6babe4af228673b",
-  [`node-${DEFAULT_NODE_VERSION}-linux-arm64.tar.gz`]: "73afc234d558c24919875f51c2d1ea002a2ada4ea6f83601a383869fefa64eed",
-  [`node-${DEFAULT_NODE_VERSION}-linux-x64.tar.gz`]: "44836872d9aec49f1e6b52a9a922872db9a2b02d235a616a5681b6a85fec8d89",
-  [`node-${DEFAULT_NODE_VERSION}-win-x64.zip`]: "cc5149eabd53779ce1e7bdc5401643622d0c7e6800ade18928a767e940bb0e62",
+  [`node-${DEFAULT_NODE_VERSION}-darwin-arm64.tar.gz`]: "8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d",
+  [`node-${DEFAULT_NODE_VERSION}-darwin-x64.tar.gz`]: "d1b5e999db158c62fe8f7267a4476b035d8bd93b1a605bac24a3f0dd166e3316",
+  [`node-${DEFAULT_NODE_VERSION}-linux-arm64.tar.gz`]: "d28c8a5bf0a808f0ed434a1dce8c54ae98f0371c0bd86ac58abc613f73e6643f",
+  [`node-${DEFAULT_NODE_VERSION}-linux-x64.tar.gz`]: "f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4",
+  [`node-${DEFAULT_NODE_VERSION}-win-x64.zip`]: "57f71ab3652e797d84acddc79c81cc9ff1c6ddb2a1974cdb83f00fee9bff4c73",
 };
 
 const NODE_DIR_NAME_MAP = {
@@ -525,10 +526,14 @@ export async function pruneServerNodeModulesViaNft({
   let fileList;
   try {
     ({ fileList } = await nodeFileTrace(
-      nftRoots.map((root) => path.join(outDir, root)),
+      [...nftRoots.map((root) => path.join(outDir, root)), ...optionalServerDependencyRoots(outDir, externalPackageNames)],
       {
         base: outDir,
         conditions: ["node", "import"],
+        // On Windows, relative(F:\\..., C:\\...) is still an absolute path.
+        // nft's default ../ guard misses it and can crawl the user's entire
+        // home directory. Runtime files must come from the staged server tree.
+        ignore: (relativePath) => path.isAbsolute(relativePath),
         // Bundled plugins remain as TypeScript source and are loaded through
         // the plugin runtime. nft resolves .ts paths but its parser only
         // accepts JavaScript syntax, so expose a read-only transpiled view for

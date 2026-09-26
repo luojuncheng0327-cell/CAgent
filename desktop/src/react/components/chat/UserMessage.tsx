@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 /**
  * UserMessage — 用户消息气泡
  */
@@ -95,7 +96,7 @@ export const UserMessage = memo(function UserMessage({
       ? extractSelectedTexts(sessionPath, ids)
       : (message.text || '');
     if (!text) return;
-    navigator.clipboard.writeText(text).then(() => {
+    copyTextToClipboard(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }).catch(() => {});

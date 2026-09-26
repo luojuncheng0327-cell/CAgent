@@ -23,9 +23,14 @@ import { sessionSummaryRevision } from "./session-summary.ts";
 
 const log = createModuleLogger("deep-memory");
 
-const MAX_RETRIES = 3;
 const MAX_CONCURRENT = 3;
-const _failCounts = new Map(); // session → { count, lastUpdated }
+type ExtractionState = {
+  active: Set<string>;
+  failures: Map<string, { count: number; lastUpdated: number; revision: string; retryAfter: number }>;
+};
+// Session ids alone are not global identities. Isolate claims/backoff by the
+// owning memory store, and release all state when that store is collected.
+const extractionStates = new WeakMap<object, ExtractionState>();
 const FAIL_COUNT_TTL_MS = 60 * 60 * 1000;
 
 function summarySupersededError(message) {
@@ -43,10 +48,10 @@ function summaryCursorBelongsToProjection(summary, projection) {
   return lineageHash === cursor.lineageHash;
 }
 
-function cleanExpiredFailCounts() {
+function cleanExpiredFailCounts(failures: ExtractionState["failures"]) {
   const cutoff = Date.now() - FAIL_COUNT_TTL_MS;
-  for (const [k, v] of _failCounts) {
-    if (v.lastUpdated < cutoff) _failCounts.delete(k);
+  for (const [k, v] of failures) {
+    if (v.lastUpdated < cutoff) failures.delete(k);
   }
 }
 
@@ -115,13 +120,26 @@ function normalizeFactJsonOutput(raw) {
  * @param {{ model: string, api: string, api_key: string, base_url: string }} resolvedModel
  * @returns {Promise<{ processed: number, factsAdded: number }>}
  */
-export async function processDirtySessions(summaryManager, factStore, resolvedModel, opts: { since?: any; getSourceTimeRange?: any; getCurrentBranchProjection?: any; timeZone?: any; sessionIds?: string[] } = {}) {
+export async function processDirtySessions(summaryManager, factStore, resolvedModel, opts: { since?: any; getSourceTimeRange?: any; getCurrentBranchProjection?: any; timeZone?: any; sessionIds?: string[]; signal?: AbortSignal } = {}) {
+  opts.signal?.throwIfAborted();
+  let state = extractionStates.get(summaryManager);
+  if (!state) {
+    state = { active: new Set(), failures: new Map() };
+    extractionStates.set(summaryManager, state);
+  }
+  const { active, failures } = state;
+  cleanExpiredFailCounts(failures);
   const requestedSessionIds = Array.isArray(opts.sessionIds) && opts.sessionIds.length > 0
     ? new Set(opts.sessionIds)
     : null;
   const dirty = summaryManager
     .getDirtySessions({ since: opts.since || null })
-    .filter((session) => !requestedSessionIds || requestedSessionIds.has(session.session_id));
+    .filter((session) => {
+      if (requestedSessionIds && !requestedSessionIds.has(session.session_id)) return false;
+      if (active.has(session.session_id)) return false;
+      const failure = failures.get(session.session_id);
+      return !failure || failure.revision !== sessionSummaryRevision(session) || Date.now() >= failure.retryAfter;
+    });
   if (dirty.length === 0) {
     return { processed: 0, factsAdded: 0 };
   }
@@ -129,6 +147,7 @@ export async function processDirtySessions(summaryManager, factStore, resolvedMo
   log.log(`${dirty.length} 个脏 session 待处理`);
 
   let totalFacts = 0;
+  for (const session of dirty) active.add(session.session_id);
 
   const processOne = async (session) => {
     const expectedRevision = sessionSummaryRevision(session);
@@ -139,6 +158,7 @@ export async function processDirtySessions(summaryManager, factStore, resolvedMo
       const sessionForTime = sourceTimeRange
         ? { ...session, source_time_range: sourceTimeRange }
         : session;
+      opts.signal?.throwIfAborted();
       const timeContext = buildFactTimeContext(sessionForTime, { timeZone: opts.timeZone });
       const replacement = session.factReplacementRequired === true;
       const facts = replacement && !session.summary?.trim()
@@ -148,7 +168,9 @@ export async function processDirtySessions(summaryManager, factStore, resolvedMo
           replacement ? "" : (session.snapshot || ""),
           resolvedModel,
           timeContext,
+          opts.signal,
         );
+      opts.signal?.throwIfAborted();
 
       const factEntries = facts.map((f) => ({
         fact: f.fact,
@@ -202,41 +224,35 @@ export async function processDirtySessions(summaryManager, factStore, resolvedMo
       if (marked === false) {
         throw summarySupersededError("session summary changed before fact extraction commit");
       }
-      _failCounts.delete(session.session_id);
+      failures.delete(session.session_id);
     } catch (err) {
+      if (opts.signal?.aborted || err?.name === "AbortError") return;
       if (err?.code === "session_summary_superseded") {
         log.warn(`${session.session_id.slice(0, 8)}...: ${err.message}; keeping current summary dirty`);
         return;
       }
-      cleanExpiredFailCounts();
-      const prev = _failCounts.get(session.session_id);
-      const count = (prev?.count || 0) + 1;
-      _failCounts.set(session.session_id, { count, lastUpdated: Date.now() });
-
-      if (count >= MAX_RETRIES && session.factReplacementRequired !== true) {
-        log.error(
-          `${session.session_id.slice(0, 8)}... 连续失败 ${count} 次，标记跳过: ${err.message}`,
-        );
-        if (typeof summaryManager.markProcessedIfCurrent === "function") {
-          summaryManager.markProcessedIfCurrent(session.session_id, expectedRevision);
-        } else {
-          summaryManager.markProcessed(session.session_id);
-        }
-        _failCounts.delete(session.session_id);
-      } else {
-        log.error(
-          session.factReplacementRequired === true && count >= MAX_RETRIES
-            ? `处理失败 (${session.session_id.slice(0, 8)}... ${count} 次，分支替换保持 dirty): ${err.message}`
-            : `处理失败 (${session.session_id.slice(0, 8)}... ${count}/${MAX_RETRIES}): ${err.message}`,
-        );
-      }
+      const prev = failures.get(session.session_id);
+      const count = (prev?.revision === expectedRevision ? prev.count : 0) + 1;
+      const delayMs = Math.min(FAIL_COUNT_TTL_MS, 60_000 * 2 ** Math.min(count - 1, 6));
+      failures.set(session.session_id, {
+        count, revision: expectedRevision, lastUpdated: Date.now(), retryAfter: Date.now() + delayMs,
+      });
+      // A failed extraction is never a successful checkpoint. Keep the source
+      // dirty, but back off instead of re-billing on each concurrent tick.
+      log.error(`处理失败 (${session.session_id.slice(0, 8)}... ${count} 次，${delayMs}ms 后可重试): ${err.message}`);
     }
   };
 
   // 分批并行处理，每批最多 MAX_CONCURRENT 个 LLM 调用
-  for (let i = 0; i < dirty.length; i += MAX_CONCURRENT) {
-    const batch = dirty.slice(i, i + MAX_CONCURRENT);
-    await Promise.allSettled(batch.map(processOne));
+  try {
+    for (let i = 0; i < dirty.length; i += MAX_CONCURRENT) {
+      opts.signal?.throwIfAborted();
+      const batch = dirty.slice(i, i + MAX_CONCURRENT);
+      await Promise.allSettled(batch.map(processOne));
+    }
+    opts.signal?.throwIfAborted();
+  } finally {
+    for (const session of dirty) active.delete(session.session_id);
   }
 
   log.log(
@@ -253,7 +269,7 @@ export async function processDirtySessions(summaryManager, factStore, resolvedMo
  * @param {{ model: string, api: string, api_key: string, base_url: string }} resolvedModel
  * @returns {Promise<Array<{ fact: string, tags: string[], time: string }>>}
  */
-async function extractFactsFromDiff(currentSummary, previousSnapshot, resolvedModel, timeContext = null) {
+async function extractFactsFromDiff(currentSummary, previousSnapshot, resolvedModel, timeContext = null, signal?: AbortSignal) {
   const hasPrevious = !!previousSnapshot;
 
   const isZh = getLocale().startsWith("zh");
@@ -291,7 +307,7 @@ async function extractFactsFromDiff(currentSummary, previousSnapshot, resolvedMo
 
   const raw = await callText({
     ...callTextConfigFromResolvedModel(resolvedModel),
-    signal: null,
+    signal,
     systemPrompt: layout.systemPrompt,
     messages: layout.messages,
     temperature: 0.3,

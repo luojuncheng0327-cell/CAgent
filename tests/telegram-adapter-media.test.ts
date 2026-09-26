@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const botInstances = [];
 
-vi.mock("node-telegram-bot-api", () => {
+vi.mock("../lib/bridge/optional-sdks.ts", () => {
   class MockTelegramBot {
     declare _request: any;
     declare getMe: any;
@@ -46,7 +46,7 @@ vi.mock("node-telegram-bot-api", () => {
       botInstances.push(this);
     }
   }
-  return { default: MockTelegramBot };
+  return { loadTelegramSdk: () => MockTelegramBot };
 });
 
 vi.mock("../lib/debug-log.js", () => ({

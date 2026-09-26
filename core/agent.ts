@@ -497,7 +497,9 @@ export class Agent {
 
     // 7. 创建工具（记忆 + 通用）
     log(`  [agent] 7. 创建工具...`);
-    this._memorySearchTool = createMemorySearchTool(this._factStore);
+    this._memorySearchTool = createMemorySearchTool(this._factStore, {
+      getMemoryMasterEnabled: () => this._memoryMasterEnabled,
+    });
     this._webSearchTool = createWebSearchTool({
       configPath: this.configPath,
       searchConfigResolver: this._searchConfigResolver,
@@ -801,7 +803,10 @@ export class Agent {
    */
   createConversationScopedMemorySearchTool(conversationScope) {
     if (!this._factStore) return null;
-    return createMemorySearchTool(this._factStore, { conversationScope });
+    return createMemorySearchTool(this._factStore, {
+      conversationScope,
+      getMemoryMasterEnabled: () => this._memoryMasterEnabled,
+    });
   }
 
   // ════════════════════════════

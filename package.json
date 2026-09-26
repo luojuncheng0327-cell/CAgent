@@ -62,6 +62,8 @@
     "lint": "eslint .",
     "lint:boundary": "node scripts/lint-open-boundary.mjs",
     "test:watch": "vitest --exclude '**/.claude/**' --exclude '**/.cache/**' --exclude '**/dist/**' --exclude '**/dist-server/**' --exclude '**/dist-computer-use/**' --exclude '**/dist-sandbox/**'",
+    "test:core": "vitest run --maxWorkers=2 tests/agent-cost-policy.test.ts tests/task-registry-lifecycle.test.ts tests/task-registry.test.ts tests/session-execution-registry.test.ts tests/session-compaction-runtime.test.ts tests/output-length-contract.test.ts tests/llm-transport-reliability.test.ts tests/llm-client-provider-compat.test.ts tests/llm-client-usage-ledger.test.ts tests/memory-reliability.test.ts tests/memory-compile-contracts.test.ts tests/memory-prompt-boundaries.test.ts tests/memory-search-channel-scope.test.ts tests/telegram-adapter-media.test.ts tests/feishu-adapter.test.ts tests/feishu-sdk-contract.test.ts tests/backend-boundaries.test.ts tests/mcp-stdio-client.test.ts tests/mcp-http-client.test.ts tests/mcp-runtime.test.ts tests/mcp-reconnect.test.ts tests/mcp-oauth.test.ts tests/session-teardown.test.ts tests/ws-protocol.test.ts tests/llm-utils-error-cause.test.ts tests/agent-description.test.ts tests/slash-commands/rc-summary.test.ts tests/workflow-run-limits.test.ts tests/workflow-concurrency.test.ts tests/workflow-integration.test.ts tests/workflow-tool.test.ts tests/workflow-host-api.test.ts tests/server-auth.test.ts tests/ws-auth-ticket.test.ts",
+    "smoke:core": "node scripts/smoke-cagent.mjs",
     "postinstall": "node scripts/patch-pi-sdk.cjs"
   },
   "dependencies": {
@@ -216,9 +218,8 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "liliMozi",
-        "repo": "openhanako"
+        "provider": "generic",
+        "url": "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/"
       }
     ],
     "win": {

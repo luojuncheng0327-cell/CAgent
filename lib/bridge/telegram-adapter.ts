@@ -5,7 +5,7 @@
  * 通过 onMessage 回调将标准化消息交给 BridgeManager。
  */
 
-import TelegramBot from "node-telegram-bot-api";
+import { loadTelegramSdk } from "./optional-sdks.ts";
 import { debugLog } from "../debug-log.ts";
 import { telegramBotOptions } from "../net/outbound-proxy.ts";
 import { createMediaCapabilities } from "./media-capabilities.ts";
@@ -109,6 +109,7 @@ function telegramDisplayName(user: Record<string, any> = {}) {
  * @returns {{ sendReply, stop, getMe }}
  */
 export function createTelegramAdapter({ token, agentId, onMessage, onStatus }) {
+  const TelegramBot = loadTelegramSdk();
   let bot = new TelegramBot(token, telegramBotOptions({ polling: true }));
   let stopped = false;
   let consecutiveErrors = 0;

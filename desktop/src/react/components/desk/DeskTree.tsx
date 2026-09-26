@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 /**
  * DeskTree — Obsidian-like single-column workspace tree.
  *
@@ -448,7 +449,7 @@ function TreeNode({
           { label: t('desk.ctx.openInFinder'), action: () => window.platform?.showInFinder?.(nativePath) },
         ] : []),
         ...(nativePath ? [
-          { label: t('desk.ctx.copyPath'), action: () => navigator.clipboard.writeText(nativePath).catch(() => {}) },
+          { label: t('desk.ctx.copyPath'), action: () => copyTextToClipboard(nativePath).catch(() => {}) },
         ] : []),
         ...(!file.isDir && nativePath && screenshotSaveDir && isMarkdownFileName(file.name) && !isWebRuntime() ? [
           {

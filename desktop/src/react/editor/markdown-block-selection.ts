@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../utils/clipboard';
 import {
   StateEffect,
   StateField,
@@ -93,11 +94,7 @@ function selectedMarkdownBlockSource(state: EditorState): string | null {
 }
 
 export function copyMarkdownSource(view: EditorView, source: string): Promise<void> {
-  const clipboard = view.dom.ownerDocument.defaultView?.navigator.clipboard;
-  if (!clipboard?.writeText) {
-    return Promise.reject(new Error('Clipboard API is unavailable for this editor window.'));
-  }
-  return clipboard.writeText(source);
+  return copyTextToClipboard(source, view.dom.ownerDocument.defaultView);
 }
 
 function copySelectedMarkdownBlocks(view: EditorView): boolean {

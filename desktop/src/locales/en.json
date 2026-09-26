@@ -515,7 +515,8 @@
   "attach": {
     "folder": "Folder",
     "copy": "Copy",
-    "copied": "Copied ✓"
+    "copied": "Copied ✓",
+    "copyFailed": "Copy failed"
   },
   "codeBlock": {
     "wordWrap": "Word Wrap"

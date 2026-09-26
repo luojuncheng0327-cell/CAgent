@@ -4219,6 +4219,23 @@
       "reason": "Reached via esbuild source module graph, imported by lib/bridge/feishu-adapter.ts (import-statement); lib/bridge/media-delivery-service.ts (import-statement); lib/bridge/bridge-manager.ts (import-statement)."
     },
     {
+      "path": "lib/bridge/optional-sdks.ts",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "server-bootstrap",
+          "from": "lib/bridge/telegram-adapter.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "lib/bridge/feishu-adapter.ts",
+          "kind": "import-statement"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by lib/bridge/telegram-adapter.ts (import-statement); lib/bridge/feishu-adapter.ts (import-statement)."
+    },
+    {
       "path": "lib/bridge/outbound-http.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -4912,6 +4929,11 @@
         },
         {
           "root": "server-bootstrap",
+          "from": "core/session-jsonl-file.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
           "from": "core/bridge-session-manager.ts",
           "kind": "import-statement"
         },
@@ -5271,7 +5293,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/migrations.ts (import-statement); core/plugin-config.ts (import-statement); lib/desk/cron-store.ts (import-statement); +81 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by core/migrations.ts (import-statement); core/plugin-config.ts (import-statement); lib/desk/cron-store.ts (import-statement); +82 more importer(s)."
     },
     {
       "path": "lib/default-models.json",
@@ -112247,6 +112269,18 @@
       "reason": "Reached via esbuild source module graph, imported by core/preferences-manager.ts (import-statement); server/routes/preferences.ts (import-statement); server/routes/settings-snapshot.ts (import-statement)."
     },
     {
+      "path": "shared/release-source.cjs",
+      "inputType": "source-graph",
+      "provenance": [
+        {
+          "root": "create-require-root:shared/artifact-core/ota-core.cjs",
+          "from": "shared/artifact-core/ota-core.cjs",
+          "kind": "require-call"
+        }
+      ],
+      "reason": "Reached via esbuild source module graph, imported by shared/artifact-core/ota-core.cjs (require-call)."
+    },
+    {
       "path": "shared/runtime-api-key-ref.ts",
       "inputType": "source-graph",
       "provenance": [
@@ -112350,6 +112384,11 @@
         {
           "root": "server-bootstrap",
           "from": "core/session-project-catalog-store.ts",
+          "kind": "import-statement"
+        },
+        {
+          "root": "server-bootstrap",
+          "from": "core/session-jsonl-file.ts",
           "kind": "import-statement"
         },
         {
@@ -112508,7 +112547,7 @@
           "kind": "import-statement"
         }
       ],
-      "reason": "Reached via esbuild source module graph, imported by core/provider-media-config.ts (import-statement); core/execution-lease-registry.ts (import-statement); core/grant-registry.ts (import-statement); +46 more importer(s)."
+      "reason": "Reached via esbuild source module graph, imported by core/provider-media-config.ts (import-statement); core/execution-lease-registry.ts (import-statement); core/grant-registry.ts (import-statement); +47 more importer(s)."
     },
     {
       "path": "shared/safe-parse.ts",
@@ -113067,9 +113106,9 @@
     }
   ],
   "stats": {
-    "totalFiles": 9652,
+    "totalFiles": 9654,
     "byInputType": {
-      "source-graph": 671,
+      "source-graph": 673,
       "runtime-asset": 11,
       "nft-runtime-trace": 8970
     }

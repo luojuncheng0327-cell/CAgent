@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { randomUUID } from 'node:crypto';
 import { AppError } from './errors.ts';
 import { errorBus } from './error-bus.ts';
 
@@ -59,12 +60,18 @@ export function safeReadYAMLSync(filePath, fallback = null, yaml) {
  * @param {number} [opts.mode] - file permission bits (e.g. 0o600 for sensitive credentials)
  */
 export function atomicWriteSync(filePath, content, { mode }: { mode?: number } = {}) {
-  const tmp = filePath + ".tmp";
-  fs.writeFileSync(tmp, content, mode !== undefined ? { encoding: "utf-8", mode } : "utf-8");
-  if (mode !== undefined) {
-    try { fs.chmodSync(tmp, mode); } catch { /* mode-on-create 兜底 */ }
+  const tmp = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
+  try {
+    fs.writeFileSync(tmp, content, { encoding: "utf-8", flag: "wx", ...(mode !== undefined ? { mode } : {}) });
+    if (mode !== undefined) {
+      try { fs.chmodSync(tmp, mode); } catch { /* mode-on-create 兜底 */ }
+    }
+    fs.renameSync(tmp, filePath);
+  } finally {
+    // Each writer owns its temporary file; failures cannot delete another
+    // process's in-progress write or leave sensitive temp contents behind.
+    try { fs.unlinkSync(tmp); } catch { /* renamed or already removed */ }
   }
-  fs.renameSync(tmp, filePath);
 }
 
 /**

@@ -72,7 +72,7 @@ describe("generateDescription", () => {
     expect(call).not.toHaveProperty("maxTokens");
   });
 
-  it("repairs overlong descriptions with the same model instead of trimming", async () => {
+  it("keeps the first complete description without paying for cosmetic repairs", async () => {
     const overlong = `这是一段${"非常".repeat(120)}长的简介，虽然内容完整，但是明显超过了产品花名册希望展示的长度。`;
     const repaired = "沉静细腻的写作型助手，擅长文本整理、创意协作和复杂想法梳理。";
     (callText as any)
@@ -85,11 +85,8 @@ describe("generateDescription", () => {
       "zh",
     );
 
-    expect(result).toBe(repaired);
-    expect(callText).toHaveBeenCalledTimes(2);
-    const repairCall = (callText as any).mock.calls[1][0];
-    expect(repairCall).not.toHaveProperty("maxTokens");
-    expect(repairCall.messages.at(-1).content).toContain("保留原意");
+    expect(result).toBe(overlong);
+    expect(callText).toHaveBeenCalledTimes(1);
   });
 });
 

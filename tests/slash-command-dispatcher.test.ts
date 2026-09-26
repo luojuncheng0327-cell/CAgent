@@ -62,6 +62,40 @@ describe("SlashCommandDispatcher.tryDispatch", () => {
     expect(ctx.reply).toHaveBeenCalledWith("pong");
   });
 
+  it("serializes command metadata without leaking circular runtime services", async () => {
+    const timer = setTimeout(() => {}, 60_000);
+    const engine = { timer, privateConfig: "must-not-cross-command-json" };
+    const hub: any = {};
+    hub.self = hub;
+    const sessionOps = { engine };
+    const dispatcher = new SlashCommandDispatcher({ registry: r, engine, hub, sessionOps });
+    let metadata: any;
+    r.registerCommand({
+      name: "crawl", permission: "owner",
+      handler: async (commandCtx) => {
+        expect(commandCtx.engine).toBe(engine);
+        expect(commandCtx.hub).toBe(hub);
+        expect(commandCtx.sessionOps).toBe(sessionOps);
+        expect(Object.isFrozen(commandCtx)).toBe(true);
+        metadata = JSON.parse(JSON.stringify({ ...commandCtx }));
+        return { reply: JSON.stringify(commandCtx) };
+      },
+    }, { source: "plugin", sourceId: "crawler-helper" });
+    const ctx = { ...makeCtx(), reply: vi.fn(async (_text: string) => {}) };
+    try {
+      await dispatcher.tryDispatch("/crawl example", ctx);
+      expect(metadata).toMatchObject({ commandName: "crawl", args: "example", senderRole: "owner" });
+      expect(metadata).not.toHaveProperty("engine");
+      expect(metadata).not.toHaveProperty("hub");
+      expect(metadata).not.toHaveProperty("sessionOps");
+      const reply = ctx.reply.mock.calls[0][0];
+      expect(JSON.parse(reply)).toEqual(metadata);
+      expect(reply).not.toContain("must-not-cross-command-json");
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+
   it("wraps handler exception in [命令错误]", async () => {
     r.registerCommand({
       name: "boom", permission: "anyone",

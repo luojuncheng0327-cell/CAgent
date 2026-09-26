@@ -444,7 +444,7 @@ describe("workflow tool", () => {
     expect(peak).toBeLessThanOrEqual(2);
   });
 
-  it("默认并发是 16（不再是 256），越界 limits 被 clamp 到 64", async () => {
+  it("默认并发是 4，显式配置仍可提高并发", async () => {
     const store = makeStore();
     let inFlight = 0, peak = 0;
     const releases: Array<() => void> = [];
@@ -461,8 +461,8 @@ describe("workflow tool", () => {
     });
     const script = META + `return await parallel(Array.from({length: 40}, () => () => agent('x', { access: 'read' })))`;
     await makeTool().execute("c1", { script }, undefined, undefined, makeCtx());
-    await vi.waitFor(() => expect(releases.length).toBeGreaterThanOrEqual(16));
-    expect(peak).toBe(16);
+    await vi.waitFor(() => expect(releases.length).toBeGreaterThanOrEqual(4));
+    expect(peak).toBe(4);
     releases.forEach((r) => r());
     await flush();
   });

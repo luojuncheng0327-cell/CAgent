@@ -4,6 +4,7 @@ import os from "os";
 import path from "path";
 import { PluginManager } from "../core/plugin-manager.ts";
 import { SlashCommandRegistry } from "../core/slash-command-registry.ts";
+import { SlashCommandDispatcher } from "../core/slash-command-dispatcher.ts";
 import { EventBus } from "../hub/event-bus.ts";
 
 let tmp, builtinDir, communityDir, dataDir;
@@ -41,6 +42,38 @@ function makePM(registry, prefs) {
 }
 
 describe("plugin commands/ — slash 注册路径（方案 C）", () => {
+  it("loads and executes a command that sends its metadata through a real subprocess", async () => {
+    writePlugin(path.join(builtinDir, "crawler"), "crawler", {
+      "commands/crawl.js": `
+        import { execFileSync } from 'node:child_process';
+        export const name = 'crawl';
+        export const handler = async (ctx) => {
+          const reply = execFileSync(process.execPath, ['-e',
+            'process.stdout.write(JSON.parse(require("fs").readFileSync(0,"utf8")).args)'],
+            { input: JSON.stringify(ctx), encoding: 'utf8', windowsHide: true });
+          return { reply };
+        };
+      `,
+    });
+    const registry = new SlashCommandRegistry();
+    const pm = makePM(registry, null);
+    const timer = setTimeout(() => {}, 60_000);
+    try {
+      pm.scan();
+      await pm.loadAll();
+      const dispatcher = new SlashCommandDispatcher({ registry, engine: { timer }, hub: { timer } });
+      const received: string[] = [];
+      await dispatcher.tryDispatch('/crawl example', {
+        source: 'desktop', sessionRef: { kind: 'desktop', agentId: 'a1', sessionPath: '/session' },
+        reply: async (text: string) => { received.push(JSON.stringify({ type: 'slash_result', text })); },
+      });
+      expect(received.map(value => JSON.parse(value))).toEqual([{ type: 'slash_result', text: 'example' }]);
+    } finally {
+      clearTimeout(timer);
+      await pm.unloadPlugin('crawler');
+    }
+  });
+
   it("builtin 插件的 handler 命令进 slash registry，source=plugin", async () => {
     writePlugin(path.join(builtinDir, "pp"), "pp", {
       "commands/ping.js":

@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from './clipboard';
 import type { MermaidConfig } from 'mermaid';
 
 interface MermaidRenderResult {
@@ -85,7 +86,10 @@ function ensureSourceToolbar(diagram: HTMLElement, sourceBlock: HTMLElement, sou
   copy.className = 'mermaid-source-copy';
   copy.textContent = t('mermaid.copySource');
   copy.addEventListener('click', () => {
-    void navigator.clipboard?.writeText?.(source);
+    void copyTextToClipboard(source).catch((error: unknown) => {
+      console.warn('[clipboard] copy diagram source failed:', error);
+      copy.title = t('attach.copyFailed');
+    });
   });
 
   toolbar.append(toggle, copy);

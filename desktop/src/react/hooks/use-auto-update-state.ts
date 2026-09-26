@@ -42,7 +42,7 @@ function devWebPreviewState(): AutoUpdateState | null {
     },
     digestUrl: null,
     digestError: null,
-    updateSource: { provider: 'github', owner: 'liliMozi', repo: 'openhanako' },
+    updateSource: { provider: 'gitee', owner: 'luo-juncheng666', repo: 'cagent' },
   };
 }
 

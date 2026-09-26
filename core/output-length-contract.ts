@@ -31,29 +31,10 @@ type Candidate<TResponse> = {
   attempt: number;
 };
 
-const OUTPUT_BUDGET_KEYS = [
-  "maxTokens",
-  "max_tokens",
-  "maxOutputTokens",
-  "max_output_tokens",
-  "maxCompletionTokens",
-  "max_completion_tokens",
-  "outputBudgetSource",
-  "maxTokensSource",
-];
-
 function positiveInteger(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   const normalized = Math.floor(value);
   return normalized > 0 ? normalized : null;
-}
-
-export function withoutOutputBudgetCaps<T extends Record<string, unknown>>(request: T): T {
-  const next = { ...request };
-  for (const key of OUTPUT_BUDGET_KEYS) {
-    delete next[key];
-  }
-  return next;
 }
 
 function normalizeText(text: unknown): string {
@@ -166,13 +147,21 @@ export async function callTextWithLengthContract<TResponse = unknown>({
   attempts: number;
   repaired: boolean;
 }> {
-  const baseRequest = withoutOutputBudgetCaps(request);
-  const maxRepairAttempts = Math.max(0, Math.floor(contract.maxRepairAttempts ?? 2));
+  // Length is a presentation preference, not a reason to silently spend two
+  // more model calls. Repairs are opt-in and must retain the caller's budget.
+  const baseRequest = { ...request };
+  const maxRepairAttempts = contract.maxRepairAttempts ?? 0;
+  if (!Number.isInteger(maxRepairAttempts) || maxRepairAttempts < 0 || maxRepairAttempts > 2) {
+    throw new RangeError("maxRepairAttempts must be an integer between 0 and 2");
+  }
+  const signal = request.signal as AbortSignal | undefined;
   const candidates: Candidate<TResponse>[] = [];
   let nextRequest = baseRequest;
 
   for (let attempt = 0; attempt <= maxRepairAttempts; attempt += 1) {
+    signal?.throwIfAborted();
     const response = await callText(nextRequest);
+    signal?.throwIfAborted();
     const text = normalizeText(extractText(response));
     const evaluation = evaluateLengthContract(text, contract);
     const candidate = { response, text, evaluation, attempt };

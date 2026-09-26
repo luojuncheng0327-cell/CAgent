@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { SettingsManager } from "../lib/pi-sdk/index.ts";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../core/session-compaction-runtime.ts";
 
 const FLOOR_RESERVE = 16_384;
+afterEach(() => vi.restoreAllMocks());
 
 function createSettingsManager() {
   return SettingsManager.inMemory({
@@ -66,6 +67,12 @@ function createAssistantTurn(totalTokens: number, overrides: Record<string, any>
 }
 
 describe("computeCompactionReserveTokens", () => {
+  it.each([4096, 8192, 16_384, 32_768])("leaves usable input space for a %s-token local model", (window) => {
+    const reserve = computeCompactionReserveTokens(window);
+    expect(reserve).toBeLessThanOrEqual(window / 4);
+    const { settingsManager } = createFakeSession({ contextWindow: window });
+    expect(settingsManager.getCompactionSettings().keepRecentTokens).toBeLessThanOrEqual((window - reserve) / 2);
+  });
   it("scales the reserve with the context window but never below the floor", () => {
     expect(computeCompactionReserveTokens(200_000)).toBe(20_000);
     expect(computeCompactionReserveTokens(100_000)).toBe(16_384);
@@ -120,6 +127,30 @@ describe("installDynamicCompactionReserve", () => {
 });
 
 describe("installMidRunCompaction", () => {
+  it("backs off repeated failures instead of making a compaction request on every tool turn", async () => {
+    let now = 1000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    const { session } = createFakeSession();
+    const runCompaction = vi.fn().mockRejectedValue(new Error("provider unavailable"));
+    installMidRunCompaction(session, { runCompaction });
+    await session.agent.prepareNextTurnWithContext(createAssistantTurn(190_000));
+    await session.agent.prepareNextTurnWithContext(createAssistantTurn(191_000));
+    expect(runCompaction).toHaveBeenCalledTimes(1);
+    now += 30_000;
+    await session.agent.prepareNextTurnWithContext(createAssistantTurn(192_000));
+    expect(runCompaction).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not start compaction on a canceled turn", async () => {
+    const { session } = createFakeSession();
+    const controller = new AbortController();
+    controller.abort();
+    const runCompaction = vi.fn();
+    installMidRunCompaction(session, { runCompaction });
+    await session.agent.prepareNextTurnWithContext(createAssistantTurn(190_000), controller.signal);
+    expect(runCompaction).not.toHaveBeenCalled();
+  });
+
   it("compacts between turns and appends a task-continuation notice", async () => {
     const { session, rebuiltMessages } = createFakeSession({ contextWindow: 200_000 });
     const runCompaction = vi.fn(async (_session: any, _options: any) => ({}));

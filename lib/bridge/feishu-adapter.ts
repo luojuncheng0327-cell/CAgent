@@ -5,7 +5,7 @@
  * 通过 onMessage 回调将标准化消息交给 BridgeManager。
  */
 
-import * as lark from "@larksuiteoapi/node-sdk";
+import { loadFeishuSdk } from "./optional-sdks.ts";
 import { debugLog } from "../debug-log.ts";
 import { downloadMedia, detectMime, formatSize, streamToBuffer } from "./media-utils.ts";
 import { createMediaCapabilities } from "./media-capabilities.ts";
@@ -83,12 +83,12 @@ const FEISHU_DOMAIN_BY_REGION = Object.freeze({
   feishu_cn: {
     region: "feishu_cn",
     domain: "https://open.feishu.cn",
-    sdkDomain: lark.Domain.Feishu,
+    get sdkDomain() { return loadFeishuSdk().Domain.Feishu; },
   },
   lark_global: {
     region: "lark_global",
     domain: "https://open.larksuite.com",
-    sdkDomain: lark.Domain.Lark,
+    get sdkDomain() { return loadFeishuSdk().Domain.Lark; },
   },
 });
 
@@ -479,6 +479,7 @@ async function bufferFromFeishuDownload(resp: any, label: any) {
  * @returns {{ sendReply, stop }}
  */
 export function createFeishuAdapter({ appId, appSecret, region, agentId, onMessage, onStatus }: Record<string, any>) {
+  const lark = loadFeishuSdk();
   const feishuDomain = resolveFeishuDomain(region);
   const client = new lark.Client({ appId, appSecret, domain: feishuDomain.sdkDomain });
 

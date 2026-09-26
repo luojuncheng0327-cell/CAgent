@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { callTextWithLengthContract } from "../core/output-length-contract.ts";
 
 describe("output length contract", () => {
-  it("repairs overlong text with the same request config and no output cap", async () => {
+  it("repairs overlong text only when requested and preserves the output budget", async () => {
     const callText = vi.fn()
       .mockResolvedValueOnce("这是一段明显过长的摘要，已经远远超过目标长度，需要重新压缩成更短的表达。")
       .mockResolvedValueOnce("压缩后的摘要");
@@ -26,13 +26,14 @@ describe("output length contract", () => {
         unit: "chars",
         min: 2,
         max: 12,
+        maxRepairAttempts: 1,
       },
     });
 
     expect(result.text).toBe("压缩后的摘要");
     expect(callText).toHaveBeenCalledTimes(2);
-    expect(callText.mock.calls[0][0]).not.toHaveProperty("maxTokens");
-    expect(callText.mock.calls[0][0]).not.toHaveProperty("outputBudgetSource");
+    expect(callText.mock.calls[0][0]).toHaveProperty("maxTokens", 10);
+    expect(callText.mock.calls[0][0]).toHaveProperty("outputBudgetSource", "system");
     expect(callText.mock.calls[1][0]).toMatchObject({
       api: "openai",
       model: "utility",
@@ -40,7 +41,7 @@ describe("output length contract", () => {
       baseUrl: "https://example.test",
       temperature: 0.3,
     });
-    expect(callText.mock.calls[1][0]).not.toHaveProperty("maxTokens");
+    expect(callText.mock.calls[1][0]).toHaveProperty("maxTokens", 10);
     expect(callText.mock.calls[1][0].messages.at(-1).content).toContain("目标");
   });
 
@@ -73,8 +74,8 @@ describe("output length contract", () => {
     expect(result.text).not.toBe(closest.slice(0, 8));
     expect(callText).toHaveBeenCalledTimes(3);
     for (const [request] of callText.mock.calls) {
-      expect(request).not.toHaveProperty("max_tokens");
-      expect(request).not.toHaveProperty("max_completion_tokens");
+      expect(request).toHaveProperty("max_tokens", 5);
+      expect(request).toHaveProperty("max_completion_tokens", 5);
     }
   });
 });

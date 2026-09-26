@@ -75,6 +75,7 @@ export class TaskRegistry {
   declare _getSessionIdForPath: any;
   declare _persistencePath: any;
   declare _scheduleTimers: any;
+  private _runningSchedules = new Map<string, { rearm: boolean }>();
   declare _schedules: any;
   declare _tasks: any;
   constructor( options: any = {}) {
@@ -107,6 +108,9 @@ export class TaskRegistry {
 
   unregisterHandler(type) {
     this._handlers.delete(type);
+    for (const schedule of this._schedules.values()) {
+      if (schedule.type === type) this._clearScheduleTimer(schedule.scheduleId);
+    }
   }
 
   // ── 任务实例生命周期 ──
@@ -158,6 +162,7 @@ export class TaskRegistry {
 
   update(taskId, patch: any = {}) {
     const task = this._requireTask(taskId);
+    if (FINAL_STATUSES.has(task.status)) return clone(task);
     const now = Date.now();
     const next = {
       ...task,
@@ -185,6 +190,7 @@ export class TaskRegistry {
 
   complete(taskId, result = null) {
     const task = this._requireTask(taskId);
+    if (FINAL_STATUSES.has(task.status)) return clone(task);
     const now = Date.now();
     const next = {
       ...task,
@@ -201,6 +207,7 @@ export class TaskRegistry {
 
   fail(taskId, error = "failed") {
     const task = this._requireTask(taskId);
+    if (FINAL_STATUSES.has(task.status)) return clone(task);
     const now = Date.now();
     const next = {
       ...task,
@@ -215,7 +222,10 @@ export class TaskRegistry {
   }
 
   cancel(taskId, reason = "canceled") {
-    const result = this.abort(taskId);
+    if (this._tasks.get(taskId)?.status === "canceled") {
+      return { result: "already_aborted", canceled: true };
+    }
+    const result = this.abort(taskId, reason);
     if (result === "aborted" || result === "already_aborted") {
       const task = this._requireTask(taskId);
       const now = Date.now();
@@ -238,6 +248,7 @@ export class TaskRegistry {
     const task = this._tasks.get(taskId);
     if (!task) return "not_found";
     if (task.aborted) return "already_aborted";
+    if (FINAL_STATUSES.has(task.status)) return "already_finished";
 
     const handler = this._handlers.get(task.type);
     if (!handler) return "no_handler";
@@ -247,7 +258,14 @@ export class TaskRegistry {
     task.updatedAt = Date.now();
     task.completedAt = task.updatedAt;
     task.error = normalizeError(reason);
-    try { handler.abort(taskId); } catch (err) {
+    try {
+      const pending = handler.abort(taskId);
+      if (pending && typeof pending.then === "function") {
+        Promise.resolve(pending).catch((err) => {
+          log.error(`abort handler error for ${taskId}: ${err?.message || String(err)}`);
+        });
+      }
+    } catch (err) {
       log.error(`abort handler error for ${taskId}: ${err.message}`);
     }
     this._persist();
@@ -394,6 +412,9 @@ export class TaskRegistry {
   }
 
   clearTimers() {
+    // A running handler may settle after shutdown. It must not create a new
+    // timer unless an explicit schedule/handler registration requests it.
+    for (const run of this._runningSchedules.values()) run.rearm = false;
     for (const scheduleId of this._scheduleTimers.keys()) {
       this._clearScheduleTimer(scheduleId);
     }
@@ -413,8 +434,14 @@ export class TaskRegistry {
 
   _armSchedule(scheduleId) {
     this._clearScheduleTimer(scheduleId);
+    const running = this._runningSchedules.get(scheduleId);
+    if (running) {
+      running.rearm = true;
+      return;
+    }
     const schedule = this._schedules.get(scheduleId);
     if (!schedule?.enabled || !schedule.nextRunAt) return;
+    if (!this._handlers.get(schedule.type)?.run) return;
     const delay = Math.max(0, Math.min(MAX_TIMER_DELAY, schedule.nextRunAt - Date.now()));
     const timer = setTimeout(() => {
       this._scheduleTimers.delete(scheduleId);
@@ -434,7 +461,13 @@ export class TaskRegistry {
 
   async _runSchedule(scheduleId) {
     const schedule = this._schedules.get(scheduleId);
-    if (!schedule?.enabled) return;
+    if (!schedule?.enabled || this._runningSchedules.has(scheduleId)) return;
+    // Node timers are capped at ~24.8 days. A capped timer is only a wake-up,
+    // not permission to execute a task before its actual due time.
+    if (schedule.nextRunAt > Date.now()) {
+      this._armSchedule(scheduleId);
+      return;
+    }
     const handler = this._handlers.get(schedule.type);
     if (!handler?.run) {
       schedule.lastError = `No schedule runner for type "${schedule.type}"`;
@@ -443,33 +476,41 @@ export class TaskRegistry {
       return;
     }
 
+    const run = { rearm: true };
+    this._runningSchedules.set(scheduleId, run);
     const now = Date.now();
     try {
       const result = await handler.run(clone(schedule));
+      if (this._schedules.get(scheduleId) !== schedule) return;
       schedule.lastRunAt = now;
       schedule.lastResult = result ?? null;
       schedule.lastError = null;
       schedule.runCount = (schedule.runCount || 0) + 1;
       if (schedule.intervalMs) {
-        schedule.nextRunAt = now + schedule.intervalMs;
+        schedule.nextRunAt = Date.now() + schedule.intervalMs;
       } else {
         schedule.enabled = false;
         schedule.nextRunAt = null;
       }
     } catch (err) {
+      if (this._schedules.get(scheduleId) !== schedule) return;
       schedule.lastRunAt = now;
       schedule.lastError = normalizeError(err);
       if (schedule.intervalMs) {
-        schedule.nextRunAt = now + schedule.intervalMs;
+        schedule.nextRunAt = Date.now() + schedule.intervalMs;
       } else {
         schedule.enabled = false;
         schedule.nextRunAt = null;
       }
     } finally {
-      schedule.updatedAt = Date.now();
-      this._schedules.set(scheduleId, schedule);
-      this._persist();
-      this._armSchedule(scheduleId);
+      this._runningSchedules.delete(scheduleId);
+      // Deletion, disabling and replacement all invalidate the old run's
+      // ownership. Never write its stale state back over the current schedule.
+      if (this._schedules.get(scheduleId) === schedule) {
+        schedule.updatedAt = Date.now();
+        this._persist();
+      }
+      if (run.rearm) this._armSchedule(scheduleId);
     }
   }
 

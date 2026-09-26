@@ -314,7 +314,7 @@ export async function translateSkillNames(utilConfig, names, lang) {
  * @param {(text: string, level?: string) => void} [emitDevLog]
  */
 export async function summarizeActivity(utilConfig, sessionPath, emitDevLog, preloaded) {
-  const log = emitDevLog || (() => {});
+  const emitLog = emitDevLog || (() => {});
   const isZh = getLocale().startsWith("zh");
   try {
     let userText, assistantText, toolCalls;
@@ -326,7 +326,7 @@ export async function summarizeActivity(utilConfig, sessionPath, emitDevLog, pre
       ({ userText, assistantText, toolCalls } = parseSessionContent(sessionPath));
     }
     if (!userText && !assistantText) {
-      log("[summarize] session empty, skipping");
+      emitLog("[summarize] session empty, skipping");
       return null;
     }
 
@@ -337,7 +337,7 @@ export async function summarizeActivity(utilConfig, sessionPath, emitDevLog, pre
       : "";
     const execution = callTextConfigFromUtilityConfig(utilConfig, "utility_large");
     if (!execution.model || !execution.baseUrl || !execution.api) {
-      log("[summarize] utility_large config incomplete, skipping");
+      emitLog("[summarize] utility_large config incomplete, skipping");
       return null;
     }
 
@@ -391,7 +391,7 @@ Rules:
 
     return text;
   } catch (err) {
-    log(`[summarize] error: ${formatError(err)}`);
+    emitLog(`[summarize] error: ${formatError(err)}`);
     log.error(`summarizeActivity failed: ${formatError(err)}`);
     return null;
   }

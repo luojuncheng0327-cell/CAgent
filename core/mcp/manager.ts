@@ -1758,6 +1758,7 @@ export class McpManager {
   }
 
   async callTool(connectorId, toolName, args, runtimeCtx: any = {}) {
+    runtimeCtx.signal?.throwIfAborted();
     const config = this.getConfig();
     if (!config.enabled) throw new Error("MCP connectors are disabled globally");
     const connector = config.connectors.find((entry) => entry.id === connectorId);
@@ -1820,7 +1821,10 @@ export class McpManager {
   async _callToolThroughInputRounds(client, { connectorId, connectorName, toolName, args, runtimeCtx }) {
     let extra = null;
     for (let round = 0; round <= MAX_INPUT_REQUIRED_ROUNDS; round += 1) {
-      const result = await client.callTool(toolName, args, extra || undefined);
+      runtimeCtx.signal?.throwIfAborted();
+      const requestOptions = runtimeCtx.signal ? { ...extra, signal: runtimeCtx.signal } : extra || undefined;
+      const result = await client.callTool(toolName, args, requestOptions);
+      runtimeCtx.signal?.throwIfAborted();
       if (result?.resultType !== "input_required") return result;
       if (round === MAX_INPUT_REQUIRED_ROUNDS) {
         throw new Error(
@@ -2123,7 +2127,10 @@ export class McpManager {
       parameters: definition.parameters || { type: "object", properties: {} },
       execute: async (toolCallId, params, signalOrRuntimeCtx, onUpdate, piCtx) => {
         const { ctx: runtimeCtx } = normalizeToolRuntimeContext(signalOrRuntimeCtx, piCtx);
-        return normalizeMcpToolResult(await origExecute(toolCallId, params, runtimeCtx));
+        const signal = signalOrRuntimeCtx && typeof signalOrRuntimeCtx.throwIfAborted === "function"
+          ? signalOrRuntimeCtx : runtimeCtx.signal;
+        signal?.throwIfAborted();
+        return normalizeMcpToolResult(await origExecute(toolCallId, params, signal ? { ...runtimeCtx, signal } : runtimeCtx));
       },
       _pluginId: MCP_TOOL_NAMESPACE,
     };

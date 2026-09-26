@@ -95,7 +95,7 @@ export function createStopTaskTool(deps) {
       if (result === "not_found") {
         return { content: [{ type: "text", text: t("error.stopTaskNotFound", { taskId }) }] };
       }
-      if (result === "already_aborted") {
+      if (result === "already_aborted" || result === "already_finished") {
         return { content: [{ type: "text", text: t("error.stopTaskAlready", { taskId }) }] };
       }
       if (result === "no_handler") {

@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { hanaFetch, hanaUrl } from '../api';
 import { t } from '../helpers';
@@ -172,8 +173,12 @@ export function AccessTab() {
 
   const copyText = useCallback(async (value: string) => {
     if (!value) return;
-    await navigator.clipboard?.writeText(value);
-    showToast(t('settings.access.copied'), 'success');
+    try {
+      await copyTextToClipboard(value);
+      showToast(t('settings.access.copied'), 'success');
+    } catch {
+      showToast(t('attach.copyFailed'), 'error');
+    }
   }, [showToast]);
 
   const saveNetworkSettings = useCallback(async (nextMode: AccessMode, nextPort: string) => {

@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../../utils/clipboard';
 import React, { useState, useRef } from 'react';
 import { useSettingsStore, type ProviderSummary } from '../../store';
 import { hanaFetch } from '../../api';
@@ -152,7 +153,9 @@ export function OAuthCredentials({ providerId, summary, onRefresh }: {
           <div
             className={styles['oauth-user-code']}
             title={t('settings.oauth.clickToCopy')}
-            onClick={() => navigator.clipboard.writeText(deviceCode).then(() => useSettingsStore.getState().showToast(t('settings.oauth.codeCopied'), 'success'))}
+            onClick={() => copyTextToClipboard(deviceCode)
+              .then(() => useSettingsStore.getState().showToast(t('settings.oauth.codeCopied'), 'success'))
+              .catch(() => useSettingsStore.getState().showToast(t('attach.copyFailed'), 'error'))}
           >
             {deviceCode}
           </div>

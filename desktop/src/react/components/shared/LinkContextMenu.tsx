@@ -1,3 +1,4 @@
+import { copyTextToClipboard } from '../../utils/clipboard';
 import { ContextMenu, type ContextMenuItem } from '../../ui';
 import {
   copyValueForLink,
@@ -41,7 +42,7 @@ export function LinkContextMenu({ state, onClose }: LinkContextMenuProps) {
     {
       label: copyLabel,
       action: () => {
-        navigator.clipboard.writeText(copyValueForLink(state.href, state.context)).catch(() => {});
+        copyTextToClipboard(copyValueForLink(state.href, state.context)).catch(() => {});
       },
     },
   ];

@@ -636,14 +636,14 @@ export class PluginManager {
     }
   }
 
-  async _withLoadTimeout(entry, promise, stage) {
+  async _withLoadTimeout(entry, promise, stage, loadToken = entry._loadToken) {
     let timer = null;
     try {
       return await Promise.race([
         promise,
         new Promise((_, reject) => {
           timer = setTimeout(() => {
-            entry._loadCancelled = true;
+            if (entry._loadToken === loadToken) entry._loadCancelled = true;
             reject(new PluginLoadTimeoutError(entry.id, entry._loadStage || stage, this._loadTimeoutMs));
           }, this._loadTimeoutMs);
           timer.unref?.();
@@ -754,6 +754,7 @@ export class PluginManager {
       try {
         const indexPath = resolvePluginEntry(entry.pluginDir);
         const mod = await this._runLoadStage(entry, "lifecycle import", () => freshImport(indexPath));
+        this._assertActiveLoad(entry, loadToken);
         const PluginClass = mod.default;
         if (PluginClass && typeof PluginClass === "function") {
           const instance = new PluginClass();
@@ -782,22 +783,34 @@ export class PluginManager {
           if (typeof instance.onload === "function") {
             this._assertActiveLoad(entry, loadToken);
             await this._runLoadStage(entry, "lifecycle onload", () => instance.onload());
+            this._assertActiveLoad(entry, loadToken);
           }
         }
         entry.activationState = "activated";
         entry.activationError = null;
         return entry;
       } catch (err) {
-        entry.activationState = "failed";
-        entry.activationError = err.message;
+        if (entry._loadToken === loadToken) {
+          entry.activationState = "failed";
+          entry.activationError = err.message;
+        }
         throw err;
-      } finally {
-        entry._activationPromise = null;
       }
     };
 
-    entry._activationPromise = this._withLoadTimeout(entry, run(), `activation ${reason.event || "manual"}`);
-    return entry._activationPromise;
+    const activationPromise = this._withLoadTimeout(entry, run(), `activation ${reason.event || "manual"}`);
+    entry._activationPromise = activationPromise;
+    try {
+      return await activationPromise;
+    } catch (err) {
+      if (entry._loadToken === loadToken) {
+        entry.activationState = "failed";
+        entry.activationError = err.message;
+      }
+      throw err;
+    } finally {
+      if (entry._activationPromise === activationPromise) entry._activationPromise = null;
+    }
   }
 
   async activatePlugin(pluginId, reason: any = {}, options = {}) {
@@ -819,7 +832,7 @@ export class PluginManager {
 
   // ── Task 5: Tool loader ──────────────────────────────────────────────────
 
-  async _loadTools(entry) {
+  async _loadTools(entry, loadToken = entry._loadToken) {
     const toolsDir = path.join(entry.pluginDir, "tools");
     if (!fs.existsSync(toolsDir)) return;
     const files = fs.readdirSync(toolsDir).filter(isPluginSourceFile);
@@ -828,6 +841,7 @@ export class PluginManager {
       const filePath = path.join(toolsDir, file);
       try {
         const mod = await freshImport(filePath);
+        this._assertActiveLoad(entry, loadToken);
         if (!mod.name || !mod.description || typeof mod.execute !== "function") continue;
         const origExecute = mod.execute;
         this._tools.push({
@@ -861,6 +875,7 @@ export class PluginManager {
           _pluginSource: entry.source,
         });
       } catch (err) {
+        this._assertActiveLoad(entry, loadToken);
         log.error(`tool "${file}" in "${entry.id}" failed to load: ${err.message}`);
       }
     }
@@ -982,7 +997,7 @@ export class PluginManager {
     ));
   }
 
-  async _loadCommands(entry) {
+  async _loadCommands(entry, loadToken = entry._loadToken) {
     const cmdsDir = path.join(entry.pluginDir, "commands");
     if (!fs.existsSync(cmdsDir)) return;
     const files = fs.readdirSync(cmdsDir).filter(isPluginSourceFile);
@@ -990,6 +1005,7 @@ export class PluginManager {
       const filePath = path.join(cmdsDir, file);
       try {
         const mod = await freshImport(filePath);
+        this._assertActiveLoad(entry, loadToken);
         if (!mod.name) continue;
         const hasHandler = typeof mod.handler === "function";
         const hasExecute = typeof mod.execute === "function";
@@ -1033,6 +1049,7 @@ export class PluginManager {
           });
         }
       } catch (err) {
+        this._assertActiveLoad(entry, loadToken);
         log.error(`command "${file}" in "${entry.id}" failed to load: ${err.message}`);
       }
     }
@@ -1047,10 +1064,11 @@ export class PluginManager {
 
   // ── Task 7: Route loader ─────────────────────────────────────────────────
 
-  async _loadRoutes(entry) {
+  async _loadRoutes(entry, loadToken = entry._loadToken) {
     const routesDir = path.join(entry.pluginDir, "routes");
     if (!fs.existsSync(routesDir)) return;
     const { Hono } = await import("hono");
+    this._assertActiveLoad(entry, loadToken);
     const app = new Hono();
     const ctx = entry.ctx;
 
@@ -1102,6 +1120,7 @@ export class PluginManager {
       const filePath = path.join(routesDir, file);
       try {
         const mod = await freshImport(filePath);
+        this._assertActiveLoad(entry, loadToken);
         if (typeof mod.default === "function") {
           const sub = mod.default;
           if (sub && typeof sub.fetch === "function") {
@@ -1121,9 +1140,11 @@ export class PluginManager {
           mod.register(app, ctx);
         }
       } catch (err) {
+        this._assertActiveLoad(entry, loadToken);
         log.error(`route "${file}" in "${entry.id}" failed to load: ${err.message}`);
       }
     }
+    this._assertActiveLoad(entry, loadToken);
     this._routeApps.set(entry.pluginKey, {
       pluginId: entry.id,
       pluginKey: entry.pluginKey,
@@ -1139,7 +1160,7 @@ export class PluginManager {
    * 加载 extensions/ 目录下的 Pi SDK extension 工厂函数。
    * 每个 .ts/.js 文件导出 (pi: ExtensionAPI) => void，在 session 创建时被 Pi SDK 调用。
    */
-  async _loadExtensions(entry) {
+  async _loadExtensions(entry, loadToken = entry._loadToken) {
     const extDir = path.join(entry.pluginDir, "extensions");
     if (!fs.existsSync(extDir)) return;
     const files = fs.readdirSync(extDir).filter(isPluginSourceFile);
@@ -1147,6 +1168,7 @@ export class PluginManager {
       const filePath = path.join(extDir, file);
       try {
         const mod = await freshImport(filePath);
+        this._assertActiveLoad(entry, loadToken);
         const factory = mod.default ?? mod;
         if (typeof factory !== "function") {
           log.warn(`extension "${file}" in "${entry.id}" does not export a function, skipped`);
@@ -1154,6 +1176,7 @@ export class PluginManager {
         }
         this._extensionFactories.push({ pluginId: entry.id, pluginKey: entry.pluginKey, source: entry.source, factory });
       } catch (err) {
+        this._assertActiveLoad(entry, loadToken);
         log.error(`extension "${file}" in "${entry.id}" failed to load: ${err.message}`);
       }
     }
@@ -1358,7 +1381,7 @@ export class PluginManager {
     ));
   }
 
-  async _loadProviders(entry) {
+  async _loadProviders(entry, loadToken = entry._loadToken) {
     const providersDir = path.join(entry.pluginDir, "providers");
     if (!fs.existsSync(providersDir)) return;
     const files = fs.readdirSync(providersDir).filter(isPluginSourceFile);
@@ -1366,9 +1389,11 @@ export class PluginManager {
       const filePath = path.join(providersDir, file);
       try {
         const mod = await freshImport(filePath);
+        this._assertActiveLoad(entry, loadToken);
         if (!mod.id) continue;
         this._providerPlugins.push({ ...mod, _pluginId: entry.id, _pluginKey: entry.pluginKey, _pluginSource: entry.source });
       } catch (err) {
+        this._assertActiveLoad(entry, loadToken);
         log.error(`provider "${file}" in "${entry.id}" failed to load: ${err.message}`);
       }
     }
@@ -1599,11 +1624,21 @@ export class PluginManager {
 
   async _cleanupPluginEntry(entry) {
     const pluginId = entry.id;
+    // A timed-out activation can still be running. Let the next load start a
+    // fresh promise; late completion is guarded by its original load token.
+    entry._activationPromise = null;
 
     // 1. 生命周期清理（onunload + disposables）
     if (entry.instance) {
       if (typeof entry.instance.onunload === "function") {
-        try { await entry.instance.onunload(); } catch (err) {
+        const instance = entry.instance;
+        try {
+          await this._runLoadStage(entry, "lifecycle onunload", () => this._withLoadTimeout(
+            entry,
+            Promise.resolve().then(() => instance.onunload()),
+            "lifecycle onunload",
+          ));
+        } catch (err) {
           log.error(`"${pluginId}" onunload error: ${err.message}`);
         }
       }
