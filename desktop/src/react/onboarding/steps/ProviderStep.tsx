@@ -5,7 +5,7 @@
 import { useState, useCallback } from 'react';
 import { PROVIDER_PRESETS } from '../constants';
 import type { ProviderPreset } from '../constants';
-import { getProviderPresetLabel } from '../../utils/provider-presets';
+import { API_FORMAT_OPTIONS, getProviderPresetLabel } from '../../utils/provider-presets';
 import { describeOnboardingError, testConnection, saveProvider as saveProviderAction } from '../onboarding-actions';
 import type { HanaFetch, OnboardingVerificationPlan } from '../onboarding-actions';
 import { StepContainer, Multiline } from '../onboarding-ui';
@@ -228,13 +228,11 @@ export function ProviderStep({
               />
             </div>
             <div className="custom-field">
+              <span className="ob-field-label">{t('settings.providers.apiType')}</span>
               <SelectWidget
                 className="ob-select-widget"
                 triggerClassName="ob-input"
-                options={[
-                  { value: 'openai-completions', label: 'OpenAI Compatible' },
-                  { value: 'anthropic-messages', label: 'Anthropic Messages' },
-                ]}
+                options={API_FORMAT_OPTIONS}
                 value={customApi}
                 onChange={value => onCustomInput(customName, customUrl, value)}
               />

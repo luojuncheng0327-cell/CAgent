@@ -69,6 +69,45 @@ async function getDeepseekApiKey(manager) {
 }
 
 describe("ModelManager AuthStorage ownership", () => {
+  it("keeps a custom provider's newly saved Responses protocol and URL after migration and refresh", async () => {
+    writeAuth({});
+    writeAddedModels({
+      relay: {
+        base_url: "https://relay.example",
+        api: "openai-completions",
+        api_key: "sk-relay",
+        models: [{
+          id: "claude-opus-5-5",
+          reasoning: true,
+          thinkingLevels: ["low", "medium", "high", "max"],
+          thinkingLevelMap: { off: null, xhigh: "max" },
+        }],
+      },
+    });
+    const manager = new ModelManager({ hanakoHome: tmpDir });
+    manager.init();
+
+    manager.providerRegistry.saveProvider("relay", {
+      base_url: "https://relay.example/v1",
+      api: "openai-responses",
+    });
+    await manager.reloadAndSync();
+
+    expect(manager.availableModels.find(model => model.provider === "relay")).toMatchObject({
+      id: "claude-opus-5-5",
+      baseUrl: "https://relay.example/v1",
+      api: "openai-responses",
+      thinkingLevelMap: { off: null, xhigh: "max" },
+    });
+    const reloaded = new ModelManager({ hanakoHome: tmpDir });
+    reloaded.init();
+    await reloaded.syncAndRefresh();
+    expect(reloaded.availableModels.find(model => model.provider === "relay")).toMatchObject({
+      baseUrl: "https://relay.example/v1",
+      api: "openai-responses",
+    });
+  });
+
   it("registers Grok OAuth with Pi and exposes subscription models only when logged in", async () => {
     writeAddedModels({});
     writeAuth({

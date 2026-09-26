@@ -15,6 +15,7 @@ import { useAutoUpdateState } from '../../hooks/use-auto-update-state';
 import { useTrainUpdateState } from '../../hooks/use-train-update-state';
 import { ConfirmDialog, Overlay } from '../../ui';
 import type { InviteChannelStatus, UpdateDigestHistoryResult } from '../../types';
+import releaseSource from '../../../../../shared/release-source.cjs';
 import appIconUrl from '../../../icon.png';
 import styles from '../Settings.module.css';
 import updateStyles from '../../components/AutoUpdateStatus.module.css';
@@ -219,14 +220,23 @@ function TrainUpdateArea({
   }
 
   if (lastError) {
+    const sourceNotReady = /Gitee channel manifest request failed:.*HTTP 404\b/i.test(lastError);
     return (
       <div className={updateStyles.root}>
-        <div className={updateStyles.row}>
-          <span className={`${updateStyles.message} ${updateStyles.error}`}>{t('settings.about.updateError')}</span>
-          <span className={updateStyles.errorDetail} title={lastError}>{lastError}</span>
-          <button type="button" className={updateStyles.action} onClick={onRetry}>
-            {t('settings.about.updateRetryBtn')}
-          </button>
+        <div className={updateStyles.column}>
+          <div className={updateStyles.row} role="status">
+            <span className={`${updateStyles.message}${sourceNotReady ? '' : ` ${updateStyles.error}`}`}>
+              {t(sourceNotReady ? 'settings.about.updateSourceNotReady' : 'settings.about.updateError')}
+            </span>
+            <button type="button" className={updateStyles.action} onClick={onRetry}>
+              {t('settings.about.updateRetryBtn')}
+            </button>
+          </div>
+          {sourceNotReady && <span className={updateStyles.message}>{t('settings.about.updateSourceNotReadyHint')}</span>}
+          <details className={updateStyles.errorDetails}>
+            <summary>{t('settings.about.updateErrorDetails')}</summary>
+            <pre>{lastError}</pre>
+          </details>
         </div>
       </div>
     );
@@ -562,7 +572,7 @@ export function AboutTab() {
         </div>
       </div>
 
-      {/* Info：4 个标准 row（license / copyright / github / beta toggle）+
+      {/* Info：许可证、版权、仓库和更新设置 +
           仅在壳更新待命时出现的条件行 */}
       <SettingsSection>
         <SettingsRow
@@ -571,20 +581,24 @@ export function AboutTab() {
         />
         <SettingsRow
           label={t('settings.about.copyright')}
-          control={<span>© 2026 liliMozi</span>}
+          control={<span>© 2026 @呈平安</span>}
         />
         <SettingsRow
-          label="GitHub"
+          label="Gitee"
           control={
             <a
               className={styles['about-link']}
-              href="#"
+              href={releaseSource.repositoryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={(e) => {
-                e.preventDefault();
-                hana?.openExternal?.('https://github.com/liliMozi');
+                if (hana?.openExternal) {
+                  e.preventDefault();
+                  hana.openExternal(releaseSource.repositoryUrl);
+                }
               }}
             >
-              github.com/liliMozi
+              {releaseSource.repositoryUrl.replace(/^https:\/\//, '')}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                 <polyline points="15 3 21 3 21 9" />
@@ -635,6 +649,7 @@ export function AboutTab() {
 const LICENSE_TEXT = `Apache License, Version 2.0
 
 Copyright 2026 liliMozi
+Modifications Copyright 2026 @呈平安
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

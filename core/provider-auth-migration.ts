@@ -184,6 +184,17 @@ export function migrateLegacyApiKeyAuthToProviders({ hanakoHome, providerRegistr
       changed = true;
     }
 
+    // Local plugin definitions own the URL, protocol and model capabilities.
+    // models.json is an older projection at this point: copying its URL/API
+    // into the overlay would undo a provider edit on every reload.
+    if (entry?.source?.kind === "local-provider-plugin") {
+      if (changed) {
+        providers[providerId] = next;
+        migratedProviders.push(providerId);
+      }
+      continue;
+    }
+
     const baseUrl = current.base_url || modelsJsonProvider?.baseUrl || entry?.baseUrl || "";
     if (baseUrl && !hasOwn(current, "base_url")) {
       next.base_url = baseUrl;
@@ -196,10 +207,7 @@ export function migrateLegacyApiKeyAuthToProviders({ hanakoHome, providerRegistr
       changed = true;
     }
 
-    if (entry?.source?.kind === "local-provider-plugin") {
-      // Local provider plugin definition owns model metadata. Avoid writing models.json
-      // ids into the catalog overlay, where a bare id can erase model capability fields.
-    } else if (!hasOwn(current, "models") || !Array.isArray(current.models)) {
+    if (!hasOwn(current, "models") || !Array.isArray(current.models)) {
       const modelIds = modelIdsFromModelsJsonProvider(modelsJsonProvider);
       const seededModels = modelIds.length > 0
         ? modelIds

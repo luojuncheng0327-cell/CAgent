@@ -1,85 +1,109 @@
 {
   "schemaVersion": 1,
-  "tag": "v0.450.0",
-  "version": "0.450.0",
-  "previousTag": "v0.449.0",
-  "generatedAt": "2026-08-22T01:36:00.000Z",
+  "tag": "v0.450.1",
+  "version": "0.450.1",
+  "previousTag": "v0.450.0",
+  "generatedAt": "2026-09-26T22:57:43.994Z",
   "noUserFacingChanges": false,
   "summary": {
-    "zh": "DeepSeek 思考档位按官方规格重整：新增更快更省的低档，并修好此前中档与高档发出完全相同请求的问题；同时补全视觉模型的登记，让它在 Responses 通道和自定义供应商配置中都能正常使用。",
-    "en": "DeepSeek thinking levels now follow the official ladder: a faster, cheaper low tier is available, and the previous behavior where the medium and high tiers sent identical requests is fixed. The vision model's registration is also completed, so it works on the Responses endpoint and in custom provider setups."
+    "zh": "完善 Claude Responses 配置、首次初始化与关于页面，接通带签名校验的 Gitee 内容更新。",
+    "en": "Improves Claude Responses configuration, initial setup and About, with signed content updates from Gitee."
   },
   "counts": {
     "feature": 0,
-    "fix": 2,
-    "improvement": 0,
+    "fix": 3,
+    "improvement": 1,
     "migration": 0
   },
   "source": {
-    "owner": "liliMozi",
-    "repo": "openhanako",
-    "commitRange": "v0.449.0..v0.450.0",
-    "releaseUrl": "https://github.com/liliMozi/openhanako/releases/tag/v0.450.0",
+    "owner": "luo-juncheng666",
+    "repo": "cagent",
+    "commitRange": "v0.450.0..v0.450.1",
+    "releaseUrl": "https://gitee.com/luo-juncheng666/cagent/releases/tag/v0.450.1",
     "releaseNotes": ""
   },
   "items": [
     {
-      "id": "deepseek-thinking-levels",
+      "id": "provider-settings",
       "kind": "fix",
       "importance": "high",
       "title": {
-        "zh": "DeepSeek 的思考档位每一档都真实生效",
-        "en": "Every DeepSeek thinking level now has a real effect"
+        "zh": "供应商接口设置正确保存",
+        "en": "Provider protocol settings persist"
       },
       "summary": {
-        "zh": "DeepSeek 官方只接受低、高、最高三档思考强度。此前 Hana 对它使用通用档位表，界面上的中档与高档实际发出完全相同的请求，而官方的低档根本选不到。现在按官方规格声明档位：补上低档，去掉重复的中档。",
-        "en": "DeepSeek's API accepts only three thinking effort tiers: low, high and max. Hana previously used the generic ladder for it, where the medium and high tiers produced identical requests and the official low tier was unreachable. The ladder now matches the official one: low is available and the duplicate medium rung is gone."
+        "zh": "修复自定义供应商的接口类型与地址在刷新时被旧配置覆盖的问题，支持已配置的 Claude Responses 与 Max 档位。",
+        "en": "Custom provider protocols and URLs no longer revert during refresh, preserving configured Claude Responses and Max effort."
       },
-      "details": [
-        {
-          "zh": "适用于 DeepSeek V4 Pro、V4 Flash 与 V4 Flash Vision（实验版），默认停在高档，与官方默认一致。",
-          "en": "Applies to DeepSeek V4 Pro, V4 Flash and V4 Flash Vision (Experimental). The default is the high tier, matching DeepSeek's own default."
-        },
-        {
-          "zh": "此前选中中档的会话会自动落到高档。这两档原本就在发送同样的请求，因此实际行为没有变化。",
-          "en": "Sessions that had selected the medium tier now resolve to high. Both tiers were already sending the same request, so actual behavior is unchanged."
-        }
-      ],
+      "details": [],
       "sources": [
         {
           "type": "commit",
-          "ref": "169619375",
-          "title": "feat(models): declare DeepSeek's official thinking levels and finish registering its vision model"
+          "ref": "v0.450.1",
+          "title": "Provider protocol settings persist"
         }
       ]
     },
     {
-      "id": "deepseek-vision-model-registration",
+      "id": "onboarding-protocols",
       "kind": "fix",
-      "importance": "medium",
+      "importance": "high",
       "title": {
-        "zh": "DeepSeek 视觉模型在更多场景下可用",
-        "en": "The DeepSeek vision model works in more places"
+        "zh": "初始化提供完整接口选项",
+        "en": "All API protocols available during setup"
       },
       "summary": {
-        "zh": "DeepSeek V4 Flash Vision（实验版）此前只登记在内置模型词典里，于是在 Responses 通道上选不到它，自定义供应商配置也查不出它的规格。现已补全登记。",
-        "en": "DeepSeek V4 Flash Vision (Experimental) was only registered in the built-in model catalog, so it could not be selected on the Responses endpoint and custom provider setups could not resolve its specifications. Its registration is now complete."
+        "zh": "初始化与设置页共用五种接口类型，名称、地址和接口选择框对齐。",
+        "en": "Setup shares all five API protocols with Settings and aligns the form controls."
       },
-      "details": [
-        {
-          "zh": "DeepSeek 官方文档确认 Responses 通道支持该模型，现在可以在该通道下正常选用。",
-          "en": "DeepSeek's documentation confirms the Responses endpoint supports this model, and it can now be selected there."
-        },
-        {
-          "zh": "通用模型回退表补上了它的上下文长度、输出上限与图片输入能力，自定义供应商指向 DeepSeek 时不再查不到规格。",
-          "en": "The generic model fallback table now carries its context window, output limit and image input capability, so custom providers pointing at DeepSeek can resolve its specifications."
-        }
-      ],
+      "details": [],
       "sources": [
         {
           "type": "commit",
-          "ref": "169619375",
-          "title": "feat(models): declare DeepSeek's official thinking levels and finish registering its vision model"
+          "ref": "v0.450.1",
+          "title": "All API protocols available during setup"
+        }
+      ]
+    },
+    {
+      "id": "gitee-updates",
+      "kind": "fix",
+      "importance": "high",
+      "title": {
+        "zh": "接通 Gitee 内容更新",
+        "en": "Gitee content updates"
+      },
+      "summary": {
+        "zh": "支持分片下载和逐片、整包校验，更新信息缺失时提供明确提示及完整详情。",
+        "en": "Content updates support split downloads with per-part and archive verification; unavailable feeds show a clear status and full details."
+      },
+      "details": [],
+      "sources": [
+        {
+          "type": "commit",
+          "ref": "v0.450.1",
+          "title": "Gitee content updates"
+        }
+      ]
+    },
+    {
+      "id": "about-fork",
+      "kind": "improvement",
+      "importance": "high",
+      "title": {
+        "zh": "更新维护者与仓库信息",
+        "en": "Updated maintainer and repository"
+      },
+      "summary": {
+        "zh": "关于页显示 @呈平安，并链接到本项目的 Gitee 仓库。",
+        "en": "About displays @呈平安 and links to this project on Gitee."
+      },
+      "details": [],
+      "sources": [
+        {
+          "type": "commit",
+          "ref": "v0.450.1",
+          "title": "Updated maintainer and repository"
         }
       ]
     }

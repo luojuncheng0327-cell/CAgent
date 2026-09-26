@@ -8,6 +8,14 @@ export interface ProviderPreset {
   custom?: boolean;
 }
 
+export const API_FORMAT_OPTIONS = [
+  { value: 'openai-completions', label: 'OpenAI Compatible' },
+  { value: 'google-generative-ai', label: 'Google Gemini' },
+  { value: 'anthropic-messages', label: 'Anthropic Messages' },
+  { value: 'openai-responses', label: 'OpenAI Responses' },
+  { value: 'openai-codex-responses', label: 'ChatGPT Codex (Plus/Pro)' },
+];
+
 export const API_PROVIDER_PRESETS: ProviderPreset[] = [
   { value: 'ollama',      label: 'Ollama (Local)',       labelZh: 'Ollama (本地)',       url: 'http://localhost:11434/v1', api: 'openai-completions', local: true },
   { value: 'dashscope',   label: 'DashScope (Qwen)',     url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', api: 'openai-completions' },

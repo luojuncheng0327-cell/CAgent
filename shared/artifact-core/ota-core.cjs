@@ -158,6 +158,7 @@ const fsp = require("fs/promises");
 const https = require("https");
 const path = require("path");
 const crypto = require("crypto");
+const { pipeline } = require("stream/promises");
 
 const manifestModule = require("./manifest.cjs");
 const pointerStore = require("./pointer-store.cjs");
@@ -691,11 +692,34 @@ function nowIso() {
  * `onProgress(receivedBytes)` is forwarded to the network download only
  * (a local dev-override copy is effectively instant and reports nothing).
  */
-async function stageArtifact({ finalPath, entry, mirrors, localDir, log, label, onProgress }) {
+async function stageArtifact({ finalPath, entry, mirrors, localDir, log, label, onProgress, fetchOnce }) {
   const maxBytes = entry.size + Math.max(Math.round(entry.size * 0.05), 5 * 1024 * 1024);
   const partPath = `${finalPath}.part`;
 
-  if (localDir) {
+  if (Array.isArray(entry.parts)) {
+    const chunkPath = `${finalPath}.chunk`;
+    let received = 0;
+    try {
+      await fsp.rm(partPath, { force: true });
+      for (const [index, part] of entry.parts.entries()) {
+        await stageArtifact({
+          finalPath: chunkPath, entry: part, mirrors, localDir, log,
+          label: `${label} part ${index + 1}/${entry.parts.length}`, fetchOnce,
+          onProgress: onProgress ? (bytes) => onProgress(received + bytes) : undefined,
+        });
+        const size = (await fsp.stat(chunkPath)).size;
+        if (size !== part.size) throw new Error(`size mismatch staging ${label} part ${index + 1}`);
+        await pipeline(fs.createReadStream(chunkPath), fs.createWriteStream(partPath, { flags: "a" }));
+        received += size;
+      }
+      if (received !== entry.size) throw new Error(`size mismatch staging ${label}`);
+      await fsp.rename(partPath, finalPath);
+    } finally {
+      await fsp.rm(chunkPath, { force: true }).catch(() => {});
+      await fsp.rm(`${chunkPath}.part`, { force: true }).catch(() => {});
+      await fsp.rm(partPath, { force: true }).catch(() => {});
+    }
+  } else if (localDir) {
     const sourcePath = path.join(localDir, entry.path);
     await fsp.rm(partPath, { force: true }).catch(() => {});
     await fsp.copyFile(sourcePath, partPath);
@@ -710,7 +734,7 @@ async function stageArtifact({ finalPath, entry, mirrors, localDir, log, label, 
       const url = `${String(mirrorBase).replace(/\/+$/, "")}/${entry.path}`;
       try {
         await fsp.rm(partPath, { force: true }).catch(() => {});
-        await downloadToFile(url, partPath, { maxBytes, timeoutMs: DOWNLOAD_REQUEST_TIMEOUT_MS, onProgress });
+        await downloadToFile(url, partPath, { maxBytes, timeoutMs: DOWNLOAD_REQUEST_TIMEOUT_MS, onProgress, fetchOnce });
         await fsp.rename(partPath, finalPath);
         staged = true;
         break;
@@ -1774,6 +1798,7 @@ module.exports = {
   fetchWithRedirects,
   fetchBuffer,
   downloadToFile,
+  stageArtifact,
   fetchChannelManifest,
   checkOnce,
   downloadAndApplyArtifacts,

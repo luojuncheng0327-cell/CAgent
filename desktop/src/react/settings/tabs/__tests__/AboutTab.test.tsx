@@ -255,6 +255,56 @@ describe('AboutTab', () => {
     expect(screen.queryByText('settings.about.updateCheckBtn')).toBeNull();
   });
 
+  it('distinguishes an unavailable Gitee update feed from a successful update check', () => {
+    installHana();
+    const lastError = 'artifact-ota: Gitee channel manifest request failed: artifact-ota: HTTP 404 for https://gitee.com/luo-juncheng666/cagent/raw/master/updates/channels/stable.json';
+    trainOverride = { ...DEFAULT_TRAIN_OVERRIDE, lastError, lastCheckedAt: '2026-09-27T00:00:00.000Z' };
+
+    render(<AboutTab />);
+
+    expect(screen.getByText('settings.about.updateSourceNotReady')).toBeTruthy();
+    expect(screen.getByText('settings.about.updateSourceNotReadyHint')).toBeTruthy();
+    expect(screen.queryByText('settings.about.updateLatestCheckedAt')).toBeNull();
+    expect(screen.queryByText('settings.about.updateError')).toBeNull();
+    const details = screen.getByText(lastError).closest('details');
+    expect(details).toBeTruthy();
+    expect(details?.hasAttribute('open')).toBe(false);
+    expect(screen.getByText('settings.about.updateErrorDetails')).toBeTruthy();
+    fireEvent.click(screen.getByText('settings.about.updateRetryBtn'));
+    expect(checkTrainNow).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    'artifact-ota: Gitee channel manifest request failed: artifact-ota: HTTP 503 for https://gitee.com/updates/channels/stable.json',
+    'artifact-ota: Gitee channel manifest failed signature or schema verification',
+    'artifact-ota: HTTP 404 for https://gitee.com/releases/renderer.zip',
+  ])('keeps other update failures visible: %s', (lastError) => {
+    installHana();
+    trainOverride = { ...DEFAULT_TRAIN_OVERRIDE, lastError };
+
+    render(<AboutTab />);
+
+    expect(screen.getByText('settings.about.updateError')).toBeTruthy();
+    expect(screen.queryByText('settings.about.updateSourceNotReady')).toBeNull();
+    expect(screen.getByText(lastError).closest('details')).toBeTruthy();
+    expect(screen.queryByText('settings.about.updateLatestCheckedAt')).toBeNull();
+  });
+
+  it('links to this fork on Gitee and displays its copyright', () => {
+    const openExternal = vi.fn();
+    installHana({ openExternal });
+
+    render(<AboutTab />);
+
+    expect(screen.getByText('© 2026 @呈平安')).toBeTruthy();
+    expect(screen.getByText('Apache License 2.0')).toBeTruthy();
+    const repository = screen.getByRole('link', { name: /gitee.com\/luo-juncheng666\/cagent/ });
+    expect(repository.getAttribute('href')).toBe('https://gitee.com/luo-juncheng666/cagent');
+    fireEvent.click(repository);
+    expect(openExternal).toHaveBeenCalledWith('https://gitee.com/luo-juncheng666/cagent');
+    expect(screen.queryByText('github.com/liliMozi')).toBeNull();
+  });
+
   it('up-to-date: only shows the "latest, last checked at" line when there is no available update and no error', () => {
     installHana();
     useSettingsStore.setState({ settingsConfig: { auto_check_updates: true, update_channel: 'stable' } });

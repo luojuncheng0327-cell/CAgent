@@ -3,6 +3,117 @@
   "entries": [
     {
       "schemaVersion": 1,
+      "tag": "v0.450.1",
+      "version": "0.450.1",
+      "previousTag": "v0.450.0",
+      "generatedAt": "2026-09-26T22:57:43.994Z",
+      "noUserFacingChanges": false,
+      "summary": {
+        "zh": "完善 Claude Responses 配置、首次初始化与关于页面，接通带签名校验的 Gitee 内容更新。",
+        "en": "Improves Claude Responses configuration, initial setup and About, with signed content updates from Gitee."
+      },
+      "counts": {
+        "feature": 0,
+        "fix": 3,
+        "improvement": 1,
+        "migration": 0
+      },
+      "source": {
+        "owner": "luo-juncheng666",
+        "repo": "cagent",
+        "commitRange": "v0.450.0..v0.450.1",
+        "releaseUrl": "https://gitee.com/luo-juncheng666/cagent/releases/tag/v0.450.1",
+        "releaseNotes": ""
+      },
+      "items": [
+        {
+          "id": "provider-settings",
+          "kind": "fix",
+          "importance": "high",
+          "title": {
+            "zh": "供应商接口设置正确保存",
+            "en": "Provider protocol settings persist"
+          },
+          "summary": {
+            "zh": "修复自定义供应商的接口类型与地址在刷新时被旧配置覆盖的问题，支持已配置的 Claude Responses 与 Max 档位。",
+            "en": "Custom provider protocols and URLs no longer revert during refresh, preserving configured Claude Responses and Max effort."
+          },
+          "details": [],
+          "sources": [
+            {
+              "type": "commit",
+              "ref": "v0.450.1",
+              "title": "Provider protocol settings persist"
+            }
+          ]
+        },
+        {
+          "id": "onboarding-protocols",
+          "kind": "fix",
+          "importance": "high",
+          "title": {
+            "zh": "初始化提供完整接口选项",
+            "en": "All API protocols available during setup"
+          },
+          "summary": {
+            "zh": "初始化与设置页共用五种接口类型，名称、地址和接口选择框对齐。",
+            "en": "Setup shares all five API protocols with Settings and aligns the form controls."
+          },
+          "details": [],
+          "sources": [
+            {
+              "type": "commit",
+              "ref": "v0.450.1",
+              "title": "All API protocols available during setup"
+            }
+          ]
+        },
+        {
+          "id": "gitee-updates",
+          "kind": "fix",
+          "importance": "high",
+          "title": {
+            "zh": "接通 Gitee 内容更新",
+            "en": "Gitee content updates"
+          },
+          "summary": {
+            "zh": "支持分片下载和逐片、整包校验，更新信息缺失时提供明确提示及完整详情。",
+            "en": "Content updates support split downloads with per-part and archive verification; unavailable feeds show a clear status and full details."
+          },
+          "details": [],
+          "sources": [
+            {
+              "type": "commit",
+              "ref": "v0.450.1",
+              "title": "Gitee content updates"
+            }
+          ]
+        },
+        {
+          "id": "about-fork",
+          "kind": "improvement",
+          "importance": "high",
+          "title": {
+            "zh": "更新维护者与仓库信息",
+            "en": "Updated maintainer and repository"
+          },
+          "summary": {
+            "zh": "关于页显示 @呈平安，并链接到本项目的 Gitee 仓库。",
+            "en": "About displays @呈平安 and links to this project on Gitee."
+          },
+          "details": [],
+          "sources": [
+            {
+              "type": "commit",
+              "ref": "v0.450.1",
+              "title": "Updated maintainer and repository"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "schemaVersion": 1,
       "tag": "v0.450.0",
       "version": "0.450.0",
       "previousTag": "v0.449.0",

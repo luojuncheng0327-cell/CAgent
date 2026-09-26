@@ -3464,6 +3464,7 @@ html[data-platform="linux"] .onboarding {
 }
 .custom-provider-fields {
     display: flex;
+    align-items: flex-end;
     gap: 8px;
     width: 100%;
 }
@@ -3478,6 +3479,9 @@ html[data-platform="linux"] .onboarding {
 }
 .custom-field .ob-input {
     width: 100%;
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    padding: 0.55rem 0.8rem;
 }
 
 .ob-select-widget {

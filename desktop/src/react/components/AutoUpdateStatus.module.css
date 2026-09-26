@@ -278,3 +278,28 @@ section + section .digestVersionHeading {
   white-space: nowrap;
   opacity: 0.68;
 }
+
+.errorDetails {
+  min-width: 0;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.errorDetails summary {
+  width: fit-content;
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+.errorDetails pre {
+  max-height: 160px;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font: inherit;
+  background: var(--overlay-light, rgba(0, 0, 0, 0.04));
+  border-radius: 4px;
+  user-select: text;
+}
