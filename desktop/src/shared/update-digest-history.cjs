@@ -1,33 +1,21 @@
 /**
  * Settings > About update history.
  *
- * GitHub Releases is the release source of truth. The installed v2 anthology is
+ * This fork's Gitee feed is the release source of truth. The installed v2 anthology is
  * only an explicit offline fallback because older app packages cannot contain
  * releases published after they were built.
  */
 
-const DEFAULT_RELEASES_API = "https://api.github.com/repos/liliMozi/openhanako/releases?per_page=20&page=1";
-const DEFAULT_RELEASE_ASSET_BASE = "https://github.com/liliMozi/openhanako/releases/download";
-const DIGEST_ASSET_NAME = "release-digest.v1.json";
+const { feedUrl } = require("../../../shared/release-source.cjs");
+const HISTORY_URL = `${feedUrl}release-digest.v2.json`;
 const HISTORY_LIMIT = 5;
-const RELEASE_SCAN_LIMIT = 10;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_RELEASES_BODY_CHARS = 512 * 1024;
-const MAX_DIGEST_BODY_CHARS = 128 * 1024;
 
 function versionFromTag(tag) {
   const match = /^v(\d+\.\d+\.\d+)$/.exec(String(tag || "").trim());
   return match ? match[1] : null;
-}
-
-function hasDigestAsset(release) {
-  return Array.isArray(release?.assets)
-    && release.assets.some((asset) => asset?.name === DIGEST_ASSET_NAME);
-}
-
-function digestUrl(tag) {
-  return `${DEFAULT_RELEASE_ASSET_BASE}/${encodeURIComponent(tag)}/${DIGEST_ASSET_NAME}`;
 }
 
 async function fetchJson(fetchImpl, url, { maxChars, timeoutMs }) {
@@ -36,7 +24,7 @@ async function fetchJson(fetchImpl, url, { maxChars, timeoutMs }) {
   try {
     const response = await fetchImpl(url, {
       headers: {
-        Accept: "application/vnd.github+json",
+        Accept: "application/json",
         "User-Agent": "HanaAgent-update-history",
       },
       signal: controller.signal,
@@ -55,34 +43,24 @@ async function fetchJson(fetchImpl, url, { maxChars, timeoutMs }) {
 }
 
 async function loadOnlineEntries({ fetchImpl, normalize, timeoutMs }) {
-  const releases = await fetchJson(fetchImpl, DEFAULT_RELEASES_API, {
+  const history = await fetchJson(fetchImpl, HISTORY_URL, {
     maxChars: MAX_RELEASES_BODY_CHARS,
     timeoutMs,
   });
-  if (!Array.isArray(releases)) {
-    throw new Error("GitHub releases response is not an array");
+  if (history?.schema !== 2 || !Array.isArray(history.entries)) {
+    throw new Error("Gitee update history is not a valid v2 history");
   }
-
-  const candidates = releases
-    .filter((release) => release && release.draft === false)
-    .filter((release) => versionFromTag(release.tag_name) && hasDigestAsset(release))
-    .slice(0, RELEASE_SCAN_LIMIT);
-
-  const settled = await Promise.all(candidates.map(async (release) => {
-    const version = versionFromTag(release.tag_name);
-    if (!version) return null;
+  const entries = [];
+  for (const payload of history.entries) {
+    const version = versionFromTag(payload?.tag);
+    if (!version) continue;
     try {
-      const payload = await fetchJson(fetchImpl, digestUrl(release.tag_name), {
-        maxChars: MAX_DIGEST_BODY_CHARS,
-        timeoutMs,
-      });
-      return normalize(payload, version);
-    } catch {
-      return null;
-    }
-  }));
-
-  return settled.filter(Boolean).slice(0, HISTORY_LIMIT);
+      const entry = normalize(payload, version);
+      if (entry && !entries.some(existing => existing.version === entry.version)) entries.push(entry);
+    } catch { /* skip malformed entries while retaining the rest of the history */ }
+    if (entries.length === HISTORY_LIMIT) break;
+  }
+  return entries;
 }
 
 function createUpdateDigestHistoryLoader({

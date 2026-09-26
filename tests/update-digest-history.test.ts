@@ -21,25 +21,9 @@ function response(body: unknown, status = 200) {
 }
 
 describe('update digest history loader', () => {
-  it('loads and validates the newest five published releases in website order', async () => {
-    const releases = [
-      ['0.500.5', false],
-      ['0.500.4', false],
-      ['0.500.3', true],
-      ['0.500.2', false],
-      ['0.500.1', false],
-      ['0.500.0', false],
-      ['0.499.9', false],
-    ].map(([version, draft]) => ({
-      tag_name: `v${version}`,
-      draft,
-      assets: [{ name: 'release-digest.v1.json' }],
-    }));
-    const fetchImpl = vi.fn(async (url: string) => {
-      if (url.includes('/releases?')) return response(releases);
-      const match = /download\/v([^/]+)\//.exec(url);
-      return response(digest(match?.[1] || 'invalid'));
-    });
+  it('loads the newest five published entries from this fork on Gitee', async () => {
+    const entries = ['0.500.5', '0.500.4', '0.500.2', '0.500.1', '0.500.0', '0.499.9'].map(digest);
+    const fetchImpl = vi.fn(async () => response({ schema: 2, entries }));
     const normalize = vi.fn((value: ReturnType<typeof digest>, expectedVersion: string) => (
       value.version === expectedVersion ? value : null
     ));
@@ -62,20 +46,20 @@ describe('update digest history loader', () => {
       '0.500.1',
       '0.500.0',
     ]);
-    expect(normalize).toHaveBeenCalledTimes(6);
+    expect(normalize).toHaveBeenCalledTimes(5);
+    expect(fetchImpl).toHaveBeenCalledExactlyOnceWith(
+      'https://gitee.com/luo-juncheng666/cagent/raw/master/updates/release-digest.v2.json',
+      expect.any(Object),
+    );
   });
 
-  it('skips missing or invalid digest assets and keeps scanning newer releases first', async () => {
-    const releases = [
-      { tag_name: 'v0.500.5', draft: false, assets: [] },
-      { tag_name: 'v0.500.4', draft: false, assets: [{ name: 'release-digest.v1.json' }] },
-      { tag_name: 'v0.500.3', draft: false, assets: [{ name: 'release-digest.v1.json' }] },
+  it('skips malformed and duplicate entries without contacting another release source', async () => {
+    const entries = [
+      { ...digest('0.500.5'), tag: 'invalid' },
+      { ...digest('0.500.4'), version: '0.400.0' },
+      digest('0.500.3'), digest('0.500.3'),
     ];
-    const fetchImpl = vi.fn(async (url: string) => {
-      if (url.includes('/releases?')) return response(releases);
-      if (url.includes('v0.500.4')) return response(digest('0.400.0'));
-      return response(digest('0.500.3'));
-    });
+    const fetchImpl = vi.fn(async () => response({ schema: 2, entries }));
     const normalize = (value: ReturnType<typeof digest>, expectedVersion: string) => (
       value.version === expectedVersion ? value : null
     );
@@ -107,14 +91,7 @@ describe('update digest history loader', () => {
   });
 
   it('caches a successful website result to avoid repeated API requests', async () => {
-    const releases = [{
-      tag_name: 'v0.500.1',
-      draft: false,
-      assets: [{ name: 'release-digest.v1.json' }],
-    }];
-    const fetchImpl = vi.fn(async (url: string) => (
-      url.includes('/releases?') ? response(releases) : response(digest('0.500.1'))
-    ));
+    const fetchImpl = vi.fn(async () => response({ schema: 2, entries: [digest('0.500.1')] }));
 
     const { createUpdateDigestHistoryLoader } = await import('../desktop/src/shared/update-digest-history.cjs');
     const load = createUpdateDigestHistoryLoader({
@@ -126,6 +103,6 @@ describe('update digest history loader', () => {
     await load();
     await load();
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
