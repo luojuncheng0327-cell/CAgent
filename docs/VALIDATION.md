@@ -136,3 +136,12 @@
 - 每条例外必须写明类别、我们的文件、审核时的最大尺寸、理由和日期，可限定参考文件和必须包含的文字；缺字段时检查直接报错。
 - 例外只放行同类别、同文件且不超过审核尺寸的发现：重合变大、换文件、换类别或文字不同都会重新判为越线。放行项和已不再命中的例外都写进报告。
 - `tests/similarity.test.ts` 新增 1 项覆盖以上规则。
+
+## 界面字体 · 2026-09-27
+
+为 1:1 复刻原版外观，按维护者同意从 Google Fonts 官方渠道获取原版所用的 5 个 SIL OFL 字体家族：Inter（界面）、EB Garamond 与 Noto Serif SC（衬线正文和标题）、PT Serif（编辑器衬线）、JetBrains Mono（代码）。字体名称来自原版运行时实际加载的字体列表；文件不从原工作区复制。
+
+- `scripts/fetch-fonts.mjs` 调用官方 CSS 接口，保存 Google 按字符范围切分的 woff2 原文件（不修改），跳过西里尔 / 希腊 / 越南语分片：115 个文件、6.37 MB，其中 Noto Serif SC 99 片。许可证原文取自 google/fonts 官方仓库；`src/ui/fonts/sources.json` 记录每个文件的来源网址、大小和 SHA-256。
+- `src/ui/fonts/fonts.css` 由脚本生成并经 Prettier 排版；Vite 构建输出 115 个 woff2。`build.assetsInlineLimit` 设为 0，因为页面 CSP 只允许同源字体，不能内嵌成 `data:` 地址。
+- 实际加载：临时数据目录启动本应用，在 CSP 下逐个加载 Inter 400 / 600、EB Garamond 常规 / 斜体、PT Serif、Noto Serif SC 400 / 700、JetBrains Mono，全部为 loaded，控制台没有 CSP 或字体错误。
+- 相似度检查发现脚本中的标准 Chrome User-Agent 与原工作区一个文件的同类字符串有 16 个单位相同。这是公共约定，登记为第一条已审核例外（最大 23 个单位，即整串）。
