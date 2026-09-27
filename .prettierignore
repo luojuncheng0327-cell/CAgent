@@ -1,4 +1,5 @@
-# JSON / Markdown / YAML 由脚本生成或由 pnpm 维护，格式以生成方为准
+# 不参与 Prettier 格式化：全部 Markdown（手写文档和脚本生成的文档）、
+# JSON（由脚本或 pnpm 生成维护）、YAML（pnpm 维护）以及 .codex/ 交接文件
 *.json
 *.md
 *.yaml

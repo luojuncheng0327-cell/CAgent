@@ -1,6 +1,31 @@
 # 验证记录
 
-## 规格基线 · 2026-09-27
+本文件按时间记录每一轮实际执行的检查、结果和遇到的问题。开头的“当前结论”每轮更新；“相似度检查的已审核例外”是常设规则；后面的“历史记录”保留各轮当时的原文和数字作为证据，那些数字只代表当时的状态。以下各轮都发生在 2026-09-27。
+
+文中提到的日志和截图保存在本机 `.artifacts/`，不进 git。2026-09-27 整理时删掉了无人引用的旧日志和重复截图，仍被引用的日志移到了 `.artifacts/logs/`；结果以本文记录为准。
+
+## 当前结论
+
+最后更新：2026-09-27，文档整理之后（台账重建提交 `85925fa`、`3f10d78`）。
+
+- `pnpm run verify` 全部通过：格式；生成的状态文件是最新的；类型；61 项单元 / 服务测试，0 失败 / 0 跳过；UI 与 Electron 构建；独立性检查覆盖 `src/` 下 161 个文件，违规 0，原目录 2,901 个受版本管理文件的指纹一致；相似度检查越线 0（代码最长 78 词元，单文件累计最高 24.4%，文字最长 16 单位即已审核的浏览器标识例外，CSS 最长 5 条）。
+- `pnpm run test:desktop` 六组共 68 项检查全部通过，页面异常 0：smoke 10、p1-p2 12、appearance 7、layout 8、menus 12、documents 19。最近一次运行对应 `bc7ff4e` 的代码；之后只改了脚本和文档，没有改界面或桌面代码。
+- 进度：必做 208 项中本机已验证 22、部分实现 56、未开始 130；另有计划中 1 项、外部待定 1 项。逐项见 `docs/功能实现情况.md`。
+- 发布门禁关闭：`node scripts/release-gate.mjs` 按设计退出 1。
+- 从未验证：真实账号和收费模型、订阅 OAuth、外部消息平台、跨平台、系统沙盒、安装与更新、所有窗口宽度和多语言的视觉矩阵。
+
+## 相似度检查的已审核例外
+
+维护者确定复制尺度为“只放宽公共约定”（提交 `0ccb9c1`）：代码仍全部自行编写；与原版重合但属于公共约定的内容（标准浏览器标识、协议规定的字段或字符串、通用写法、颜色尺寸等外观数值）不必为避开检查而绕写，登记到 `scripts/similarity-exceptions.json`。原版的函数、组件、CSS 文件和独创文案仍不允许复制。
+
+- 每条例外必须写明类别、我们的文件、审核时的最大尺寸、理由和日期，可限定参考文件和必须包含的文字；缺字段时检查直接报错。
+- 例外只放行同类别、同文件且不超过审核尺寸的发现：重合变大、换文件、换类别或文字不同都会重新判为越线。放行项和已不再命中的例外都写进报告。
+- `tests/similarity.test.ts` 新增 1 项覆盖以上规则。
+- 目前只有 1 条例外：`scripts/fetch-fonts.mjs` 里的标准 Chrome 浏览器标识（User-Agent），整串 23 个单位（见第 9 轮）。
+
+## 历史记录
+
+### 1. 规格基线（`8f6403b`）
 
 - 交接文档已读取；用户确认允许通用基础技术，禁止继承或依赖任何现成开源应用实现。
 - 已独立编写 210 项规格，涵盖 23 个能力域。其中 208 项为完整产品的必需项；语音合成为旧占位能力，旧商业邀请服务为外部服务决策项。
@@ -8,7 +33,7 @@
 - 旧应用没有在本轮运行；其历史测试不计入新实现验收。
 - 规格基线先提交为独立根提交 `8f6403b`，再开始产品代码实现；新仓库没有 upstream / origin。
 
-## 独立实现主链 · 2026-09-27
+### 2. 独立实现主链（`38de016`）
 
 实际环境：Windows，Node.js 24.19.0，Electron 44.4.5，React 19.3.0，TypeScript 5.9.3，Vite 8.3.1。依赖来自通用基础库，没有 Pi SDK、旧 CAgent 模块或其他 Agent 应用依赖。
 
@@ -34,9 +59,9 @@
 
 可视证据：`.artifacts/chat-desktop.png` 和 `.artifacts/settings-desktop.png`，已实际查看，无主要遮挡和裁切。截图中的模型服务是本机测试夹具，不是用户真实账号。
 
-## 首个切片的未完成范围（历史快照，最新状态见「P1/P2 延续实现」一节）
+### 3. 首个切片的未完成范围（历史快照，`38de016` 时）
 
-完整 210 项规格尚未实现。逐项状态见 `spec/implementation-status.json` / `docs/IMPLEMENTATION-STATUS.md`：14 项有本机验证切片，53 项部分实现，141 项尚未开始；另外 1 项为旧占位功能，1 项为外部服务决策。数字不表示完整产品验收通过率。
+完整 210 项规格尚未实现。逐项状态见 `spec/implementation-status.json` / `docs/IMPLEMENTATION-STATUS.md`（该文件后来由 `docs/功能实现情况.md` 取代，见第 14 轮）：14 项有本机验证切片，53 项部分实现，141 项尚未开始；另外 1 项为旧占位功能，1 项为外部服务决策。数字不表示完整产品验收通过率。
 
 当前没有自动化调度、MCP、Skills、插件、Bridge、原生 Computer Use、完整附件 / 媒体、LAN / 设备体系、旧 `.hanako` 导入器、完整上下文压缩、安装包、签名更新或跨平台实机验收。原生命令目前没有 OS 沙盒，产品说明和逐次批准中均明确提示。任何网络模型 / OAuth / 消息平台都没有进行真实账号测试。
 
@@ -44,7 +69,7 @@
 
 未 push、未建 Release、未打包旧改造版、未覆盖安装、未读取旧用户凭据或私有签名密钥。旧工作区的现有 WIP 和许可证文件保留。
 
-## P1/P2 延续实现 · 2026-09-27
+### 4. P1/P2 延续实现（`a931531`）
 
 本轮直接延续 `F:\CAgent-independent` 的既有内核。未复制旧应用模块、CSS、资产或提示词，未新增应用框架依赖，未修改冻结的 210 项功能规格。
 
@@ -76,9 +101,9 @@
 
 最新状态由 `scripts/update-status.mjs` 生成：**22 个本机验证切片、56 个部分实现、130 个未开始、1 个 planned、1 个 external_decision**。`verified_local` 只覆盖各行证据和 remaining 所述切片。自动化 / 持续任务、多助手、后台记忆、Skills / MCP、插件、媒体、渠道、多端、旧格式只读预检和安装 / 签名更新仍需继续实现。未发布、未覆盖安装、未修改旧工作区。
 
-## 源码格式统一 · 2026-09-27
+### 5. 源码格式统一（`b022c34`）
 
-新增开发依赖 Prettier 3.9.9（`.prettierrc.json`：单引号、行宽 100），格式化 `scripts/`、`spec/catalog.mjs`、`src/`、`tests/` 和 `vite.config.ts` 共 43 个文件；生成的 JSON、Markdown、YAML 和 `.codex/` 不参与。只改排版，功能和规格状态与上一节相同。
+新增开发依赖 Prettier 3.9.9（`.prettierrc.json`：单引号、行宽 100），格式化 `scripts/`、`spec/catalog.mjs`、`src/`、`tests/` 和 `vite.config.ts` 共 43 个文件；生成的 JSON、Markdown、YAML 和 `.codex/` 不参与（更正：`.prettierignore` 实际排除全部 Markdown，包括手写文档）。只改排版，功能和规格状态与上一节相同。
 
 不改行为的证据：
 
@@ -87,7 +112,7 @@
 - `pnpm run verify`（首步新增格式检查）：类型检查、46 项自动化（0 失败、0 跳过）、构建、独立性检查（违规 0）通过。
 - `pnpm run test:desktop`：两组桌面链路共 22 项检查通过，页面异常 0。
 
-## 词元级相似度检查 · 2026-09-27
+### 6. 词元级相似度检查（`4957682`）
 
 新增 `pnpm run check:similarity`（入口 `scripts/check-similarity.ts`，算法 `scripts/similarity.ts`），量化本仓库代码和文字与 `F:\CAgent` 的相似程度，补上 `check:independent` 查不到的改写式照抄。没有新增依赖，只用已有的 TypeScript 解析器；按冻结快照 `original-state.json` 列出的 tracked 文件只读原工作区，报告只写入 `.artifacts/`。Markdown 报告含原工作区片段，仅在本机审阅，不提交。
 
@@ -115,7 +140,7 @@
 - 更低阈值下的噪声底：至少 30 词元（种类 ≥ 8）144 段，覆盖 2.3%；至少 40 词元（种类 ≥ 10）24 段，覆盖 0.7%。
 - 文案只有 1 段 10 个单位（SQL 列定义 `created_at TEXT NOT NULL …`）；CSS 没有至少 6 条的连续相同声明。
 - 完全相同的字符串 165 条，主要是规格中引用的原文件路径、协议固定字段（如 `text/event-stream`、Anthropic 版本日期）以及 4–8 字的界面短语（如“测试连接”“永久删除”“至少保留一个助手”）。共同命名 183 个，多为官方 API 字段、React 状态函数名和同领域的通用词。
-- 当前限值：单段至少 80 词元；单个文件（至少 150 词元）与同一参考文件累计至少 40%；相同文字至少 16 个单位；连续相同 CSS 至少 8 条。本仓库 0 项越线。限值和是否并入 `verify` 待维护者决定；目前单独运行，本机约 13 秒。
+- 当前限值：单段至少 80 词元；单个文件（至少 150 词元）与同一参考文件累计至少 40%；相同文字至少 16 个单位；连续相同 CSS 至少 8 条。本仓库 0 项越线。限值和是否并入 `verify` 待维护者决定；目前单独运行，本机约 13 秒。（后来维护者确认了这些限值并同意并入 verify，见第 7 轮。）
 
 开发验证：
 
@@ -125,19 +150,15 @@
 
 局限：只和一个参考工作区比较；能发现复制、改名、换格式和轻度改写，逻辑被大幅重组的代码查不出。数字只说明哪里对得上，不是法律鉴定。
 
-## 相似度检查并入 verify · 2026-09-27
+### 7. 相似度检查并入 verify（`3188a15`）
 
 维护者确认上一节的四项限值，并同意把 `check:similarity` 作为 `verify` 的最后一步。`pnpm run verify`：格式、类型、52 项自动化（0 失败、0 跳过）、构建、独立性检查（违规 0）、相似度检查（越线 0；最长 65 词元，文件累计最高 24.4%）通过，本机全程约 24 秒。原工作区不存在时，相似度检查与独立性检查一样只报告不可用，不判失败。
 
-## 相似度检查的已审核例外 · 2026-09-27
+### 8. 相似度检查的已审核例外（`0ccb9c1`）
 
-维护者确定复制尺度为“只放宽公共约定”：代码仍全部自行编写；与原版重合但属于公共约定的内容（标准浏览器标识、协议规定的字段或字符串、通用写法、颜色尺寸等外观数值）不必为避开检查而绕写，登记到 `scripts/similarity-exceptions.json`。原版的函数、组件、CSS 文件和独创文案仍不允许复制。
+这一轮定下的规则已移到本文开头的常设章节“相似度检查的已审核例外”，原文照录在那里。
 
-- 每条例外必须写明类别、我们的文件、审核时的最大尺寸、理由和日期，可限定参考文件和必须包含的文字；缺字段时检查直接报错。
-- 例外只放行同类别、同文件且不超过审核尺寸的发现：重合变大、换文件、换类别或文字不同都会重新判为越线。放行项和已不再命中的例外都写进报告。
-- `tests/similarity.test.ts` 新增 1 项覆盖以上规则。
-
-## 界面字体 · 2026-09-27
+### 9. 界面字体（`4bcea86`）
 
 为 1:1 复刻原版外观，按维护者同意从 Google Fonts 官方渠道获取原版所用的 5 个 SIL OFL 字体家族：Inter（界面）、EB Garamond 与 Noto Serif SC（衬线正文和标题）、PT Serif（编辑器衬线）、JetBrains Mono（代码）。字体名称来自原版运行时实际加载的字体列表；文件不从原工作区复制。
 
@@ -146,7 +167,7 @@
 - 实际加载：临时数据目录启动本应用，在 CSP 下逐个加载 Inter 400 / 600、EB Garamond 常规 / 斜体、PT Serif、Noto Serif SC 400 / 700、JetBrains Mono，全部为 loaded，控制台没有 CSP 或字体错误。
 - 相似度检查发现脚本中的标准 Chrome User-Agent 与原工作区一个文件的同类字符串有 16 个单位相同。这是公共约定，登记为第一条已审核例外（最大 23 个单位，即整串）。
 
-## 界面复刻第 1 步：基础 · 2026-09-27
+### 10. 界面复刻第 1 步：基础（`3757cc8`）
 
 - 用独立命名的 appearance.css 变量接入暖纸 / 青夜；跟随系统订阅颜色模式变化，手选主题不受系统切换影响，偏好重载后保留。Inter 15px / 1.7、阅读 EB Garamond + Noto Serif SC、代码 JetBrains Mono、编辑器 PT Serif 均来自已登记的官方字体。
 - 自行绘制 45 个 SVG 线条图标和圆底首字头像；scripts/draw-paper.mjs 用固定种子生成 680 个细点、42 条短纤维的纹理，无输入图片。没有取用原版图片或字体。
@@ -156,7 +177,7 @@
 - 参考仅从交接指定临时副本启动。Windows 离屏窗口原生边框导致视口偏移，采用运行时 Emulation.setDeviceMetricsOverride 固定 1280×800、deviceScaleFactor=1；原版与本版输出 PNG 均核对为 1280×800。截图合成首次因尺寸不符主动失败（Expected two 1280 x 800 screenshots.），校准后通过；没有拉伸图片充数。
 - Start-Process 后台命令曾被自动审批拦截，改为终端直接运行已审核的 driver.mjs 成功；未安装或启动打包原版，测试使用显式 CAGENT_HOME。
 
-## 界面复刻第 2 步：主界面 · 2026-09-27
+### 11. 界面复刻第 2 步：主界面（`d3174b2`）
 
 实现范围：独立的 Shell.tsx / shell.css 承载 44px 顶栏、240px 左栏、聊天 / 频道分段、欢迎页、输入卡、消息和 260px 书桌；沿用既有服务与会话逻辑。用量移到设置 → 供应商 → 用量，记忆由欢迎页进入，多标签文件改为右侧编辑 / 预览区域。未实现的主界面入口禁用并标注“即将提供”（图标入口通过名称 / 悬停说明标注）。主界面共使用 48 个自绘几何图标，没有引用原版组件、CSS 或资产。
 
@@ -164,7 +185,7 @@
 - 文件编辑保留十个标签、草稿、外部冲突及历史恢复。新增 Markdown / 文本预览读取当前草稿，切回编辑不丢内容；文本编辑与渲染预览是两个模式，尚无原版的直接富文本编辑。编辑器新配置默认改为实测的 PT Serif 16px / 1.5；已有用户保存的字号和行高保持。
 - 参考程序只从临时副本启动。最终所有原始截图均为 1280×800，无缩放拼成 2560×842（顶部 42px 是对照标题）。对照图已逐张实际查看：.artifacts/ui-replica/main-welcome-compare.png、main-chat-compare.png、main-night-compare.png、main-preview-compare.png。基础阶段保留 foundation-compare.png。参考窗口和本轮创建的参考测试文件已关闭 / 清理，临时副本保留供后续引导与设置使用。
 - 同尺寸普通聊天的正文 / 标题 / 列表 / 表格 / 引用抽测：横坐标与宽度一致，纵坐标偏差约 0.28px；欢迎输入卡 y=472.203px，参考 y=472.078px。数值在 main-measurements.json / reference-measurements.json。只代表这个固定场景和这些节点，不是全界面像素一致或完整交互验收。
-- 头像、欢迎文案、未实现入口标记和测试会话数量是已知的对照差别；设置仍沿用现有五类页面（供应商内含用量），六步引导 / 17 类设置复刻尚未做。模型与权限选择目前复用已有原生选择控件；完整弹出菜单样式、富文本直接编辑和其他未完成能力仍需后续补齐。
+- 头像、欢迎文案、未实现入口标记和测试会话数量是已知的对照差别；设置仍沿用现有五类页面（供应商内含用量），六步引导 / 17 类设置复刻尚未做。模型与权限选择目前复用已有原生选择控件；完整弹出菜单样式、富文本直接编辑和其他未完成能力仍需后续补齐。（弹出菜单和直接编辑后来在第 12、13 轮补齐。）
 
 本轮最终验证：pnpm run format、pnpm run verify 全过（53 项测试，0 失败 / 0 跳过；构建、独立性和相似度通过）；pnpm run test:desktop 四组全过，页面异常 0。独立性检查 155 个文件，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元，文件累计最高 24.4%，CSS 最长 5 条；仍只有标准 UA 这 1 条已审核例外。
 
@@ -173,11 +194,11 @@
 1. 新布局测量曾报 Cannot read properties of null (reading 'getBoundingClientRect')：切换会话暂时卸载了书桌。测试增加等待输入框 / 书桌加载完成，保留原尺寸断言。
 2. 文件预览用例曾报 locator.click: Timeout 12000ms exceeded，等待 ui-replica-example.md：测试工作台误放在 CAGENT_HOME 内，应用按设计提示“不能通过工作区工具访问应用私有数据”。已将 home 和 workspace 分开到两个独立临时根，没有放宽安全检查。
 3. 原 smoke 的 page.screenshot: Timeout 30000ms exceeded（waiting for fonts to load... fonts loaded）：改为交接中已验证的 Electron capturePage，并等待字体 / repaint。旧聊天、取消、改名、记忆、退出草稿与重启历史断言全部保留。
-4. 一轮重复启动被 PowerShell 的日志占用拦截：The process cannot access the file ... because it is being used by another process. 这次桌面测试没有启动，退出码不能当作通过证据；停止重叠运行后，用独立日志重新串行执行全部检查。最终日志为 .artifacts/main-verify-final.log 和 .artifacts/main-desktop-delivery.log。
+4. 一轮重复启动被 PowerShell 的日志占用拦截：The process cannot access the file ... because it is being used by another process. 这次桌面测试没有启动，退出码不能当作通过证据；停止重叠运行后，用独立日志重新串行执行全部检查。最终日志为 .artifacts/logs/main-verify-final.log 和 .artifacts/logs/main-desktop-delivery.log。
 
 验证边界：代码复制检查仅和冻结的一个原工作区比较；没有真实账号、收费模型、安装包、跨平台或全部窗口宽度验收。新增复制代码检查使用剪贴板替身核对负载，未改用户系统剪贴板。状态计数仍为 22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision；发布仍禁止。
 
-## 主界面继续：模型、推理与权限菜单 · 2026-09-27
+### 12. 主界面继续：模型、推理与权限菜单（`a0b069f`）
 
 - 接管时核对：分支 `codex/independent-rewrite`，工作区干净，无 remote，最新 `d3174b2`，前一提交 `3757cc8`。已阅读交接、README、本记录的最后两节和公共约定例外，逐张查看原有五张并排图。
 - 原版只运行 `F:\cagent-reference-run\app` 临时副本和既有 driver；显式 CAGENT_HOME / HANA_HOME 指向参考临时 home，工作台为独立目录。实际点击模型 / 推理 / 权限菜单，读取显示尺寸和选项，未复制原组件、函数或 CSS。
@@ -190,9 +211,9 @@
 
 文件区预检也已执行：在参考临时工作台创建 `interaction-sample.md`，双击打开，直接输入 X 后核对落盘，再用撤销还原；参考实际采用自动保存。预览按钮首次被浮层拦截导致点击超时，改用聚焦后 Enter 成功切换并截图，没有修改参考实现。用户已明确批准新增通用 ProseMirror 项目依赖，并选择独立版继续手动保存 + Ctrl+S；此菜单批次尚未接入该依赖或富文本编辑。
 
-最终串行验收：`pnpm run format`、`pnpm run verify`、`pnpm run test:desktop` 全部退出 0。53 项单元 / 服务测试，0 失败 / 0 跳过；桌面五组全部通过，页面异常 0。独立性检查原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元、文件累计最高 24.4%、CSS 最长 5 条，只保留既有标准 UA 公共约定例外。最终日志为 `.artifacts/menus-verify-final.log` 和 `.artifacts/menus-desktop-final.log`。状态由 `node scripts/update-status.mjs` 更新，计数不变，发布门禁仍关闭。
+最终串行验收：`pnpm run format`、`pnpm run verify`、`pnpm run test:desktop` 全部退出 0。53 项单元 / 服务测试，0 失败 / 0 跳过；桌面五组全部通过，页面异常 0。独立性检查原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元、文件累计最高 24.4%、CSS 最长 5 条，只保留既有标准 UA 公共约定例外。最终日志为 `.artifacts/logs/menus-verify-final.log` 和 `.artifacts/logs/menus-desktop-final.log`。状态由 `node scripts/update-status.mjs` 更新，计数不变，发布门禁仍关闭。
 
-## 主界面继续：文件直接编辑 · 2026-09-27
+### 13. 主界面继续：文件直接编辑（`bc7ff4e`）
 
 本节工作由 Codex 在菜单提交 `a0b069f` 之后开始，桌面专项收尾时因额度用完中断；随后由 Claude Code 接手，核对未提交改动和中断前的测试日志，完成剩余测试修正、对照图、文档和提交。
 
@@ -211,7 +232,25 @@
 3. 下一轮测试长时间不结束：失败后的退出流程因草稿未保存弹出原生提示“草稿尚未保存 / 退出前保存未完成。请检查当前会话后再次退出。”，挡住了失败输出。测试的失败分支改为只结束这个一次性测试实例（`app.exit(1)`），应用本身的退出保护不变。
 4. `locator.isDisabled: Timeout 12000ms exceeded`，等待 `getByRole('button', { name: '文档即将提供' })`：按钮的可访问名称由正文和“即将提供”小字拼成，匹配不稳定。按钮改为明确的 `aria-label`（“文档 · 即将提供”，文件列表同样如“unavailable.pdf · 即将提供”），测试按新名称断言。
 5. 同一轮随后报 `EBUSY: resource busy or locked, unlink '...\cagent.sqlite-shm'`：进程还没退出就清理临时目录。改为等进程 close 事件后再删除，删除带有限次重试。
-6. 修正后重跑（Codex 中断前启动，日志 `.artifacts/editor-desktop-recheck-2.log`），前面的检查全部通过，最后“控制台零错误”断言收到 `Failed to load resource: the server responded with a status of 409 (Conflict)`。这是冲突保护步骤故意触发的保存拒绝（FILE_CONFLICT 按设计返回 409），浏览器会自动把失败响应记为控制台错误。测试改为在这一步等待并核对恰好这一条 409 后清空，其余步骤仍要求零错误，覆盖没有降低；重跑 19 项全部通过（`.artifacts/editor-desktop-recheck-3.log`）。
+6. 修正后重跑（Codex 中断前启动，日志 `.artifacts/logs/editor-desktop-recheck-2.log`），前面的检查全部通过，最后“控制台零错误”断言收到 `Failed to load resource: the server responded with a status of 409 (Conflict)`。这是冲突保护步骤故意触发的保存拒绝（FILE_CONFLICT 按设计返回 409），浏览器会自动把失败响应记为控制台错误。测试改为在这一步等待并核对恰好这一条 409 后清空，其余步骤仍要求零错误，覆盖没有降低；重跑 19 项全部通过（`.artifacts/logs/editor-desktop-recheck-3.log`）。
 7. 对照图首次合成的中文标题是乱码：Windows PowerShell 5.1 按系统代码页读取了无 BOM 的 UTF-8 脚本 `compare.ps1`。改为按 UTF-8 读入后执行、重新合成，截图内容本身不受影响。
 
-最终串行验收：`node scripts/update-status.mjs`、`pnpm run format`、`pnpm run verify`、`pnpm run test:desktop` 全部退出 0。61 项单元 / 服务测试，0 失败 / 0 跳过；桌面六组共 68 项检查全部通过（smoke 10、p1-p2 12、appearance 7、layout 8、menus 12、documents 19），每组页面异常 0。独立性检查 161 个应用源文件无违规，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元、文件累计最高 24.4%、文字最长 16 单位（既有 UA 例外）、CSS 最长 5 条，没有新增例外。日志为 `.artifacts/editor-verify-final.log` 和 `.artifacts/editor-desktop-final.log`。状态计数不变（22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision），发布门禁仍关闭。中断运行遗留的两个测试临时目录（只含测试夹具）已确认后删除；原版参考程序已经由 driver 的 close 命令关闭，临时副本保留。
+最终串行验收：`node scripts/update-status.mjs`、`pnpm run format`、`pnpm run verify`、`pnpm run test:desktop` 全部退出 0。61 项单元 / 服务测试，0 失败 / 0 跳过；桌面六组共 68 项检查全部通过（smoke 10、p1-p2 12、appearance 7、layout 8、menus 12、documents 19），每组页面异常 0。独立性检查 161 个应用源文件无违规，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元、文件累计最高 24.4%、文字最长 16 单位（既有 UA 例外）、CSS 最长 5 条，没有新增例外。日志为 `.artifacts/logs/editor-verify-final.log` 和 `.artifacts/logs/editor-desktop-final.log`。状态计数不变（22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision），发布门禁仍关闭。中断运行遗留的两个测试临时目录（只含测试夹具）已确认后删除；原版参考程序已经由 driver 的 close 命令关闭，临时副本保留。
+
+### 14. 整理：进度台账、状态文档、文档结构和临时文件（`85925fa`、`3f10d78` 及随后的文档整理提交）
+
+维护者要求整理全部文件和文档，写清哪些实现、哪些没实现，并给出可以删改的待实现功能名单；整理方案经维护者确认后执行。本轮没有改动 `src/` 下的界面和桌面代码。
+
+- 进度台账：原来的 `scripts/update-status.mjs` 按轮追加了 51 处 `mark()`，28 个编号被后来的调用覆盖；早期一句话管好几项的说明没有跟着更新，出现了“多标签编辑、文件变化订阅、精确替换、深分页未实现”等与代码和其他条目矛盾的说法。台账改为 `spec/progress.mjs`：每个编号一条当前记录，分“已有 / 还缺”；过时的条目按代码核实后重写（SESSION-015、WORK-001 / 002、FILE-001 / 002 / 005、AGENT-003、CHAT-003 / 009 / 010、MODEL-005 / 006 / 011、PREF-002 / 003 / 008 和 BOOT 各项），另外给 3 个未开始但已有零星基础的功能（BOOT-004、AGENT-004、PREF-005）写了说明。和上一版 JSON 逐项比对：210 项的编号顺序和状态完全不变，计数仍为 22 / 56 / 130 / 1 / 1。
+- 生成：`update-status.mjs` 改为纯生成器，带校验（未知或重复编号、证据文件不存在或位于 `.artifacts/`、说明为空、领域说明缺漏等），输出不含时间戳。`spec/implementation-status.json` 升为 schema 2（增加 domain / done / todo，去掉无人读取的 remaining），`release-gate` 读取正常。`docs/IMPLEMENTATION-STATUS.md` 由 `docs/功能实现情况.md` 取代；新增 `docs/待实现功能清单.md` 和同内容的 CSV（186 项，UTF-8 带 BOM；以 `@` 等符号开头的单元格前加零宽空格，防止被表格软件当成公式）。`check-similarity` 的生成文件名单同步更新，名单里的文件不存在时直接报错。
+- 一致性检查：新增 `pnpm run status` 和 `pnpm run check:status`，`verify` 在格式检查之后运行 `check:status`。反向验证：手动改动一份生成文档后检查退出 1，重新生成后退出 0。
+- 文档：README 改为概览加文档导航；HANDOFF 改成固定章节（接手步骤和提示词、当前状态、用户决定汇总、工作方式、界面复刻、已知限制、下一步、本机文件说明、里程碑），删除 4 个“本轮…交接”小节和其中过时的“四组 / 五组”“53 项”等数字；DEPENDENCIES 改为“依赖、许可证与项目归属”，列出运行时 27 个第三方包的许可证（25 个 MIT，Python-2.0 和 BSD-2-Clause 各 1 个）和开发工具的许可证；本文增加“当前结论”，历史各节原文保留，只统一标题编号、补提交号并给后来被取代的说法加注；`.prettierignore` 的注释改正。
+- 临时文件：`.artifacts/` 从 142 个文件整理为 99 个（删除 26 个无人引用的旧日志、5 张与参考截图字节相同的副本、6 张旧的参考截图尝试，以及 2 个一次性脚本、1 个运行日志和 3 个草稿数据文件；8 个仍被引用的日志移到 `logs/`）。维护者同意后，删除了系统临时目录中本项目和 Codex 留下的临时文件，共约 314 MB：本项目的格式核对副本、只剩空仓库的调研目录和旧日志，原版测试留下的约 3,000 个夹具目录，Codex 的 5 个调研目录，旧截图和剪贴板图片。删除前核对了所有进程的命令行和已加载模块，没有程序在使用这些路径；正在运行的 Codex 所用的临时目录、最近 10 分钟内的截图和其他软件的临时文件都没有动。原版参考副本按维护者决定保留。
+
+过程中的问题：
+
+1. 删除 `F:\tmp` 的命令被 Claude 的安全机制拦下（该路径被视为受保护的系统临时目录），整条命令没有执行。没有绕过；`F:\tmp`（原版测试留下的 10 个小文件）留给维护者自行处理。
+2. 用变量拼出的删除路径被安全机制按“可能是根目录”拦下，两次都没有执行任何删除。改为逐项写明“系统临时目录 + 名称模式”后执行，逐项核对删除后剩余为 0。
+3. 生成器源码里的零宽空格和 BOM 一开始写成了看不见的真实字符，改为 `\u200B`、`\uFEFF` 转义写法，生成结果不变。
+
+验证：`pnpm run format`；`pnpm run status` 之后 `check:status` 退出 0；`pnpm run verify` 全部通过（61 项测试 0 失败 / 0 跳过；独立性违规 0；相似度越线 0，新台账和生成器在报告里只出现在共用名字 / 字面值的参考统计中，没有代码段或文字重合）；`node scripts/release-gate.mjs` 仍按设计退出 1（208 项必做未完整验证）。本轮没有改动界面或桌面代码，没有重跑 `test:desktop`。日志在 `.artifacts/logs/`：`ledger-verify.log`、`check-status-verify.log`、`docs-verify.log`。
