@@ -26,7 +26,12 @@ const REFERENCE = 'F:/CAgent';
 const SNAPSHOT = path.join(REFERENCE, '.codex/rewrite-spec/original-state.json');
 /** Reviewed overlaps that are public conventions; each entry carries its reason. */
 const EXCEPTIONS = 'scripts/similarity-exceptions.json';
-const GENERATED = new Set(['docs/IMPLEMENTATION-STATUS.md', 'docs/CAgent-功能清单与验收规格.md']);
+/** Generated docs are checked at their sources (spec/catalog.mjs, spec/progress.mjs, spec/preamble.md). */
+const GENERATED = new Set([
+  'docs/功能实现情况.md',
+  'docs/待实现功能清单.md',
+  'docs/CAgent-功能清单与验收规格.md',
+]);
 const OPTIONS: Record<'code' | 'style' | 'prose', MatchOptions> = {
   code: { seed: 20, min: 20, common: 10 },
   style: { seed: 4, min: 6, common: 10 },
@@ -154,6 +159,8 @@ const snapshot = JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8')) as {
 };
 const book = new Codebook();
 
+// A renamed generated doc must fail loudly instead of silently being scanned as a hand-written one.
+for (const f of GENERATED) if (!fs.existsSync(f)) throw new Error(`Generated doc not found: ${f}`);
 const ownFiles = [
   ...['src', 'tests', 'scripts', 'spec', 'docs'].flatMap(walk),
   'vite.config.ts',
