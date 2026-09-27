@@ -1,0 +1,2170 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-09-27T05:53:23.867Z",
+  "milestone": "独立桌面主链可运行，完整重写仍进行中",
+  "counts": {
+    "partial": 53,
+    "not_started": 141,
+    "verified_local": 14,
+    "planned": 1,
+    "external_decision": 1
+  },
+  "fullProductComplete": false,
+  "releaseAllowed": false,
+  "features": [
+    {
+      "id": "CA-BOOT-001",
+      "title": "空目录初始化",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/desktop/main.ts",
+        "src/desktop/preload.ts",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有初始化、窗口、托盘、实例锁、目录选择及隔离；开机恢复 / 所有系统操作 / 崩溃恢复矩阵未齐。"
+    },
+    {
+      "id": "CA-BOOT-002",
+      "title": "桌面进程与主窗口",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/desktop/main.ts",
+        "src/desktop/preload.ts",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有初始化、窗口、托盘、实例锁、目录选择及隔离；开机恢复 / 所有系统操作 / 崩溃恢复矩阵未齐。"
+    },
+    {
+      "id": "CA-BOOT-003",
+      "title": "窗口和托盘",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/desktop/main.ts",
+        "src/desktop/preload.ts",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有初始化、窗口、托盘、实例锁、目录选择及隔离；开机恢复 / 所有系统操作 / 崩溃恢复矩阵未齐。"
+    },
+    {
+      "id": "CA-BOOT-004",
+      "title": "快速聊天",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BOOT-005",
+      "title": "系统对话框",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/desktop/main.ts",
+        "src/desktop/preload.ts",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有初始化、窗口、托盘、实例锁、目录选择及隔离；开机恢复 / 所有系统操作 / 崩溃恢复矩阵未齐。"
+    },
+    {
+      "id": "CA-BOOT-006",
+      "title": "开机启动与防休眠",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BOOT-007",
+      "title": "通知",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BOOT-008",
+      "title": "服务所有权",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BOOT-009",
+      "title": "桌面安全边界",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/desktop/main.ts",
+        "src/desktop/preload.ts",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有初始化、窗口、托盘、实例锁、目录选择及隔离；开机恢复 / 所有系统操作 / 崩溃恢复矩阵未齐。"
+    },
+    {
+      "id": "CA-BOOT-010",
+      "title": "跨平台启动",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MODEL-001",
+      "title": "自定义供应商持久化",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts",
+        "tests/protocol-tools.test.ts"
+      ],
+      "remaining": "仅本机夹具和 Windows DPAPI；真实外部模型 / 账号尚未联调。"
+    },
+    {
+      "id": "CA-MODEL-002",
+      "title": "五种模型协议",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/models.ts",
+        "tests/protocol-tools.test.ts",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "五种协议的文本夹具通过，Responses / Anthropic / Completions / Gemini 有工具往返夹具；Codex 订阅认证、完整官方兼容性和线上账号仍缺。"
+    },
+    {
+      "id": "CA-MODEL-003",
+      "title": "凭据保管",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts",
+        "tests/protocol-tools.test.ts"
+      ],
+      "remaining": "仅本机夹具和 Windows DPAPI；真实外部模型 / 账号尚未联调。"
+    },
+    {
+      "id": "CA-MODEL-004",
+      "title": "OAuth 授权",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MODEL-005",
+      "title": "发现模型与连通性测试",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/discovery.ts",
+        "src/server/runtime.ts",
+        "src/ui/Settings.tsx"
+      ],
+      "remaining": "已有供应商模型发现、手动模型和会话 / 助手模型；订阅发现、辅助模型职责、全量兼容能力未齐。"
+    },
+    {
+      "id": "CA-MODEL-006",
+      "title": "模型元数据编辑",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/discovery.ts",
+        "src/server/runtime.ts",
+        "src/ui/Settings.tsx"
+      ],
+      "remaining": "已有供应商模型发现、手动模型和会话 / 助手模型；订阅发现、辅助模型职责、全量兼容能力未齐。"
+    },
+    {
+      "id": "CA-MODEL-007",
+      "title": "模型职责分配",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/discovery.ts",
+        "src/server/runtime.ts",
+        "src/ui/Settings.tsx"
+      ],
+      "remaining": "已有供应商模型发现、手动模型和会话 / 助手模型；订阅发现、辅助模型职责、全量兼容能力未齐。"
+    },
+    {
+      "id": "CA-MODEL-008",
+      "title": "真实推理档位映射",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts",
+        "tests/protocol-tools.test.ts"
+      ],
+      "remaining": "仅本机夹具和 Windows DPAPI；真实外部模型 / 账号尚未联调。"
+    },
+    {
+      "id": "CA-MODEL-009",
+      "title": "流式传输正确性",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts",
+        "tests/protocol-tools.test.ts"
+      ],
+      "remaining": "仅本机夹具和 Windows DPAPI；真实外部模型 / 账号尚未联调。"
+    },
+    {
+      "id": "CA-MODEL-010",
+      "title": "重试与预算",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/models.ts",
+        "src/server/runtime.ts"
+      ],
+      "remaining": "有超时、输出和轮数限制，无自动重试；用量账本已写入但完整统计 UI、失败计费和缓存价格仍缺。"
+    },
+    {
+      "id": "CA-MODEL-011",
+      "title": "用量账本",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/models.ts",
+        "src/server/runtime.ts"
+      ],
+      "remaining": "有超时、输出和轮数限制，无自动重试；用量账本已写入但完整统计 UI、失败计费和缓存价格仍缺。"
+    },
+    {
+      "id": "CA-MODEL-012",
+      "title": "模态与兼容性",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MODEL-013",
+      "title": "网络代理",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SESSION-001",
+      "title": "新建和恢复会话",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/desktop-smoke.mjs",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "Windows Electron、本机 HTTP/SSE 测试模型；无真实账号验证。"
+    },
+    {
+      "id": "CA-SESSION-002",
+      "title": "历史分页和摘要",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-003",
+      "title": "重命名、置顶和排序",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-004",
+      "title": "项目和文件夹分组",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SESSION-005",
+      "title": "全文搜索和会话内查找",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-006",
+      "title": "归档、恢复和永久删除",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-007",
+      "title": "分支与分叉",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-008",
+      "title": "编辑后重发和重试",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-009",
+      "title": "输入草稿",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/desktop-smoke.mjs",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "Windows Electron、本机 HTTP/SSE 测试模型；无真实账号验证。"
+    },
+    {
+      "id": "CA-SESSION-010",
+      "title": "会话目录授权",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-011",
+      "title": "上下文压缩",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SESSION-012",
+      "title": "多客户端续流",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-013",
+      "title": "助手被删除后的历史",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SESSION-014",
+      "title": "导出对话",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-SESSION-015",
+      "title": "并发和空闲回收",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/server/http.ts",
+        "src/ui/App.tsx",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "已有列表、查找、改名、置顶、归档、分叉、重试、工作区、续流、导出和并发 4；深分页、分支编辑、授权目录集合、空闲回收及各条完整异常矩阵未齐。"
+    },
+    {
+      "id": "CA-CHAT-001",
+      "title": "发送、流式、停止",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/desktop-smoke.mjs",
+        "tests/runtime.test.ts"
+      ],
+      "remaining": "Windows Electron、本机 HTTP/SSE 测试模型；无真实账号验证。"
+    },
+    {
+      "id": "CA-CHAT-002",
+      "title": "补充指令与插话",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHAT-003",
+      "title": "思考、工具和执行过程",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/ui/components.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有思考 / 工具显示、基本 Markdown、复制 / 分叉、批准、权限模式与滚动；公式 / 图示、引用、计划模式、完整卡片和导航未齐。"
+    },
+    {
+      "id": "CA-CHAT-004",
+      "title": "Markdown 与代码",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/ui/components.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有思考 / 工具显示、基本 Markdown、复制 / 分叉、批准、权限模式与滚动；公式 / 图示、引用、计划模式、完整卡片和导航未齐。"
+    },
+    {
+      "id": "CA-CHAT-005",
+      "title": "消息操作",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/ui/components.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有思考 / 工具显示、基本 Markdown、复制 / 分叉、批准、权限模式与滚动；公式 / 图示、引用、计划模式、完整卡片和导航未齐。"
+    },
+    {
+      "id": "CA-CHAT-006",
+      "title": "文件和多模态附件",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHAT-007",
+      "title": "文件、技能和助手提及",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHAT-008",
+      "title": "斜杠命令",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHAT-009",
+      "title": "权限和表单确认",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/ui/components.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有思考 / 工具显示、基本 Markdown、复制 / 分叉、批准、权限模式与滚动；公式 / 图示、引用、计划模式、完整卡片和导航未齐。"
+    },
+    {
+      "id": "CA-CHAT-010",
+      "title": "计划模式与权限模式",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/ui/components.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有思考 / 工具显示、基本 Markdown、复制 / 分叉、批准、权限模式与滚动；公式 / 图示、引用、计划模式、完整卡片和导航未齐。"
+    },
+    {
+      "id": "CA-CHAT-011",
+      "title": "任务清单与进度",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHAT-012",
+      "title": "交互卡和产物",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHAT-013",
+      "title": "长对话导航",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/ui/components.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "已有思考 / 工具显示、基本 Markdown、复制 / 分叉、批准、权限模式与滚动；公式 / 图示、引用、计划模式、完整卡片和导航未齐。"
+    },
+    {
+      "id": "CA-CHAT-014",
+      "title": "对话截图和分享",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AGENT-001",
+      "title": "助手增删和主助手",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/ui/Settings.tsx"
+      ],
+      "remaining": "新建和编辑助手、原创中立说明、记忆开关已实现；排序、公开身份、工具 / Skills 精细配置未齐。"
+    },
+    {
+      "id": "CA-AGENT-002",
+      "title": "独立身份和行为规则",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/ui/Settings.tsx"
+      ],
+      "remaining": "新建和编辑助手、原创中立说明、记忆开关已实现；排序、公开身份、工具 / Skills 精细配置未齐。"
+    },
+    {
+      "id": "CA-AGENT-003",
+      "title": "原创人格选项",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/ui/Settings.tsx"
+      ],
+      "remaining": "新建和编辑助手、原创中立说明、记忆开关已实现；排序、公开身份、工具 / Skills 精细配置未齐。"
+    },
+    {
+      "id": "CA-AGENT-004",
+      "title": "头像与用户资料",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AGENT-005",
+      "title": "工具和技能开关",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/runtime.ts",
+        "src/ui/Settings.tsx"
+      ],
+      "remaining": "新建和编辑助手、原创中立说明、记忆开关已实现；排序、公开身份、工具 / Skills 精细配置未齐。"
+    },
+    {
+      "id": "CA-AGENT-006",
+      "title": "角色卡导入导出",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-WORK-001",
+      "title": "工作区选择与历史",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "src/ui/App.tsx",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "有单工作区、目录列表、文本读取与带 hash 冲突保护的编辑；多挂载、全格式预览、多标签、外部变更订阅未实现。"
+    },
+    {
+      "id": "CA-WORK-002",
+      "title": "目录树与检索",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "src/ui/App.tsx",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "有单工作区、目录列表、文本读取与带 hash 冲突保护的编辑；多挂载、全格式预览、多标签、外部变更订阅未实现。"
+    },
+    {
+      "id": "CA-WORK-003",
+      "title": "文件及目录管理",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-WORK-004",
+      "title": "文本和 Markdown 编辑",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "src/ui/App.tsx",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "有单工作区、目录列表、文本读取与带 hash 冲突保护的编辑；多挂载、全格式预览、多标签、外部变更订阅未实现。"
+    },
+    {
+      "id": "CA-WORK-005",
+      "title": "多标签预览与独立查看器",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "src/ui/App.tsx",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "有单工作区、目录列表、文本读取与带 hash 冲突保护的编辑；多挂载、全格式预览、多标签、外部变更订阅未实现。"
+    },
+    {
+      "id": "CA-WORK-006",
+      "title": "HTML 预览隔离",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-WORK-007",
+      "title": "工作便笺",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-WORK-008",
+      "title": "文件变化订阅",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-WORK-009",
+      "title": "封面与文档美化",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-WORK-010",
+      "title": "活动和执行记录",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-WORK-011",
+      "title": "会话文件集合",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-FILE-001",
+      "title": "读写和精确编辑",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "有文件读写、文本搜索、本机命令 / 超时；精确局部编辑、可持续交互终端、后台输出分页未齐。命令未使用 OS 沙盒。"
+    },
+    {
+      "id": "CA-FILE-002",
+      "title": "目录与内容搜索",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "有文件读写、文本搜索、本机命令 / 超时；精确局部编辑、可持续交互终端、后台输出分页未齐。命令未使用 OS 沙盒。"
+    },
+    {
+      "id": "CA-FILE-003",
+      "title": "文件引用与复制",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-FILE-004",
+      "title": "文档提取",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-FILE-005",
+      "title": "命令进程生命周期",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "有文件读写、文本搜索、本机命令 / 超时；精确局部编辑、可持续交互终端、后台输出分页未齐。命令未使用 OS 沙盒。"
+    },
+    {
+      "id": "CA-FILE-006",
+      "title": "终端会话交互",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-FILE-007",
+      "title": "网页搜索",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-FILE-008",
+      "title": "网页读取",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-FILE-009",
+      "title": "结构化产物发布",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-FILE-010",
+      "title": "设置修改工具",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTH-001",
+      "title": "本机 API 鉴权",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "仅本机所有者与会话工具；远程主体尚未实现。"
+    },
+    {
+      "id": "CA-AUTH-002",
+      "title": "按动作授权",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "仅本机所有者与会话工具；远程主体尚未实现。"
+    },
+    {
+      "id": "CA-AUTH-003",
+      "title": "一次性确认",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "仅本机所有者与会话工具；远程主体尚未实现。"
+    },
+    {
+      "id": "CA-AUTH-004",
+      "title": "文件路径边界",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "src/server/runtime.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "已验工作区越界和目录联接拒绝、批准审计；并发路径替换攻击、全局审计导出尚待专项。"
+    },
+    {
+      "id": "CA-AUTH-005",
+      "title": "操作系统沙盒",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTH-006",
+      "title": "网络限制",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTH-007",
+      "title": "资源下载票据",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTH-008",
+      "title": "审计与脱敏",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/tools.ts",
+        "src/server/runtime.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "已验工作区越界和目录联接拒绝、批准审计；并发路径替换攻击、全局审计导出尚待专项。"
+    },
+    {
+      "id": "CA-AUTH-009",
+      "title": "隔离远程执行",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEM-001",
+      "title": "记忆总开关和健康",
+      "phase": 3,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/server/tools.ts",
+        "src/server/runtime.ts"
+      ],
+      "remaining": "手工记忆新增 / 删除 / 固定、开关和有限字面检索已实现；记忆编辑、健康 UI、自动提取与分层编译未实现。"
+    },
+    {
+      "id": "CA-MEM-002",
+      "title": "手工固定记忆",
+      "phase": 3,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/server/tools.ts",
+        "src/server/runtime.ts"
+      ],
+      "remaining": "手工记忆新增 / 删除 / 固定、开关和有限字面检索已实现；记忆编辑、健康 UI、自动提取与分层编译未实现。"
+    },
+    {
+      "id": "CA-MEM-003",
+      "title": "事实检索和来源",
+      "phase": 3,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/App.tsx",
+        "src/server/tools.ts",
+        "src/server/runtime.ts"
+      ],
+      "remaining": "手工记忆新增 / 删除 / 固定、开关和有限字面检索已实现；记忆编辑、健康 UI、自动提取与分层编译未实现。"
+    },
+    {
+      "id": "CA-MEM-004",
+      "title": "异步记忆提取",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEM-005",
+      "title": "分层记忆编辑",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEM-006",
+      "title": "编译和遗忘策略",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEM-007",
+      "title": "整理与版本恢复",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEM-008",
+      "title": "记忆清理与交换",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEM-009",
+      "title": "经验库",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEM-010",
+      "title": "日记",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-001",
+      "title": "计划任务管理",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-002",
+      "title": "建议先审阅再启用",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-003",
+      "title": "到期调度与防重叠",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-004",
+      "title": "巡检",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-005",
+      "title": "后台会话与通知",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-006",
+      "title": "持续唤醒与完成",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-007",
+      "title": "任务注册与取消",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-008",
+      "title": "工作流调度",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-AUTO-009",
+      "title": "工作流恢复",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COLLAB-001",
+      "title": "子助手任务",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COLLAB-002",
+      "title": "子任务续聊与关闭",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COLLAB-003",
+      "title": "任务状态和延迟结果",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COLLAB-004",
+      "title": "跨会话发现和阅读",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COLLAB-005",
+      "title": "跨会话发送和创建",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COLLAB-006",
+      "title": "协作审阅",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHANNEL-001",
+      "title": "频道管理",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHANNEL-002",
+      "title": "频道消息",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHANNEL-003",
+      "title": "助手频道参与",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHANNEL-004",
+      "title": "已读、活动与导出",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHANNEL-005",
+      "title": "频道手机与工具策略",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CHANNEL-006",
+      "title": "DM 历史与重置",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-001",
+      "title": "Telegram 接入",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-002",
+      "title": "飞书和 Lark 接入",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-003",
+      "title": "钉钉接入",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-004",
+      "title": "QQ 接入",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-005",
+      "title": "微信扫码接入",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-006",
+      "title": "Bridge 路由和权限",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-007",
+      "title": "平台会话管理",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-008",
+      "title": "媒体、回执与流式编辑",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BRIDGE-009",
+      "title": "远程控制命令",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BROWSER-001",
+      "title": "浏览器生命周期",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BROWSER-002",
+      "title": "导航与多标签",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BROWSER-003",
+      "title": "页面观察和截图",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BROWSER-004",
+      "title": "网页交互",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BROWSER-005",
+      "title": "等待和脚本计算",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-BROWSER-006",
+      "title": "Cookie 与紧急停止",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COMPUTER-001",
+      "title": "平台能力与总开关",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COMPUTER-002",
+      "title": "应用枚举与租用",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COMPUTER-003",
+      "title": "界面观察",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COMPUTER-004",
+      "title": "元素操作",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COMPUTER-005",
+      "title": "可见控制与停止",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-COMPUTER-006",
+      "title": "系统权限管理",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-001",
+      "title": "技能发现和预览",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-002",
+      "title": "技能包安装和删除",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-003",
+      "title": "每助手技能选择",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-004",
+      "title": "技能分组与导出",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-005",
+      "title": "外部兼容目录",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-006",
+      "title": "工作区规则与技能",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-007",
+      "title": "刷新和元数据翻译",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SKILL-008",
+      "title": "按需加载",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MCP-001",
+      "title": "连接器配置和导入",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MCP-002",
+      "title": "启动、停止和刷新",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MCP-003",
+      "title": "工具发现和调用",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MCP-004",
+      "title": "OAuth 与认证恢复",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MCP-005",
+      "title": "资源和 MCP Apps",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MCP-006",
+      "title": "总开关和助手权限",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MCP-007",
+      "title": "延迟 schema 和固定工具",
+      "phase": 3,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-001",
+      "title": "插件安装和卸载",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-002",
+      "title": "信任等级",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-003",
+      "title": "配置 schema",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-004",
+      "title": "工具、路由、命令和事件",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-005",
+      "title": "页面、组件和卡片",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-006",
+      "title": "市场与版本管理",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-007",
+      "title": "开发诊断和热重载",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-008",
+      "title": "Office 扩展",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-009",
+      "title": "媒体和封面扩展",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-010",
+      "title": "即梦 CLI 扩展",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PLUGIN-011",
+      "title": "独立插件协议与 SDK",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-001",
+      "title": "媒体供应商与模型",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-002",
+      "title": "图片生成与编辑",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-003",
+      "title": "视频生成",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-004",
+      "title": "任务批次与重试",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-005",
+      "title": "录音与转写",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-006",
+      "title": "ASR 协议",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-007",
+      "title": "媒体查看与保管",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-MEDIA-008",
+      "title": "语音合成占位识别",
+      "phase": 4,
+      "scope": "planned",
+      "status": "planned",
+      "evidence": [],
+      "remaining": "见规格中的范围说明。"
+    },
+    {
+      "id": "CA-CLIENT-001",
+      "title": "网络监听设置",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CLIENT-002",
+      "title": "设备配对和撤销",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CLIENT-003",
+      "title": "本地账号与网页登录",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CLIENT-004",
+      "title": "远端服务器切换",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CLIENT-005",
+      "title": "移动聊天",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CLIENT-006",
+      "title": "移动工作台",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-CLIENT-007",
+      "title": "命令行聊天和服务",
+      "phase": 4,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/cli.ts"
+      ],
+      "remaining": "已有 serve / status / sessions / chat；CLI 增量流、确认、取消和 continue 命令未齐，尚未作 CLI 专项验收。"
+    },
+    {
+      "id": "CA-CLIENT-008",
+      "title": "CLI 资源更新与恢复",
+      "phase": 4,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-001",
+      "title": "主题与字体",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/style.css",
+        "src/ui/App.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "浅色 / 夜色 / 系统主题、字号、标签和原生 dialog 已实现；字体选择、完整键盘 / 屏幕阅读器审计未齐。"
+    },
+    {
+      "id": "CA-PREF-002",
+      "title": "语言与时区",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-003",
+      "title": "编辑器排版",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-004",
+      "title": "侧栏与工作区布局",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-005",
+      "title": "装饰与动态效果",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-006",
+      "title": "GPU 与故障恢复",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-007",
+      "title": "一致的设置快照",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-008",
+      "title": "实验功能",
+      "phase": 2,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-PREF-009",
+      "title": "可访问性",
+      "phase": 2,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/ui/style.css",
+        "src/ui/App.tsx",
+        "tests/desktop-smoke.mjs"
+      ],
+      "remaining": "浅色 / 夜色 / 系统主题、字号、标签和原生 dialog 已实现；字体选择、完整键盘 / 屏幕阅读器审计未齐。"
+    },
+    {
+      "id": "CA-DATA-001",
+      "title": "独立版本化数据根",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "只覆盖新独立数据格式。"
+    },
+    {
+      "id": "CA-DATA-002",
+      "title": "事务和并发写入",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "只覆盖新独立数据格式。"
+    },
+    {
+      "id": "CA-DATA-003",
+      "title": "崩溃恢复",
+      "phase": 1,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "只覆盖新独立数据格式。"
+    },
+    {
+      "id": "CA-DATA-004",
+      "title": "新格式备份与恢复",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/backup.ts",
+        "src/server/tools.ts",
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "中立备份含核心文字、配置和手工记忆，校验及幂等导入通过；附件、旧格式、导入撤销、完整历史 UI、版本升级迁移仍缺。"
+    },
+    {
+      "id": "CA-DATA-005",
+      "title": "旧格式显式导入",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-DATA-006",
+      "title": "迁移幂等与回滚",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/backup.ts",
+        "src/server/tools.ts",
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "中立备份含核心文字、配置和手工记忆，校验及幂等导入通过；附件、旧格式、导入撤销、完整历史 UI、版本升级迁移仍缺。"
+    },
+    {
+      "id": "CA-DATA-007",
+      "title": "文件修改历史",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/backup.ts",
+        "src/server/tools.ts",
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "中立备份含核心文字、配置和手工记忆，校验及幂等导入通过；附件、旧格式、导入撤销、完整历史 UI、版本升级迁移仍缺。"
+    },
+    {
+      "id": "CA-DATA-008",
+      "title": "数据版本升级与降级",
+      "phase": 1,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "src/server/backup.ts",
+        "src/server/tools.ts",
+        "tests/runtime.test.ts",
+        "tests/boundaries.test.ts"
+      ],
+      "remaining": "中立备份含核心文字、配置和手工记忆，校验及幂等导入通过；附件、旧格式、导入撤销、完整历史 UI、版本升级迁移仍缺。"
+    },
+    {
+      "id": "CA-DATA-009",
+      "title": "数据保留和清理",
+      "phase": 1,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SHIP-001",
+      "title": "独立源码与出处",
+      "phase": 5,
+      "scope": "required",
+      "status": "verified_local",
+      "evidence": [
+        "scripts/check-independent.mjs",
+        ".artifacts/independence-check.json"
+      ],
+      "remaining": "导入边界、直接依赖和整文件指纹检查不等于法律鉴定。"
+    },
+    {
+      "id": "CA-SHIP-002",
+      "title": "可重复构建和依赖说明",
+      "phase": 5,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "package.json",
+        "scripts/build-desktop.mjs",
+        "scripts/check-independent.mjs"
+      ],
+      "remaining": "类型、自动化测试、构建与未完成发布门禁已建立；依赖随包声明、诊断 UI、安装与更新未完成。"
+    },
+    {
+      "id": "CA-SHIP-003",
+      "title": "运行诊断",
+      "phase": 5,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "package.json",
+        "scripts/build-desktop.mjs",
+        "scripts/check-independent.mjs"
+      ],
+      "remaining": "类型、自动化测试、构建与未完成发布门禁已建立；依赖随包声明、诊断 UI、安装与更新未完成。"
+    },
+    {
+      "id": "CA-SHIP-004",
+      "title": "Windows 安装与卸载",
+      "phase": 5,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SHIP-005",
+      "title": "检查更新和历史",
+      "phase": 5,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SHIP-006",
+      "title": "更新完整性和回退",
+      "phase": 5,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SHIP-007",
+      "title": "组件更新兼容",
+      "phase": 5,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SHIP-008",
+      "title": "跨平台交付",
+      "phase": 5,
+      "scope": "required",
+      "status": "not_started",
+      "evidence": [],
+      "remaining": "按完整验收规格实现，当前不可当作已提供功能。"
+    },
+    {
+      "id": "CA-SHIP-009",
+      "title": "发布门禁",
+      "phase": 5,
+      "scope": "required",
+      "status": "partial",
+      "evidence": [
+        "package.json",
+        "scripts/build-desktop.mjs",
+        "scripts/check-independent.mjs"
+      ],
+      "remaining": "类型、自动化测试、构建与未完成发布门禁已建立；依赖随包声明、诊断 UI、安装与更新未完成。"
+    },
+    {
+      "id": "CA-SHIP-010",
+      "title": "旧商业服务占位",
+      "phase": 5,
+      "scope": "external-decision",
+      "status": "external_decision",
+      "evidence": [],
+      "remaining": "见规格中的范围说明。"
+    }
+  ]
+}

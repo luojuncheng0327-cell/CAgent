@@ -1,0 +1,108 @@
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { randomBytes, timingSafeEqual, randomUUID } from 'node:crypto';
+import { z } from 'zod';
+import type { Runtime } from './runtime.ts';
+import type { Session, Run, RunEvent, Memory, Model, Agent, Provider } from '../shared/contracts.ts';
+import { publicError, AppError, invariant } from './errors.ts';
+import { readWorkspaceFile, writeWorkspaceFile, workspacePath } from './tools.ts';
+import { exportBackup, inspectBackup, importBackup } from './backup.ts';
+import { discoverModels } from './discovery.ts';
+
+interface ServerOptions {port?:number;token?:string;uiDir?:string}
+const equal=(a:string,b:string)=>{const left=Buffer.from(a),right=Buffer.from(b);return left.length===right.length&&timingSafeEqual(left,right);};
+export async function serve(rt:Runtime,options:ServerOptions={}){
+  const token=options.token??randomBytes(32).toString('base64url');const cookies=new Set<string>();let origin='';
+  const json=(res:http.ServerResponse,data:unknown,status=200)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
+  async function body(req:http.IncomingMessage){
+    invariant(req.headers['content-type']?.startsWith('application/json'),'CONTENT_TYPE','仅接受 JSON 请求',415);
+    let bytes=0;const chunks:Buffer[]=[];for await(const chunk of req){bytes+=chunk.length;invariant(bytes<=8*1024*1024,'BODY_TOO_LARGE','请求超过 8 MiB',413);chunks.push(chunk);}
+    try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw new AppError('INVALID_JSON','请求不是有效 JSON');}
+  }
+  const server=http.createServer(async(req,res)=>{
+    res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','DENY');
+    res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'");
+    try{
+      const url=new URL(req.url??'/',origin);const route=url.pathname;const method=req.method??'GET';
+      invariant(req.headers.host===new URL(origin).host,'INVALID_HOST','访问来源不匹配',403);
+      if(req.headers.origin)invariant(req.headers.origin===origin,'INVALID_ORIGIN','跨来源请求已拒绝',403);
+      if(route==='/api/v1/auth'&&method==='POST'){
+        const input=z.object({token:z.string().max(256)}).parse(await body(req));invariant(equal(input.token,token),'UNAUTHORIZED','连接凭据无效',401);
+        const session=randomBytes(32).toString('base64url');cookies.add(session);if(cookies.size>32)cookies.delete(cookies.values().next().value!);
+        res.setHeader('Set-Cookie',`cagent_session=${session}; Path=/; HttpOnly; SameSite=Strict`);json(res,{data:{authenticated:true}});return;
+      }
+      if(!route.startsWith('/api/')){
+        invariant(method==='GET','METHOD_NOT_ALLOWED','请求方法不支持',405);
+        if(!options.uiDir){json(res,{data:{name:'CAgent',state:'server-ready',ui:'请先运行构建命令'}});return;}
+        const relative=route==='/'?'index.html':decodeURIComponent(route.slice(1));
+        invariant(!relative.includes('..')&&!relative.includes('\\')&&!relative.includes('\0'),'INVALID_PATH','路径无效',403);
+        const file=path.resolve(options.uiDir,relative);invariant(file.startsWith(path.resolve(options.uiDir)+path.sep),'INVALID_PATH','路径无效',403);
+        const bytes=await fs.readFile(file).catch(()=>{throw new AppError('NOT_FOUND','文件不存在',404);});
+        const types:Record<string,string>={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.woff2':'font/woff2'};
+        res.writeHead(200,{'Content-Type':types[path.extname(file)]??'application/octet-stream','Cache-Control':'no-cache'});res.end(bytes);return;
+      }
+      const bearer=req.headers.authorization?.replace(/^Bearer /,'')??'';const cookie=(req.headers.cookie??'').split(';').map(s=>s.trim()).find(s=>s.startsWith('cagent_session='))?.split('=')[1];
+      const byBearer=!!bearer&&equal(bearer,token);invariant(byBearer||(cookie&&cookies.has(cookie)),'UNAUTHORIZED','请连接此 CAgent 实例',401);
+      if(!['GET','HEAD'].includes(method)&&!byBearer)invariant(req.headers.origin===origin,'INVALID_ORIGIN','修改请求必须来自本应用',403);
+      if(route==='/api/v1/logout'&&method==='POST'){if(cookie)cookies.delete(cookie);res.setHeader('Set-Cookie','cagent_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');json(res,{data:{authenticated:false}});return;}
+      if(route==='/api/v1/health'&&method==='GET'){json(res,{data:{name:'CAgent',version:'0.1.0-dev.1',runtime:'independent',platform:process.platform,keystore:rt.vault.available,osSandbox:false}});return;}
+      if(route==='/api/v1/bootstrap'&&method==='GET'){
+        json(res,{data:{preferences:rt.preferences(),agents:rt.store.list('agent'),providers:rt.store.list('provider'),models:rt.store.list('model'),sessions:rt.store.list('session'),runs:rt.store.list<Run>('run').filter(r=>!['succeeded','failed','cancelled','interrupted'].includes(r.status)),capabilities:{chat:true,workspace:true,manualMemory:true,backup:true,oauth:false,mcp:false,plugins:false,bridge:false,osSandbox:false}}});return;
+      }
+      if(route==='/api/v1/preferences'&&method==='PUT'){json(res,{data:rt.savePreferences(await body(req))});return;}
+      for(const [kind,save]of [['providers',(b:unknown,id?:string)=>rt.saveProvider(b,id)],['models',(b:unknown,id?:string)=>rt.saveModel(b,id)],['agents',(b:unknown,id?:string)=>rt.saveAgent(b,id)]] as const){
+        if(route===`/api/v1/${kind}`&&method==='POST'){json(res,{data:save(await body(req))},201);return;}
+        const match=route.match(new RegExp(`^/api/v1/${kind}/([^/]+)$`));
+        if(match&&method==='PUT'){json(res,{data:save(await body(req),decodeURIComponent(match[1]))});return;}
+        if(match&&method==='DELETE'){
+          const id=decodeURIComponent(match[1]);if(kind==='agents')rt.deleteAgent(id);
+          else if(kind==='models'){invariant(!rt.store.list<Session>('session').some(s=>s.modelId===id)&&!rt.store.list<Agent>('agent').some(a=>a.modelId===id),'MODEL_IN_USE','模型仍被会话或助手使用',409);rt.store.remove('model',id);}
+          else{invariant(!rt.store.list<Model>('model').some(m=>m.providerId===id),'PROVIDER_IN_USE','请先移除此供应商下的模型',409);rt.store.remove('provider',id);rt.vault.remove(id);rt.vault.remove(id+':headers');}
+          json(res,{data:{deleted:true}});return;
+        }
+      }
+      let match=route.match(/^\/api\/v1\/providers\/([^/]+)\/discover$/);if(match&&method==='POST'){const p=rt.store.need<Provider>('provider',match[1]);json(res,{data:await discoverModels(p,rt.vault.get(p.id),JSON.parse(rt.vault.get(p.id+':headers')??'{}'),rt.fetcher)});return;}
+      match=route.match(/^\/api\/v1\/models\/([^/]+)\/test$/);if(match&&method==='POST'){json(res,{data:await rt.testModel(match[1])});return;}
+      if(route==='/api/v1/sessions'&&method==='GET'){
+        const q=(url.searchParams.get('q')??'').toLowerCase(),archived=url.searchParams.get('archived')==='true';
+        const sessions=rt.store.list<Session>('session').filter(s=>s.archived===archived&&(!q||s.title.toLowerCase().includes(q)||rt.store.messages(s.id,0,10000).some(m=>m.text.toLowerCase().includes(q)))).sort((a,b)=>Number(b.pinned)-Number(a.pinned)||b.updatedAt.localeCompare(a.updatedAt));json(res,{data:sessions});return;
+      }
+      if(route==='/api/v1/sessions'&&method==='POST'){json(res,{data:await rt.createSession(await body(req))},201);return;}
+      match=route.match(/^\/api\/v1\/sessions\/([^/]+)(?:\/(.+))?$/);
+      if(match){
+        const id=match[1],action=match[2];const session=rt.store.need<Session>('session',id);
+        if(!action&&method==='GET'){json(res,{data:rt.snapshot(id)});return;}
+        if(!action&&method==='PATCH'){json(res,{data:await rt.updateSession(id,await body(req))});return;}
+        if(!action&&method==='DELETE'){rt.deleteSession(id);json(res,{data:{deleted:true}});return;}
+        if(action==='runs'&&method==='POST'){json(res,{data:await rt.start(id,await body(req))},202);return;}
+        if(action==='fork'&&method==='POST'){const b=z.object({messageId:z.string()}).parse(await body(req));json(res,{data:await rt.forkSession(id,b.messageId)},201);return;}
+        if(action==='cancel'&&method==='POST'){const b=z.object({runId:z.string()}).parse(await body(req));json(res,{data:await rt.cancel(id,b.runId)});return;}
+        if(action==='export'&&method==='GET'){const messages=rt.store.messages(id,0,10000);json(res,{data:{session,messages,markdown:messages.map(m=>`## ${m.role}\n\n${m.text}`).join('\n\n')}});return;}
+        if(action==='events'&&method==='GET'){
+          const after=z.coerce.number().int().min(0).parse(url.searchParams.get('after')??'0');
+          res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-store','Connection':'keep-alive'});res.flushHeaders();
+          let last=after;const send=(event:RunEvent)=>{if(event.sessionId!==id||event.id<=last)return;if(res.writableLength>1024*1024){res.destroy();return;}last=event.id;res.write(`id: ${event.id}\ndata: ${JSON.stringify(event)}\n\n`);};
+          rt.events.on('event',send);let page;do{page=rt.store.events(id,last);page.forEach(send);}while(page.length===2000&&!res.destroyed);
+          const ping=setInterval(()=>res.write(': keepalive\n\n'),15000);ping.unref();req.on('close',()=>{clearInterval(ping);rt.events.off('event',send);});return;
+        }
+        if(action==='files'&&method==='GET'){const target=await workspacePath(rt.store,session,url.searchParams.get('path')??'.');const entries=await fs.readdir(target,{withFileTypes:true});json(res,{data:{entries:entries.slice(0,500).map(e=>({name:e.name,kind:e.isSymbolicLink()?'link':e.isDirectory()?'directory':'file'})),truncated:entries.length>500}});return;}
+        if(action==='file'&&method==='GET'){json(res,{data:await readWorkspaceFile(rt.store,session,url.searchParams.get('path')??'')});return;}
+        if(action==='file'&&method==='PUT'){invariant(session.permission!=='read','READ_ONLY','此会话工作区为只读',403);const b=z.object({path:z.string(),text:z.string().max(1000000),expectedHash:z.string().optional()}).parse(await body(req));json(res,{data:await writeWorkspaceFile(rt.store,session,b.path,b.text,b.expectedHash)});return;}
+      }
+      match=route.match(/^\/api\/v1\/approvals\/([^/]+)$/);if(match&&method==='POST'){json(res,{data:rt.decideApproval(match[1],await body(req))});return;}
+      if(route==='/api/v1/memory'&&method==='GET'){const agentId=url.searchParams.get('agentId');rt.store.need('agent',agentId??'');json(res,{data:rt.store.list<Memory>('memory').filter(m=>m.agentId===agentId)});return;}
+      if(route==='/api/v1/memory'&&method==='POST'){const b=z.object({agentId:z.string(),text:z.string().min(1).max(8000),pinned:z.boolean().default(false)}).parse(await body(req));rt.store.need('agent',b.agentId);json(res,{data:rt.store.put<Memory>('memory',randomUUID(),{...b,source:null})},201);return;}
+      match=route.match(/^\/api\/v1\/memory\/([^/]+)$/);if(match&&method==='DELETE'){rt.store.need('memory',match[1]);rt.store.remove('memory',match[1]);json(res,{data:{deleted:true}});return;}
+      if(route==='/api/v1/usage'&&method==='GET'){json(res,{data:rt.store.list('usage')});return;}
+      if(route==='/api/v1/backup'&&method==='GET'){json(res,{data:exportBackup(rt)});return;}
+      if(route==='/api/v1/backup/inspect'&&method==='POST'){const plan=inspectBackup(rt,await body(req));json(res,{data:{sha256:plan.sha256,counts:plan.counts,conflicts:plan.conflicts,alreadyImported:plan.alreadyImported}});return;}
+      if(route==='/api/v1/backup/import'&&method==='POST'){const b=z.object({backup:z.unknown(),confirm:z.string()}).parse(await body(req));json(res,{data:importBackup(rt,b.backup,b.confirm)});return;}
+      throw new AppError('NOT_FOUND','此接口不存在或尚未实现',404);
+    }catch(e){const error=publicError(e);if(!res.headersSent)json(res,{error:{code:error.code,message:error.message,retryable:error.retryable}},error.status);else res.end();}
+  });
+  server.requestTimeout=30000;server.headersTimeout=10000;
+  await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(options.port??0,'127.0.0.1',()=>{server.off('error',reject);resolve();});});
+  const address=server.address();invariant(address&&typeof address==='object','SERVER_START','无法取得监听端口',500);origin=`http://127.0.0.1:${address.port}`;
+  return {server,origin,token,close:async()=>{server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}};
+}
