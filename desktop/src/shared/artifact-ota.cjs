@@ -35,6 +35,7 @@ const otaCore = require("../../../shared/artifact-core/ota-core.cjs");
 // Static specifier on purpose — see artifact-ota-dev-bypass.cjs's header
 // comment; vite.config.main.js's alias keys off this exact literal.
 const devBypass = require("./artifact-ota-dev-bypass.cjs");
+const { electronUpdateTransport } = require("./update-transport.cjs");
 
 const { SEED_CHANNEL } = artifactBoot;
 
@@ -66,7 +67,7 @@ function scheduleBackgroundOtaChecks(opts) {
   } = opts || {};
 
   const runOnce = () => {
-    otaCore.checkOnce({ homeDir, keyset, currentShellVersion, platformArch, channel, log, devBypass })
+    otaCore.checkOnce({ homeDir, keyset, currentShellVersion, platformArch, channel, log, devBypass, fetchOnce: opts.fetchOnce || electronUpdateTransport })
       .then((result) => {
         log(`[ota] cycle: ${result.outcome}${result.error ? ` (${result.error})` : ""}`);
         if ((result.outcome === "available" || result.outcome === "minshell-blocked") && typeof onAvailable === "function") {
@@ -111,9 +112,9 @@ module.exports = {
   fetchWithRedirects: otaCore.fetchWithRedirects,
   fetchBuffer: otaCore.fetchBuffer,
   downloadToFile: otaCore.downloadToFile,
-  fetchChannelManifest: (opts) => otaCore.fetchChannelManifest({ ...opts, devBypass }),
-  checkOnce: (opts) => otaCore.checkOnce({ ...opts, devBypass }),
-  downloadAndApplyArtifacts: (opts) => otaCore.downloadAndApplyArtifacts({ ...opts, devBypass }),
+  fetchChannelManifest: (opts) => otaCore.fetchChannelManifest({ ...opts, devBypass, fetchOnce: opts?.fetchOnce || electronUpdateTransport }),
+  checkOnce: (opts) => otaCore.checkOnce({ ...opts, devBypass, fetchOnce: opts?.fetchOnce || electronUpdateTransport }),
+  downloadAndApplyArtifacts: (opts) => otaCore.downloadAndApplyArtifacts({ ...opts, devBypass, fetchOnce: opts?.fetchOnce || electronUpdateTransport }),
   scheduleBackgroundOtaChecks,
   hasDevOverrideConfigured,
   bothNextPointersReady: otaCore.bothNextPointersReady,

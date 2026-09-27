@@ -691,7 +691,7 @@ function nowIso() {
  * `onProgress(receivedBytes)` is forwarded to the network download only
  * (a local dev-override copy is effectively instant and reports nothing).
  */
-async function stageArtifact({ finalPath, entry, mirrors, localDir, log, label, onProgress }) {
+async function stageArtifact({ finalPath, entry, mirrors, localDir, log, label, onProgress, fetchOnce }) {
   const maxBytes = entry.size + Math.max(Math.round(entry.size * 0.05), 5 * 1024 * 1024);
   const partPath = `${finalPath}.part`;
 
@@ -710,7 +710,7 @@ async function stageArtifact({ finalPath, entry, mirrors, localDir, log, label, 
       const url = `${String(mirrorBase).replace(/\/+$/, "")}/${entry.path}`;
       try {
         await fsp.rm(partPath, { force: true }).catch(() => {});
-        await downloadToFile(url, partPath, { maxBytes, timeoutMs: DOWNLOAD_REQUEST_TIMEOUT_MS, onProgress });
+        await downloadToFile(url, partPath, { maxBytes, timeoutMs: DOWNLOAD_REQUEST_TIMEOUT_MS, onProgress, fetchOnce });
         await fsp.rename(partPath, finalPath);
         staged = true;
         break;
@@ -1287,6 +1287,7 @@ async function downloadAndApplyArtifacts(opts) {
         localDir,
         log,
         label: `server-${serverEntry.version}-${platformArch}`,
+        fetchOnce,
         onProgress: (receivedBytes) => emitProgress({ phase: "downloading", kind: "server", receivedBytes, totalBytes: serverEntry.size }),
       });
       emitProgress({ phase: "verifying", kind: "server", receivedBytes: serverEntry.size, totalBytes: serverEntry.size });
@@ -1299,6 +1300,7 @@ async function downloadAndApplyArtifacts(opts) {
         localDir,
         log,
         label: `renderer-${rendererEntry.version}`,
+        fetchOnce,
         onProgress: (receivedBytes) => emitProgress({ phase: "downloading", kind: "renderer", receivedBytes, totalBytes: rendererEntry.size }),
       });
       emitProgress({ phase: "verifying", kind: "renderer", receivedBytes: rendererEntry.size, totalBytes: rendererEntry.size });
@@ -1581,6 +1583,7 @@ async function downloadAndApplyRendererArtifact(opts) {
         localDir,
         log,
         label: `renderer-${rendererEntry.version}`,
+        fetchOnce,
         onProgress: (receivedBytes) => emitProgress({ phase: "downloading", kind: "renderer", receivedBytes, totalBytes: rendererEntry.size }),
       });
       emitProgress({ phase: "verifying", kind: "renderer", receivedBytes: rendererEntry.size, totalBytes: rendererEntry.size });

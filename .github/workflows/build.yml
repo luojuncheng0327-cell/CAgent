@@ -13,6 +13,8 @@ jobs:
   # scripts/build-server-artifact.mjs 的 packDualKindSeed prebuiltRendererArchive
   # / HANA_PREBUILT_RENDERER_BOX 入参。
   renderer-box:
+    # This fork publishes verified local builds; cloud signing remains an explicit action.
+    if: github.repository == 'liliMozi/openhanako' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

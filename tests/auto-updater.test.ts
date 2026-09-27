@@ -21,6 +21,7 @@ const mockWindows = [];
 let mockExePath = "/Applications/HanaAgent.app/Contents/MacOS/HanaAgent";
 
 vi.mock("electron", () => ({
+  net: { fetch: (...args) => globalThis.fetch(...args) },
   ipcMain: { handle: vi.fn() },
   BrowserWindow: { getAllWindows: vi.fn(() => mockWindows) },
   app: {

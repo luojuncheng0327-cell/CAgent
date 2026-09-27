@@ -6,7 +6,7 @@
  * graceful shutdown，避免“重启更新”点击后长时间无反馈。
  * 频道：Stable（allowPrerelease=false）/ Preview（allowPrerelease=true）。
  */
-const { ipcMain, app, BrowserWindow } = require("electron");
+const { ipcMain, app, BrowserWindow, net } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
@@ -380,10 +380,12 @@ function requestReleaseDigest(version) {
   const requestId = _digestRequestId + 1;
   _digestRequestId = requestId;
   setState({ digest: null, digestUrl, digestError: null });
-  if (!digestUrl || typeof fetch !== "function") return;
+  if (!digestUrl) return;
 
-  fetch(digestUrl, {
+  net.fetch(digestUrl, {
     headers: { Accept: "application/json" },
+    credentials: "omit",
+    signal: AbortSignal.timeout(10_000),
   })
     .then(async (response) => {
       if (!response.ok) {

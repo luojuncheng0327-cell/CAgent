@@ -8,7 +8,7 @@
  * 4. 关闭 splash，显示主窗口
  * 5. 优雅关闭
  */
-const { app, BrowserWindow, WebContentsView, globalShortcut, ipcMain, dialog, session, shell, clipboard, nativeTheme, Tray, Menu, nativeImage, systemPreferences, Notification, webContents, screen, powerSaveBlocker } = require("electron");
+const { app, BrowserWindow, WebContentsView, globalShortcut, ipcMain, dialog, session, shell, clipboard, nativeTheme, Tray, Menu, nativeImage, systemPreferences, Notification, webContents, screen, powerSaveBlocker, net } = require("electron");
 const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
@@ -5156,6 +5156,7 @@ function readBundledUpdateDigestHistory() {
 // About 页的历史是“当前网站上最近发布的版本”，不能由安装时冻结的包内文件
 // 充当真相。包内 v2 史册只在网络不可用时显式回退，并由 renderer 标注来源。
 const loadUpdateDigestHistory = createUpdateDigestHistoryLoader({
+  fetchImpl: (...args) => net.fetch(...args),
   normalize: normalizeReleaseDigest,
   readBundledEntries: readBundledUpdateDigestHistory,
   log: (message) => console.warn(`[update-history] ${redactMainLogText(message)}`),

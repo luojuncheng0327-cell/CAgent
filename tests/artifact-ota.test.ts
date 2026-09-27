@@ -1118,6 +1118,35 @@ describe("artifact-ota: checkOnce (ETag / not-modified semantics, mutation-check
 //    user clicked something ──────────────────────────────────────────────
 
 describe("artifact-ota: downloadAndApplyArtifacts", () => {
+  it("uses the same injected transport for the manifest, signature and both archives", async () => {
+    const root = makeTempDir("hana-ota-proxy-");
+    const keys = makeKeys();
+    const { fixtureDir, manifest } = await makeOtaFixture(root, keys);
+    manifest.mirrors = ["https://downloads.example.com"];
+    const bytes = Buffer.from(JSON.stringify(manifest));
+    const [manifestUrl] = channelManifestUrls("stable");
+    const responses = new Map([
+      [manifestUrl, bytes],
+      [`${manifestUrl}.sig`, cryptoSign(null, bytes, keys.privateKey)],
+    ]);
+    for (const entry of [manifest.artifacts.server[PLATFORM_ARCH], manifest.artifacts.renderer]) {
+      responses.set(`${manifest.mirrors[0]}/${entry.path}`, await fsp.readFile(path.join(fixtureDir, entry.path)));
+    }
+    const requested: string[] = [];
+    const result = await downloadAndApplyArtifacts({
+      homeDir: path.join(root, "home"), keyset: keys.keyset,
+      currentShellVersion: SHELL_VERSION, platformArch: PLATFORM_ARCH, log: () => {},
+      fetchOnce: async (url: string) => {
+        requested.push(url);
+        const body = responses.get(url);
+        if (!body) throw new Error(`Unexpected update URL: ${url}`);
+        return fakeStreamResponse(200, {}, [body]);
+      },
+    });
+    expect(result).toEqual({ ok: true, train: 1, version: "2.0.0" });
+    expect(requested).toEqual([...responses.keys()]);
+  });
+
   it("stages both archives, activates them in order with phase-ordered progress, and clears available/lastError", async () => {
     const root = makeTempDir("hana-ota-e2e-");
     const keys = makeKeys();
