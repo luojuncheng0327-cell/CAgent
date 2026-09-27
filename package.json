@@ -12,6 +12,8 @@
   },
   "scripts": {
     "spec": "node scripts/render-spec.mjs",
+    "status": "node scripts/update-status.mjs",
+    "check:status": "node scripts/update-status.mjs --check",
     "typecheck": "tsc --noEmit",
     "test": "node --test --test-concurrency=1 tests/*.test.ts",
     "build": "vite build && node scripts/build-desktop.mjs",
@@ -23,7 +25,7 @@
     "check:similarity": "node scripts/check-similarity.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
+    "verify": "pnpm run format:check && pnpm run check:status && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
     "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs && node tests/desktop-layout.mjs && node tests/desktop-menus.mjs && node tests/desktop-documents.mjs"
   },
   "dependencies": {
