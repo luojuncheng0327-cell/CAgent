@@ -1,0 +1,12 @@
+node_modules/
+dist/
+release/
+.runtime/
+.artifacts/
+coverage/
+*.log
+.env*
+!.env.example
+*.key
+*.pem
+

@@ -1,0 +1,6030 @@
+{
+  "schema": 1,
+  "baseline": "2026-09-27",
+  "features": [
+    {
+      "id": "CA-BOOT-001",
+      "domain": "BOOT",
+      "title": "空目录初始化",
+      "entry": "首次启动向导",
+      "io": "语言、供应商、协议、地址、模型 → 可用配置及首个助手",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "必填错误定位字段；失败保留草稿",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "空临时目录完成设置，重启不再弹向导，五种协议选项在初始化和设置一致",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-002",
+      "domain": "BOOT",
+      "title": "桌面进程与主窗口",
+      "entry": "Windows 应用启动",
+      "io": "用户启动 → 一个可用主窗口和服务实例",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "端口冲突、服务失败、渲染崩溃有可读错误和重试",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "连续启动两次只聚焦一个实例；服务崩溃后恢复不丢会话",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-003",
+      "domain": "BOOT",
+      "title": "窗口和托盘",
+      "entry": "标题栏、任务栏、托盘",
+      "io": "最小化、最大化、关闭、托盘显示 / 退出 → 对应窗口状态",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "屏幕变化时把窗口移回可见区域",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "移动缩放后重启恢复可见尺寸；真正退出释放端口和后台任务",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-004",
+      "domain": "BOOT",
+      "title": "快速聊天",
+      "entry": "全局快捷键和浮窗",
+      "io": "快捷键、复用时长、文本 → 浮窗聊天和主会话定位",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "快捷键占用报告失败而非显示注册成功",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "设新快捷键可唤出；超时前复用、超时后新建；转主窗口保留全文",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-005",
+      "domain": "BOOT",
+      "title": "系统对话框",
+      "entry": "文件 / 文件夹选择、拖入拖出",
+      "io": "本机选项 → 用户实际选择的文件引用",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "取消不改变工作区；失效文件有提示",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "选择 Unicode 路径和多文件能使用；拖出得到真实文件",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-006",
+      "domain": "BOOT",
+      "title": "开机启动与防休眠",
+      "entry": "通用设置",
+      "io": "开关 → 系统实际状态",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "无权限时回滚显示并给出原因",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "读取系统状态与 UI 一致；关闭应用释放防休眠请求",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-007",
+      "domain": "BOOT",
+      "title": "通知",
+      "entry": "聊天和后台任务完成",
+      "io": "通知偏好、会话归属 → 有条件的本机通知",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "拒绝系统权限不影响任务终态",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "前台、失焦、不同会话三种场景符合设置；点击能定位原会话",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-008",
+      "domain": "BOOT",
+      "title": "服务所有权",
+      "entry": "桌面连接本机或远程服务",
+      "io": "连接目标 → 独立连接状态",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "退出客户端不杀死不属于自己的服务",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "本机自建服务正常关闭，外部服务继续可达",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-009",
+      "domain": "BOOT",
+      "title": "桌面安全边界",
+      "entry": "渲染层调用系统操作",
+      "io": "限定 IPC 请求 → 校验后的动作",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "外部页面、子帧、任意频道或危险 URL 一律拒绝",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "渲染器没有 Node 权限；伪造来源不能读密钥或执行命令",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BOOT-010",
+      "domain": "BOOT",
+      "title": "跨平台启动",
+      "entry": "macOS / Linux 桌面",
+      "io": "平台能力声明 → 对应菜单、文件路径和包",
+      "states": "未初始化 → 配置中 → 就绪；启动中 → 就绪 / 失败；退出中 → 已退出",
+      "failures": "不可用原生能力禁用并解释",
+      "dataOwner": "安装实例 / 本机偏好",
+      "acceptance": "各系统分别启动验证；Windows 通过不能替代其他系统记录",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/main.cjs",
+        "desktop/src/react/onboarding/OnboardingApp.tsx",
+        "core/first-run.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-001",
+      "domain": "MODEL",
+      "title": "自定义供应商持久化",
+      "entry": "初始化和供应商设置",
+      "io": "名称、base URL、协议、headers → 版本化供应商记录",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "非法 URL / 重名拒绝；显式保存值不得被发现或迁移覆盖",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "先保存地址 A 再改 B，发现模型并重启两次后仍为 B",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-002",
+      "domain": "MODEL",
+      "title": "五种模型协议",
+      "entry": "供应商协议选择",
+      "io": "Chat Completions、Responses、Anthropic Messages、Google Generative AI、OpenAI Codex Responses → 独立适配器",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "未知协议拒绝，不静默退回另一协议",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "每协议验证普通输出、流输出、工具往返、错误和取消；没有真实账号的协议标明待联调",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-003",
+      "domain": "MODEL",
+      "title": "凭据保管",
+      "entry": "API key 输入、清除和替换",
+      "io": "密钥变更 → 系统保护存储；界面返回已保存状态",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "空白不误删、显式清除才删除；禁止返回旧明文",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "API、日志、备份、模型请求错误均不包含密钥；重启仍可调用",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-004",
+      "domain": "MODEL",
+      "title": "OAuth 授权",
+      "entry": "订阅供应商授权入口",
+      "io": "登录启动、state / callback、取消 → 授权状态",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "过期、state 不匹配、拒绝、撤销可见；重复回调幂等",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "用测试授权服务验证 PKCE/state、刷新、注销；真实服务单独验收",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-005",
+      "domain": "MODEL",
+      "title": "发现模型与连通性测试",
+      "entry": "获取模型 / 测试按钮",
+      "io": "供应商配置 → 模型清单或结构化诊断",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "401、403、404、429、5xx、TLS、超时分别展示",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "模型列表为空不能报网络失败；测试结果包含协议和脱敏目标",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-006",
+      "domain": "MODEL",
+      "title": "模型元数据编辑",
+      "entry": "模型详情",
+      "io": "模型 ID、上下文、最大输出、价格、模态、推理档位 → 保存结果",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "数字和能力组合校验；未知模型不推断成全能",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "新增、修改、删除后列表同步；覆盖字段重启不丢",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-007",
+      "domain": "MODEL",
+      "title": "模型职责分配",
+      "entry": "助手和通用模型设置",
+      "io": "聊天、轻量任务、复杂任务、embedding、视觉模型 → 独立选择",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "缺少专用模型明确不可用，不偷偷切换收费来源",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "修改辅助模型不改变聊天模型；会话覆盖不污染其他会话",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-008",
+      "domain": "MODEL",
+      "title": "真实推理档位映射",
+      "entry": "聊天输入区",
+      "io": "声明的 off / low / medium / high / xhigh / max → 协议参数",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "不支持的档位前置拒绝；映射由模型声明而非名称猜测",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "配置 xhigh→max 后抓取出站 JSON 得到 max；默认 high 保持 high",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-009",
+      "domain": "MODEL",
+      "title": "流式传输正确性",
+      "entry": "模型连接",
+      "io": "分块 UTF-8 / SSE / JSON → 增量内容及唯一终态",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "断流不当成功；畸形帧、超限、服务错误可见",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "拆开中文多字节、CRLF 和工具参数传输，最终拼接正确；无终态断开标失败",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-010",
+      "domain": "MODEL",
+      "title": "重试与预算",
+      "entry": "单次模型执行",
+      "io": "超时、最大输出、重试上限 → 有界执行",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "副作用工具不重放；已产出内容不偷偷自动重试",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "同一失败最多按设定重试，停止后请求数不再增长；不暗降模型",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-011",
+      "domain": "MODEL",
+      "title": "用量账本",
+      "entry": "供应商用量页",
+      "io": "时间段、助手、模型 → 输入 / 输出 / 缓存 token 及费用估计",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "缺失 usage 为未知，不写零；失败也保存已知用量",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "两模型三会话汇总与逐笔记录一致；价格缺失展示未知",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-012",
+      "domain": "MODEL",
+      "title": "模态与兼容性",
+      "entry": "图片、音频、视频输入",
+      "io": "模型声明 + 附件 → 合法协议内容块",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "不支持的输入说明原因或经显式辅助模型转换",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "文本模型不接收伪装图片；辅助结果带原始附件引用",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MODEL-013",
+      "domain": "MODEL",
+      "title": "网络代理",
+      "entry": "网络设置",
+      "io": "system / manual / direct、排除地址 → 网络 transport",
+      "states": "未配置 → 已保存 → 测试中 → 可用 / 鉴权失败 / 协议错误 / 超时",
+      "failures": "代理失败诊断不泄露认证头；配置失败不覆写旧值",
+      "dataOwner": "全局供应商；助手默认；会话覆盖",
+      "acceptance": "模型、OAuth、插件下载和更新都遵守模式；本机地址按 noProxy 绕过",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/providers.ts",
+        "server/routes/models.ts",
+        "server/routes/auth.ts",
+        "core/provider-catalog.ts",
+        "desktop/src/react/settings/tabs/providers/ModelEditPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-001",
+      "domain": "SESSION",
+      "title": "新建和恢复会话",
+      "entry": "侧栏、新聊天、继续",
+      "io": "助手和工作区 → 稳定 ID 的独立会话",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "归属缺失可显示历史但不可静默接管",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "新建两会话交替聊天，模型、内容和权限互不串线；重启恢复",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-002",
+      "domain": "SESSION",
+      "title": "历史分页和摘要",
+      "entry": "会话列表和详情",
+      "io": "游标、分页量 → 有序消息和摘要",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "损坏单条隔离报告，不能使全部历史空白",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "加载长历史无重复缺失；摘要能定位原会话",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-003",
+      "domain": "SESSION",
+      "title": "重命名、置顶和排序",
+      "entry": "会话菜单",
+      "io": "名称、置顶序列 → 持久化列表顺序",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "非法序列或旧版本更新拒绝",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "重启保留名称和手动顺序；置顶不会复制会话",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-004",
+      "domain": "SESSION",
+      "title": "项目和文件夹分组",
+      "entry": "侧栏分组",
+      "io": "项目、目录、会话归属 → 可管理的分组树",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "删除分组不删除会话；无效父级和循环拒绝",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "移动会话、重排分组后重启一致",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-005",
+      "domain": "SESSION",
+      "title": "全文搜索和会话内查找",
+      "entry": "搜索框、查找栏",
+      "io": "关键词、游标 → 命中片段和消息定位",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "空搜索正常；分页失效可重新开始",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "中文、英文及特殊符号可查；点击命中定位正确消息",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-006",
+      "domain": "SESSION",
+      "title": "归档、恢复和永久删除",
+      "entry": "会话菜单、归档列表",
+      "io": "会话 ID + 确认 → 对应生命周期",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "运行中处理有明确约定；永久删除需确认且撤销访问",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "归档仍可恢复全部内容；删除后引用返回不存在",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-007",
+      "domain": "SESSION",
+      "title": "分支与分叉",
+      "entry": "消息操作",
+      "io": "父会话、消息节点 → 独立子会话和来源关系",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "不存在节点拒绝，父历史不改写",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "从中间节点分叉只继承该点以前上下文，后续各自独立",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-008",
+      "domain": "SESSION",
+      "title": "编辑后重发和重试",
+      "entry": "用户 / 助手消息操作",
+      "io": "原轮次、修改文本 → 新分支或新轮次",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "旧流迟到数据不得写进新轮次",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "编辑后只发送修改后的分支；重试不重复用户消息或副作用工具",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-009",
+      "domain": "SESSION",
+      "title": "输入草稿",
+      "entry": "输入框切换会话",
+      "io": "文本、附件引用、选中技能 → 每会话草稿",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "失效附件可移除；保存失败提示",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "切到另一会话再重启原草稿仍完整；发送成功清除原草稿",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-010",
+      "domain": "SESSION",
+      "title": "会话目录授权",
+      "entry": "文件夹授权入口",
+      "io": "路径、读写级别、撤销 → 会话范围权限",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "父子路径和符号链接归一化后判断",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "只授权 A 不能读 B；撤销后正在排队的动作也拒绝",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-011",
+      "domain": "SESSION",
+      "title": "上下文压缩",
+      "entry": "手动压缩和容量策略",
+      "io": "历史 + 模型窗口 → 摘要与保留尾部",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "失败保留原始全文；编辑后过期摘要不提交",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "小窗口仍预留输出；手动和自动失败都有结果；压缩不删历史",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-012",
+      "domain": "SESSION",
+      "title": "多客户端续流",
+      "entry": "重新连接和切换设备",
+      "io": "runId、事件序号 → 重放或重新同步提示",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "缓存淘汰明确 reset；旧取消令牌不能中止新任务",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "断开后重连增量无重复，终态一致；取消旧 runId 不影响新流",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-013",
+      "domain": "SESSION",
+      "title": "助手被删除后的历史",
+      "entry": "历史恢复入口",
+      "io": "原历史和新助手选择 → 显式重新归属的会话",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "禁止把旧助手隐式复活",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "仍可阅读旧记录；明确指定新助手才能继续运行",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-014",
+      "domain": "SESSION",
+      "title": "导出对话",
+      "entry": "会话菜单",
+      "io": "JSON / Markdown 选择 → 完整可下载文档",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "下载失败可重试；密钥和内部令牌排除",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "顺序、时间、角色、工具结果和附件引用与历史一致",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SESSION-015",
+      "domain": "SESSION",
+      "title": "并发和空闲回收",
+      "entry": "多个会话同时运行",
+      "io": "每会话任务 → 独立取消、锁和休眠",
+      "states": "活动 / 归档；空闲 → 运行 → 完成 / 失败 / 取消；删除为终态",
+      "failures": "超过并发上限排队；回收不取消其他会话",
+      "dataOwner": "稳定 sessionId；助手归属；项目和分支",
+      "acceptance": "并行两会话只停止其中一个；恢复已休眠会话不丢记录",
+      "phase": 1,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/sessions.ts",
+        "server/routes/session-projects.ts",
+        "core/session-manifest/store.ts",
+        "desktop/src/react/components/SessionList.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-001",
+      "domain": "CHAT",
+      "title": "发送、流式、停止",
+      "entry": "输入区",
+      "io": "文本 → 实时助手回复及持久化消息",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "空输入拒绝；发送失败保留文本；停止显示取消",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "真实本机测试服务逐块返回，UI 持续更新；停止后不再追加",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-002",
+      "domain": "CHAT",
+      "title": "补充指令与插话",
+      "entry": "运行中输入区",
+      "io": "追加任务或转向指令 → 当前轮次后的明确处理",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "重复提交去重；取消不能吞掉未消费草稿",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "正在生成时补充一条指令，按界面标示顺序执行且只出现一次",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-003",
+      "domain": "CHAT",
+      "title": "思考、工具和执行过程",
+      "entry": "消息内容区",
+      "io": "reasoning / tool events → 折叠过程、参数、结果",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "失败工具明确错误；不能伪造思考内容",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "工具开始、执行结果、完成顺序正确；折叠不影响复制正文",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-004",
+      "domain": "CHAT",
+      "title": "Markdown 与代码",
+      "entry": "消息渲染",
+      "io": "Markdown、代码、表格、公式、图示 → 安全可读内容",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "原始 HTML 和脚本不获取宿主权限",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "危险 HTML 不执行；代码可复制；长表格可横向滚动",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-005",
+      "domain": "CHAT",
+      "title": "消息操作",
+      "entry": "消息工具栏",
+      "io": "复制、引用、重试、分叉 → 对应内容或会话",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "剪贴板失败可见；引用保留出处",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "复制不混入按钮标签；引用选中文字带原消息关联",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-006",
+      "domain": "CHAT",
+      "title": "文件和多模态附件",
+      "entry": "粘贴、拖入、选择",
+      "io": "文件 / 图片 / 音频 / 视频 → 附件卡和上传状态",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "类型、大小超限拒绝；过期链接提供重选",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "多文件失败独立显示；发送前删除不会继续附带",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-007",
+      "domain": "CHAT",
+      "title": "文件、技能和助手提及",
+      "entry": "输入提及菜单",
+      "io": "@ 查询、技能选择 → 可撤销结构化引用",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "引用权限不足不泄露完整路径或内容",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "选择后发送携带真实引用；同名不同来源可区分",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-008",
+      "domain": "CHAT",
+      "title": "斜杠命令",
+      "entry": "输入命令菜单",
+      "io": "命令及参数 → 文档化命令结果",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "未知命令明确错误；命令不误当收费模型调用",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "列出可用命令，重置、状态、压缩遵守各自权限",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-009",
+      "domain": "CHAT",
+      "title": "权限和表单确认",
+      "entry": "执行确认卡",
+      "io": "批准、拒绝、选项、文字 → 唯一确认结果",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "超时、取消、旧卡片和重复回复有明确状态",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "一次批准只解决对应动作；拒绝后不产生副作用",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-010",
+      "domain": "CHAT",
+      "title": "计划模式与权限模式",
+      "entry": "输入区开关",
+      "io": "read / ask / operate、计划标志 → 后续工具策略",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "只读禁止写入和任意命令；计划不暗升权限",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "切只读后先前排队的写入仍被执行前检查阻止",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-011",
+      "domain": "CHAT",
+      "title": "任务清单与进度",
+      "entry": "右侧活动 / 待办卡",
+      "io": "任务、状态、完成操作 → 顺序进度",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "取消后的迟到完成不能重开任务",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "同一待办重复完成幂等；会话间不共享清单",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-012",
+      "domain": "CHAT",
+      "title": "交互卡和产物",
+      "entry": "对话卡片区",
+      "io": "结构化卡片 / 文件 / 媒体任务 → 可操作结果",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "未知版本提供文本回退；卡过期不能重复确认",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "卡片刷新后状态一致，文件可读取实际字节而非空占位",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-013",
+      "domain": "CHAT",
+      "title": "长对话导航",
+      "entry": "时间线、查找、滚动",
+      "io": "目标消息、阅读位置 → 定位与保持视口",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "持续输出不抢走正在阅读的历史位置",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "回到底部恢复跟随；跳转后目标可见",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHAT-014",
+      "domain": "CHAT",
+      "title": "对话截图和分享",
+      "entry": "分享设置与消息操作",
+      "io": "范围、宽度、主题、字体、分页 → 图片导出",
+      "states": "草稿 → 提交 → 等待 / 流式 / 工具执行 / 等待确认 → 终态",
+      "failures": "超长分片有顺序；私有令牌不可进入图片或 HTML",
+      "dataOwner": "会话消息、轮次、附件和临时 UI 状态",
+      "acceptance": "导出含代码 / 附件的对话，无截断遮盖且分片顺序正确",
+      "phase": 1,
+      "dependencies": [
+        "SESSION",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/chat.ts",
+        "server/ws-protocol.ts",
+        "desktop/src/react/components/InputArea.tsx",
+        "desktop/src/react/components/chat/ChatTranscript.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AGENT-001",
+      "domain": "AGENT",
+      "title": "助手增删和主助手",
+      "entry": "助手设置",
+      "io": "名称、模型 → 独立助手、主助手和顺序",
+      "states": "新建 → 已配置 → 活动 / 未加载 → 删除",
+      "failures": "删除确认；不能留下无效默认引用",
+      "dataOwner": "助手独立配置；用户全局资料",
+      "acceptance": "创建 A/B 并切换，聊天及配置归属正确；删除后历史按规格保留",
+      "phase": 2,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/agents.ts",
+        "server/routes/avatar.ts",
+        "server/routes/character-cards.ts",
+        "desktop/src/react/settings/tabs/AgentTab.tsx",
+        "desktop/src/react/settings/tabs/MeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AGENT-002",
+      "domain": "AGENT",
+      "title": "独立身份和行为规则",
+      "entry": "助手编辑器",
+      "io": "原创系统说明、私有 / 公开规则 → 生效文本",
+      "states": "新建 → 已配置 → 活动 / 未加载 → 删除",
+      "failures": "版本冲突拒绝；不得复用旧项目人格模板",
+      "dataOwner": "助手独立配置；用户全局资料",
+      "acceptance": "修改一个助手只影响其新轮次；公开渠道只加载公开部分",
+      "phase": 2,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/agents.ts",
+        "server/routes/avatar.ts",
+        "server/routes/character-cards.ts",
+        "desktop/src/react/settings/tabs/AgentTab.tsx",
+        "desktop/src/react/settings/tabs/MeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AGENT-003",
+      "domain": "AGENT",
+      "title": "原创人格选项",
+      "entry": "新建助手",
+      "io": "中立 / 用户自定义风格 → 新撰写角色设定",
+      "states": "新建 → 已配置 → 活动 / 未加载 → 删除",
+      "failures": "旧角色名和素材仅作为迁移数据，不打包进新产品",
+      "dataOwner": "助手独立配置；用户全局资料",
+      "acceptance": "新装不含旧人格文字、头像、示例文案；用户可自行导入",
+      "phase": 2,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/agents.ts",
+        "server/routes/avatar.ts",
+        "server/routes/character-cards.ts",
+        "desktop/src/react/settings/tabs/AgentTab.tsx",
+        "desktop/src/react/settings/tabs/MeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AGENT-004",
+      "domain": "AGENT",
+      "title": "头像与用户资料",
+      "entry": "我 / 助手资料",
+      "io": "名字、简介、裁剪图片 → 验证后的头像和资料",
+      "states": "新建 → 已配置 → 活动 / 未加载 → 删除",
+      "failures": "非法图片拒绝；删除回退原创默认图形",
+      "dataOwner": "助手独立配置；用户全局资料",
+      "acceptance": "头像重启保持；更新用户资料不覆盖助手身份",
+      "phase": 2,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/agents.ts",
+        "server/routes/avatar.ts",
+        "server/routes/character-cards.ts",
+        "desktop/src/react/settings/tabs/AgentTab.tsx",
+        "desktop/src/react/settings/tabs/MeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AGENT-005",
+      "domain": "AGENT",
+      "title": "工具和技能开关",
+      "entry": "助手能力设置",
+      "io": "工具 / 技能选择 → 每助手可用集合",
+      "states": "新建 → 已配置 → 活动 / 未加载 → 删除",
+      "failures": "禁用后运行时检查；全局高权限能力不可局部越权",
+      "dataOwner": "助手独立配置；用户全局资料",
+      "acceptance": "两个助手工具集不同，禁用工具即使模型强行调用也拒绝",
+      "phase": 2,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/agents.ts",
+        "server/routes/avatar.ts",
+        "server/routes/character-cards.ts",
+        "desktop/src/react/settings/tabs/AgentTab.tsx",
+        "desktop/src/react/settings/tabs/MeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AGENT-006",
+      "domain": "AGENT",
+      "title": "角色卡导入导出",
+      "entry": "角色卡入口",
+      "io": "中立角色卡、资源清单 → 预览、导入计划及导出包",
+      "states": "新建 → 已配置 → 活动 / 未加载 → 删除",
+      "failures": "路径穿越、资源缺失、超限拒绝；不导出凭据",
+      "dataOwner": "助手独立配置；用户全局资料",
+      "acceptance": "先预览后导入；再导出字段与允许资源一致",
+      "phase": 2,
+      "dependencies": [
+        "DATA",
+        "MODEL"
+      ],
+      "evidence": [
+        "server/routes/agents.ts",
+        "server/routes/avatar.ts",
+        "server/routes/character-cards.ts",
+        "desktop/src/react/settings/tabs/AgentTab.tsx",
+        "desktop/src/react/settings/tabs/MeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-001",
+      "domain": "WORK",
+      "title": "工作区选择与历史",
+      "entry": "工作台入口",
+      "io": "文件夹或挂载 ID → 根目录和最近列表",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "路径失效可重新选择；清历史不删文件",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "切换工作区后根和上下文正确，重启保留选择",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-002",
+      "domain": "WORK",
+      "title": "目录树与检索",
+      "entry": "工作台文件列表",
+      "io": "目录、过滤词 → 有界目录树、文件搜索",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "访问拒绝和大目录分页可见",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "Unicode / 空格路径能查找；不能用 ../ 跳出授权根",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-003",
+      "domain": "WORK",
+      "title": "文件及目录管理",
+      "entry": "工作台菜单",
+      "io": "创建、重命名、移动、上传、回收 → 实际文件变化",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "碰撞不覆盖；跨根移动检查两边权限",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "逐项操作后磁盘与列表一致；失败保留原文件",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-004",
+      "domain": "WORK",
+      "title": "文本和 Markdown 编辑",
+      "entry": "文件预览编辑器",
+      "io": "文件、文本、预期版本 → 新版本和修改状态",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "外部修改产生冲突，不静默覆盖",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "另一进程改同文件时保存被拒；用户刷新 / 合并后可保存",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-005",
+      "domain": "WORK",
+      "title": "多标签预览与独立查看器",
+      "entry": "预览区、独立窗口",
+      "io": "资源 ID → 文本 / 图片 / 音视频 / PDF 预览",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "缺失、过期和类型错误可见；未保存关闭需处理",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "切标签保持草稿和滚动；本地 / 移动渲染同一资源",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-006",
+      "domain": "WORK",
+      "title": "HTML 预览隔离",
+      "entry": "预览 HTML",
+      "io": "文档及局部资源 → 隔离预览",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "不授予宿主 Node、任意路径或凭据",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "文档可显示自身资源；恶意脚本无法调宿主 API",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-007",
+      "domain": "WORK",
+      "title": "工作便笺",
+      "entry": "工作台便笺",
+      "io": "文本 → 当前助手便笺",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "并发保存冲突可处理",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "两助手便笺隔离，重启和后台任务看到正确版本",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-008",
+      "domain": "WORK",
+      "title": "文件变化订阅",
+      "entry": "打开的文档和目录",
+      "io": "订阅根、资源版本 → 变更事件",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "断线重同步；关闭界面释放 watcher",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "外部新建 / 修改 / 删除能刷新；重复切换无 watcher 泄漏",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-009",
+      "domain": "WORK",
+      "title": "封面与文档美化",
+      "entry": "Markdown 封面工具",
+      "io": "用户图片、裁剪位置 → 文档封面及可撤销修改",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "缺图提示；生成图片需指定供应商并显式执行",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "封面可显示、调整和移除，正文保持不变",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-010",
+      "domain": "WORK",
+      "title": "活动和执行记录",
+      "entry": "工作台活动页",
+      "io": "助手、任务 ID → 执行摘要和原会话",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "历史任务缺失可解释；提升为会话不重复执行",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "后台活动可打开原记录，失败不展示成功",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-WORK-011",
+      "domain": "WORK",
+      "title": "会话文件集合",
+      "entry": "右侧产物列表",
+      "io": "上传 / 输出文件 → 稳定引用、下载、定位",
+      "states": "无工作区 → 已挂载 → 浏览 / 编辑 → 保存 / 冲突；文件存在 / 回收",
+      "failures": "同名文件独立标识；失效状态可见",
+      "dataOwner": "已授权工作区；会话产物；编辑器草稿",
+      "acceptance": "从会话 A 的引用不能读取会话 B 私有产物",
+      "phase": 2,
+      "dependencies": [
+        "FILE",
+        "SESSION"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "server/routes/studio-workspaces.ts",
+        "server/routes/resource-io.ts",
+        "desktop/src/react/components/PreviewEditor.tsx",
+        "desktop/src/react/components/desk/DeskTree.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-001",
+      "domain": "FILE",
+      "title": "读写和精确编辑",
+      "entry": "Agent 文件工具",
+      "io": "路径、行范围、替换内容 → 文本 / 版本 / 差异",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "大文件限量；版本不匹配和歧义替换拒绝",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "读到正确行；写入原子完成；编辑匹配多处时不误改",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-002",
+      "domain": "FILE",
+      "title": "目录与内容搜索",
+      "entry": "ls / find / grep 等工具",
+      "io": "根、glob / 关键词 → 带出处的有限结果",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "遍历深度、结果量和时间有界",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "匹配 Unicode 文件；结果截断有标记；权限外无结果",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-003",
+      "domain": "FILE",
+      "title": "文件引用与复制",
+      "entry": "上传、产物、materialize",
+      "io": "资源 ID 或路径、目标、冲突策略 → 实际副本",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "路径穿越、symlink 越界和同名覆盖默认拒绝",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "来源、目标都鉴权；副本 hash 一致",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-004",
+      "domain": "FILE",
+      "title": "文档提取",
+      "entry": "Office / PDF 读取",
+      "io": "PDF、DOCX、XLSX、PPTX、ODT、ODS、RTF、EPUB、CSV → 文本及提取报告",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "扫描件 / 加密 / 不支持格式明确限制，不输出乱码当正文",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "每格式独立夹具；表格 / 页码可追溯；扫描件标需 OCR",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-005",
+      "domain": "FILE",
+      "title": "命令进程生命周期",
+      "entry": "Agent 终端执行",
+      "io": "shell、cwd、命令、时限 → 输出、退出码、运行 ID",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "明确批准后才能执行；超时终止进程树；输出截断可见",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "交互输入和增量输出正常；取消后子进程不残留",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-006",
+      "domain": "FILE",
+      "title": "终端会话交互",
+      "entry": "命令继续输入",
+      "io": "运行 ID、stdin、等待量 → 新输出或完成",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "其他会话不能输入；已退出返回终态",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "同一运行分段输出不重复；写入已结束进程有确定结果",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-007",
+      "domain": "FILE",
+      "title": "网页搜索",
+      "entry": "web_search",
+      "io": "query、结果数、服务选择 → 标题 / URL / 摘要 / 来源",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "无 key、限流、验证码 / 拒绝分别标示；不能编结果",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "使用测试服务对比结果；真实供应商逐项联调；切换来源可追踪",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-008",
+      "domain": "FILE",
+      "title": "网页读取",
+      "entry": "web_fetch",
+      "io": "HTTP(S) URL → 有限正文和最终 URL",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "SSRF 私有地址、重定向越界、超限、超时拒绝",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "恶意重定向不能访问本机密钥服务；网页指令只作为数据",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-009",
+      "domain": "FILE",
+      "title": "结构化产物发布",
+      "entry": "输出文件工具",
+      "io": "会话文件及媒体元数据 → 可下载卡片",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "必须验证文件存在且权限允许",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "下载字节与工具输出 hash 一致；无文件不能报已交付",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-FILE-010",
+      "domain": "FILE",
+      "title": "设置修改工具",
+      "entry": "Agent 设置建议",
+      "io": "查找配置项、变更建议、用户应用 → 有版本的配置",
+      "states": "校验 → 等待批准 → 执行 → 成功 / 失败 / 取消",
+      "failures": "敏感项不得自动批准；建议过期重新确认",
+      "dataOwner": "调用会话及明确授权的文件系统 / 网络范围",
+      "acceptance": "拒绝不改设置；应用后 UI 与持久化值一致",
+      "phase": 2,
+      "dependencies": [
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "shared/tool-categories.ts",
+        "lib/tools/file-tool.ts",
+        "lib/exec-command/",
+        "lib/resource-io/",
+        "lib/tools/web-search.ts",
+        "lib/document-extract/"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-001",
+      "domain": "AUTH",
+      "title": "本机 API 鉴权",
+      "entry": "HTTP / 流连接",
+      "io": "身份凭据 → 有范围的主体",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "缺失 / 错误凭据拒绝；Origin 和 Host 校验",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "陌生网页、外部来源及错误 token 不能读取会话或变更配置",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-002",
+      "domain": "AUTH",
+      "title": "按动作授权",
+      "entry": "只读、询问、操作模式",
+      "io": "主体 + 动作 + 目标 → allow / ask / deny",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "每次执行前重查；前端隐藏不是权限控制",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "只读模式直接调用写 API 仍拒绝；被撤销批准不可复用",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-003",
+      "domain": "AUTH",
+      "title": "一次性确认",
+      "entry": "权限对话框",
+      "io": "callId、动作摘要、批准范围 → 审计结果",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "重复、旧会话、修改过的参数拒绝",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "批准绑定同一次调用和参数；换路径不能沿用批准",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-004",
+      "domain": "AUTH",
+      "title": "文件路径边界",
+      "entry": "文件和挂载服务",
+      "io": "路径 / 资源引用 → 归一化授权目标",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "Windows 大小写、UNC、设备路径、junction / symlink 必须处理",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "越界和链接逃逸被拒；无测试权限的链接场景记未验证",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-005",
+      "domain": "AUTH",
+      "title": "操作系统沙盒",
+      "entry": "终端与插件执行",
+      "io": "支持的平台策略 → OS 实际隔离",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "不支持时不可声称已隔离；只读模式不得靠字符串黑名单放行 shell",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "Windows / macOS / Linux 各自运行越界夹具；无后端时显示不可用",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-006",
+      "domain": "AUTH",
+      "title": "网络限制",
+      "entry": "沙盒网络设置",
+      "io": "允许网络 / 域范围 → 实际网络策略",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "平台不支持禁网则禁用选项并说明",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "拒绝策略下测试进程真实无法联网；仅 UI 开关不算通过",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-007",
+      "domain": "AUTH",
+      "title": "资源下载票据",
+      "entry": "图片、视频、插件资源",
+      "io": "资源、主体、期限 → 有限访问票据",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "过期、跨主体、路径替换拒绝",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "过期后直接 URL 无法读取；票据不包含原始密钥",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-008",
+      "domain": "AUTH",
+      "title": "审计与脱敏",
+      "entry": "安全诊断",
+      "io": "主体、动作、结果、时间 → 本地审计条目",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "写日志失败不泄密；用户内容默认不进入诊断",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "批准 / 拒绝可追溯；密钥搜索在日志和错误中为零",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTH-009",
+      "domain": "AUTH",
+      "title": "隔离远程执行",
+      "entry": "远程 / 移动用户调用",
+      "io": "设备 scopes → 限定的聊天和工具权限",
+      "states": "未授权 → 待批准 → 允许 / 拒绝 / 过期 / 撤销",
+      "failures": "远程用户不能设系统密钥或扩大自身权限",
+      "dataOwner": "本机所有者 / 设备主体 / 助手 / 会话 / 单次调用",
+      "acceptance": "伪造本机 owner 字段仍拒绝管理动作",
+      "phase": 1,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "core/capability-policy.ts",
+        "core/server-auth.ts",
+        "core/security-principal.ts",
+        "lib/permission/",
+        "lib/sandbox/",
+        "server/routes/confirm.ts",
+        "server/routes/resources.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-001",
+      "domain": "MEM",
+      "title": "记忆总开关和健康",
+      "entry": "助手记忆页",
+      "io": "enabled、健康查询 → 实际启停和失败步骤",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "关闭不再注入 / 提取；错误展示最近失败",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "关闭后发送消息无记忆调用；历史数据不被误删",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-002",
+      "domain": "MEM",
+      "title": "手工固定记忆",
+      "entry": "固定记忆列表和工具",
+      "io": "新增、编辑、取消固定 → 稳定记忆条目",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "重复条目和并发变更可控",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "重启可读；取消固定后不再优先注入",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-003",
+      "domain": "MEM",
+      "title": "事实检索和来源",
+      "entry": "search_memory",
+      "io": "query、范围、输出预算 → 有限事实与来源",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "禁止跨助手泄漏；超限明确截断",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "命中带 ID 和来源；正文总量遵守预算且原文不截坏",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-004",
+      "domain": "MEM",
+      "title": "异步记忆提取",
+      "entry": "会话结束后的后台提取",
+      "io": "新消息水位线 → 新事实及完成水位",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "失败不推进水位；并发只认领一次",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "模拟失败再恢复仍处理遗漏消息；不重复写事实",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-005",
+      "domain": "MEM",
+      "title": "分层记忆编辑",
+      "entry": "事实 / 今日 / 周 / 长期编辑器",
+      "io": "内容 + revision → 新版本",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "同时模型编译和人工编辑时人工修改不被旧结果覆盖",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "等待模型时手动重置，模型返回后旧记忆不得复活",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-006",
+      "domain": "MEM",
+      "title": "编译和遗忘策略",
+      "entry": "记忆配置",
+      "io": "token 预算、衰减和重要性 → 可解释的注入集合",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "不能因超预算删除原始事实；无模型明确降级",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "过期低权重条目不入上下文，仍可查看 / 导出",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-007",
+      "domain": "MEM",
+      "title": "整理与版本恢复",
+      "entry": "记忆整理页",
+      "io": "手动运行、版本 ID → 整理预览 / 还原版本",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "失败、取消、过期版本和恢复冲突可见",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "恢复前备份当前版；还原不触碰无关层",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-008",
+      "domain": "MEM",
+      "title": "记忆清理与交换",
+      "entry": "清空 / 导入 / 导出",
+      "io": "范围、确认、结构化数据 → 删除报告或导入报告",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "格式不合、跨助手和未知版本拒绝",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "导入后条目数、内容 hash 一致；清空后后台不能写回",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-009",
+      "domain": "MEM",
+      "title": "经验库",
+      "entry": "经验分类页和工具",
+      "io": "类别、经验文本 → 分类存储、检索",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "关闭经验能力不注入；删除分类不能删别的助手数据",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "记录一次后能按类别检索；修改 / 删除重启保持",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEM-010",
+      "domain": "MEM",
+      "title": "日记",
+      "entry": "日记入口",
+      "io": "日期、生成请求 → 按日期保存的文本",
+      "states": "待提取 → 提取中 → 待编译 → 可检索；失败退避；关闭 / 重置使旧结果失效",
+      "failures": "重复触发有明确覆盖策略；模型失败保留旧稿",
+      "dataOwner": "助手私有；明确的频道范围；用户编辑版本",
+      "acceptance": "列表日期排序正确；生成失败不覆盖已存在日记",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/config.ts",
+        "server/routes/memory-dream.ts",
+        "server/routes/diary.ts",
+        "lib/memory/",
+        "lib/tools/experience.ts",
+        "desktop/src/react/settings/tabs/agent/AgentMemory.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-001",
+      "domain": "AUTO",
+      "title": "计划任务管理",
+      "entry": "自动化面板",
+      "io": "名称、prompt、周期 / cron / 一次性时间、时区 → 下次执行时间",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "错误 cron / 过去时间明确处理",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "创建、修改、暂停、恢复、删除分别可见且重启保持",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-002",
+      "domain": "AUTO",
+      "title": "建议先审阅再启用",
+      "entry": "Agent 自动化卡",
+      "io": "建议内容 → 用户应用后的任务",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "未应用不得持久化为运行计划；重复应用幂等",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "拒绝建议后不存在调度；应用一次仅产生一个任务",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-003",
+      "domain": "AUTO",
+      "title": "到期调度与防重叠",
+      "entry": "后台调度器",
+      "io": "时钟 tick → 最多一个同任务运行",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "不能提前执行；错过触发策略明确；重启不补跑风暴",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "模拟时间和慢任务，无提前触发 / 重叠 / 删除后复活",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-004",
+      "domain": "AUTO",
+      "title": "巡检",
+      "entry": "助手工作设置",
+      "io": "总开关、每助手开关、间隔 → 工作区巡检",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "默认关闭；无工作区明确跳过",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "开启前零调用；启用后按设定执行并留下活动记录",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-005",
+      "domain": "AUTO",
+      "title": "后台会话与通知",
+      "entry": "活动面板",
+      "io": "计划、模型、权限 → 独立后台会话及结果",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "后台批准等待不能无限挂起；未知权限拒绝",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "结果关联原计划；手动打开不会重复跑；通知遵守偏好",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-006",
+      "domain": "AUTO",
+      "title": "持续唤醒与完成",
+      "entry": "loop_control",
+      "io": "下一唤醒时间 / complete → 延续同一任务",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "终态不可被迟到回调改回运行",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "完成后所有唤醒取消；取消后不再新增费用",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-007",
+      "domain": "AUTO",
+      "title": "任务注册与取消",
+      "entry": "当前任务列表、停止按钮",
+      "io": "taskId → 原子终态和取消信号",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "未知、不支持停止、已结束分开返回",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "重复停止幂等；异步迟到成功不覆盖取消",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-008",
+      "domain": "AUTO",
+      "title": "工作流调度",
+      "entry": "工作流工具和卡片",
+      "io": "独立编排定义、节点、依赖、预算 → DAG 运行结果",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "环、并发、超时、重试和 token 预算校验",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "依赖顺序正确；默认并发 4；中止不启动新节点",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-AUTO-009",
+      "domain": "AUTO",
+      "title": "工作流恢复",
+      "entry": "运行记录",
+      "io": "runId + 未改变节点输入 → 已完成节点复用",
+      "states": "建议 → 已启用 / 暂停 → 到期 → 运行 → 完成 / 失败；删除永久终止调度",
+      "failures": "输入变更使依赖缓存失效；副作用不能盲重放",
+      "dataOwner": "助手、会话及自动化记录",
+      "acceptance": "失败后恢复只执行需要的节点；可查逐节点结果",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/desk.ts",
+        "hub/scheduler.ts",
+        "lib/tools/automation-tool.ts",
+        "lib/tools/loop-control-tool.ts",
+        "lib/task-registry.ts",
+        "desktop/src/react/components/AutomationPanel.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COLLAB-001",
+      "domain": "COLLAB",
+      "title": "子助手任务",
+      "entry": "子任务工具",
+      "io": "任务、助手、模型、读写级别 → 子线程 ID 和执行状态",
+      "states": "创建 → 排队 → 运行 → 等待 / 完成 / 失败 / 关闭",
+      "failures": "权限不超过父任务；并发槽超限有队列 / 拒绝",
+      "dataOwner": "父会话、子会话、草案及消息投递 ID",
+      "acceptance": "只读父任务不能派写任务；子任务结果归原父会话",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "AUTO"
+      ],
+      "evidence": [
+        "lib/tools/subagent-tool.ts",
+        "lib/tools/session-tool.ts",
+        "server/routes/session-collab.ts",
+        "lib/session-collab/",
+        "lib/deferred-result-store.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COLLAB-002",
+      "domain": "COLLAB",
+      "title": "子任务续聊与关闭",
+      "entry": "子任务卡和工具",
+      "io": "threadId、追加任务 / 关闭原因 → 同线程续执行或释放",
+      "states": "创建 → 排队 → 运行 → 等待 / 完成 / 失败 / 关闭",
+      "failures": "跨父会话操作拒绝；关闭后不能隐式复活",
+      "dataOwner": "父会话、子会话、草案及消息投递 ID",
+      "acceptance": "续聊保留子上下文；关闭释放槽且保留历史",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "AUTO"
+      ],
+      "evidence": [
+        "lib/tools/subagent-tool.ts",
+        "lib/tools/session-tool.ts",
+        "server/routes/session-collab.ts",
+        "lib/session-collab/",
+        "lib/deferred-result-store.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COLLAB-003",
+      "domain": "COLLAB",
+      "title": "任务状态和延迟结果",
+      "entry": "活动查询",
+      "io": "父会话、taskId → 已完成 / 待完成结果",
+      "states": "创建 → 排队 → 运行 → 等待 / 完成 / 失败 / 关闭",
+      "failures": "分支改变后过期结果不注入新分支",
+      "dataOwner": "父会话、子会话、草案及消息投递 ID",
+      "acceptance": "多个并行结果仅各投递一次，取消后的旧结果有明确标志",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "AUTO"
+      ],
+      "evidence": [
+        "lib/tools/subagent-tool.ts",
+        "lib/tools/session-tool.ts",
+        "server/routes/session-collab.ts",
+        "lib/session-collab/",
+        "lib/deferred-result-store.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COLLAB-004",
+      "domain": "COLLAB",
+      "title": "跨会话发现和阅读",
+      "entry": "session 工具",
+      "io": "查询、目标会话、深度、游标 → 摘要或正文",
+      "states": "创建 → 排队 → 运行 → 等待 / 完成 / 失败 / 关闭",
+      "failures": "未授权会话不可枚举私密内容",
+      "dataOwner": "父会话、子会话、草案及消息投递 ID",
+      "acceptance": "分页读不重复；目标不存在和无权限区分但不泄密",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "AUTO"
+      ],
+      "evidence": [
+        "lib/tools/subagent-tool.ts",
+        "lib/tools/session-tool.ts",
+        "server/routes/session-collab.ts",
+        "lib/session-collab/",
+        "lib/deferred-result-store.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COLLAB-005",
+      "domain": "COLLAB",
+      "title": "跨会话发送和创建",
+      "entry": "协作草案卡",
+      "io": "目标、文字、新助手选择 → 待应用草案和投递结果",
+      "states": "创建 → 排队 → 运行 → 等待 / 完成 / 失败 / 关闭",
+      "failures": "未经用户授权不得主动发送；重复应用幂等",
+      "dataOwner": "父会话、子会话、草案及消息投递 ID",
+      "acceptance": "拒绝不发送；应用后目标只收到一条，并带来源",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "AUTO"
+      ],
+      "evidence": [
+        "lib/tools/subagent-tool.ts",
+        "lib/tools/session-tool.ts",
+        "server/routes/session-collab.ts",
+        "lib/session-collab/",
+        "lib/deferred-result-store.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COLLAB-006",
+      "domain": "COLLAB",
+      "title": "协作审阅",
+      "entry": "审阅请求 / 反馈卡",
+      "io": "请求、结果、批准 / 拒绝 → 可追溯决策",
+      "states": "创建 → 排队 → 运行 → 等待 / 完成 / 失败 / 关闭",
+      "failures": "过期请求不能覆盖新版本",
+      "dataOwner": "父会话、子会话、草案及消息投递 ID",
+      "acceptance": "审阅对象与版本一致；结论可回看原上下文",
+      "phase": 3,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "AUTO"
+      ],
+      "evidence": [
+        "lib/tools/subagent-tool.ts",
+        "lib/tools/session-tool.ts",
+        "server/routes/session-collab.ts",
+        "lib/session-collab/",
+        "lib/deferred-result-store.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHANNEL-001",
+      "domain": "CHANNEL",
+      "title": "频道管理",
+      "entry": "频道面板",
+      "io": "名称、成员 → 频道和成员清单",
+      "states": "创建 → 活动 / 已读未读 → 停用 / 删除",
+      "failures": "重名、非法成员拒绝；删除有确认",
+      "dataOwner": "频道成员与消息；DM 双方",
+      "acceptance": "创建、加人、移除后列表及权限即时更新",
+      "phase": 4,
+      "dependencies": [
+        "AGENT",
+        "SESSION",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/channels.ts",
+        "server/routes/dm.ts",
+        "hub/channel-router.ts",
+        "hub/dm-router.ts",
+        "lib/tools/channel-tool.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHANNEL-002",
+      "domain": "CHANNEL",
+      "title": "频道消息",
+      "entry": "频道输入与工具",
+      "io": "文字、附件、提及 → 顺序消息",
+      "states": "创建 → 活动 / 已读未读 → 停用 / 删除",
+      "failures": "无成员权限拒绝；重复发送可去重",
+      "dataOwner": "频道成员与消息；DM 双方",
+      "acceptance": "两成员看到同一条消息，移除成员后不能继续读取",
+      "phase": 4,
+      "dependencies": [
+        "AGENT",
+        "SESSION",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/channels.ts",
+        "server/routes/dm.ts",
+        "hub/channel-router.ts",
+        "hub/dm-router.ts",
+        "lib/tools/channel-tool.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHANNEL-003",
+      "domain": "CHANNEL",
+      "title": "助手频道参与",
+      "entry": "助手频道开关",
+      "io": "参与开关和提及规则 → 有限轮转响应",
+      "states": "创建 → 活动 / 已读未读 → 停用 / 删除",
+      "failures": "默认不自动加入；禁止无限互相触发",
+      "dataOwner": "频道成员与消息；DM 双方",
+      "acceptance": "关闭后没有后台模型调用；单次消息响应遵守轮次预算",
+      "phase": 4,
+      "dependencies": [
+        "AGENT",
+        "SESSION",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/channels.ts",
+        "server/routes/dm.ts",
+        "hub/channel-router.ts",
+        "hub/dm-router.ts",
+        "lib/tools/channel-tool.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHANNEL-004",
+      "domain": "CHANNEL",
+      "title": "已读、活动与导出",
+      "entry": "频道状态",
+      "io": "最后已读游标、导出格式 → 未读数和历史文件",
+      "states": "创建 → 活动 / 已读未读 → 停用 / 删除",
+      "failures": "已读游标不能倒退；导出只含授权范围",
+      "dataOwner": "频道成员与消息；DM 双方",
+      "acceptance": "重连未读数正确，导出包含顺序和来源",
+      "phase": 4,
+      "dependencies": [
+        "AGENT",
+        "SESSION",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/channels.ts",
+        "server/routes/dm.ts",
+        "hub/channel-router.ts",
+        "hub/dm-router.ts",
+        "lib/tools/channel-tool.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHANNEL-005",
+      "domain": "CHANNEL",
+      "title": "频道手机与工具策略",
+      "entry": "会话工具配置",
+      "io": "会话级设备设置 / 工具模式 → 频道执行权限",
+      "states": "创建 → 活动 / 已读未读 → 停用 / 删除",
+      "failures": "群聊不能继承本机所有者无限权限",
+      "dataOwner": "频道成员与消息；DM 双方",
+      "acceptance": "只读群聊不能修改文件或调用电脑；公开规则生效",
+      "phase": 4,
+      "dependencies": [
+        "AGENT",
+        "SESSION",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/channels.ts",
+        "server/routes/dm.ts",
+        "hub/channel-router.ts",
+        "hub/dm-router.ts",
+        "lib/tools/channel-tool.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CHANNEL-006",
+      "domain": "CHANNEL",
+      "title": "DM 历史与重置",
+      "entry": "DM 记录入口",
+      "io": "对端 ID、重置请求 → 双方历史及新对话起点",
+      "states": "创建 → 活动 / 已读未读 → 停用 / 删除",
+      "failures": "遗留 DM 工具不作为新默认模型工具暴露",
+      "dataOwner": "频道成员与消息；DM 双方",
+      "acceptance": "可读历史、可显式重置；不存在对端不创建幽灵助手",
+      "phase": 4,
+      "dependencies": [
+        "AGENT",
+        "SESSION",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/channels.ts",
+        "server/routes/dm.ts",
+        "hub/channel-router.ts",
+        "hub/dm-router.ts",
+        "lib/tools/channel-tool.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-001",
+      "domain": "BRIDGE",
+      "title": "Telegram 接入",
+      "entry": "Bridge 设置",
+      "io": "bot 凭据、允许主体 → 状态和独立平台会话",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "凭据无效、限流和断线有诊断",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "通过平台测试账号收发文本 / 附件并核对消息 ID；无账号记待验证",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-002",
+      "domain": "BRIDGE",
+      "title": "飞书和 Lark 接入",
+      "entry": "Bridge 设置",
+      "io": "区域、应用凭据、权限 → 连接状态",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "区域错配、事件验签、重复事件处理",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "两个区域分别有适配测试；实际平台回调需专项联调",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-003",
+      "domain": "BRIDGE",
+      "title": "钉钉接入",
+      "entry": "Bridge 设置",
+      "io": "企业、client、机器人和 API 地址 → 会话连接",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "鉴权失败和缺权限明确",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "平台测试验证入站、出站、回复关系和错误路径",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-004",
+      "domain": "BRIDGE",
+      "title": "QQ 接入",
+      "entry": "Bridge 设置",
+      "io": "应用凭据及授权范围 → 平台会话",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "富媒体上传失败独立展示",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "实际账号验证文本与媒体，不拿本机假服务代替",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-005",
+      "domain": "BRIDGE",
+      "title": "微信扫码接入",
+      "entry": "Bridge 扫码",
+      "io": "二维码、轮询状态、用户登录 → 有界登录态",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "过期 / 取消终止轮询；隐私凭据不显示",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "扫码状态按真实平台变化；退出后不再接收",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-006",
+      "domain": "BRIDGE",
+      "title": "Bridge 路由和权限",
+      "entry": "平台所有者与助手配置",
+      "io": "owner、agent、read / ask / operate → 平台执行边界",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "未知发件人和群组不能借用 owner 身份",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "同一平台两个用户的会话 / 文件权限隔离",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-007",
+      "domain": "BRIDGE",
+      "title": "平台会话管理",
+      "entry": "Bridge 面板",
+      "io": "筛选、历史、重置、停止、测试 → 平台记录",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "停止断开连接；历史不冒充本地会话",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "重置只影响指定平台会话；关闭后无后台重连",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-008",
+      "domain": "BRIDGE",
+      "title": "媒体、回执与流式编辑",
+      "entry": "平台回复",
+      "io": "模型增量 / 文件 → 平台允许的分段和媒体消息",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "限流退避有界；发送失败保留投递状态",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "长文本不丢段；重复事件只回复一次；rich 开关实际生效",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BRIDGE-009",
+      "domain": "BRIDGE",
+      "title": "远程控制命令",
+      "entry": "平台斜杠命令",
+      "io": "附着会话、状态、停止、应用建议 → 有权限的操作",
+      "states": "未配置 → 连接中 → 已连接 / 错误 / 已停止；扫码待确认 → 成功 / 过期",
+      "failures": "文本平台批准绑定对应草案和操作者",
+      "dataOwner": "平台账号、平台会话和选择的助手",
+      "acceptance": "指令可继续指定会话；错误身份不能批准桌面动作",
+      "phase": 4,
+      "dependencies": [
+        "SESSION",
+        "AUTH",
+        "MEDIA"
+      ],
+      "evidence": [
+        "server/routes/bridge.ts",
+        "lib/bridge/",
+        "core/bridge-session-manager.ts",
+        "core/slash-commands/bridge-commands.ts",
+        "desktop/src/react/settings/tabs/BridgeTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BROWSER-001",
+      "domain": "BROWSER",
+      "title": "浏览器生命周期",
+      "entry": "browser start / stop",
+      "io": "会话 → 专属实例与状态",
+      "states": "关闭 → 启动 → 空闲 / 操作中 → 回收 / 错误",
+      "failures": "实例数限制、崩溃和空闲回收明确",
+      "dataOwner": "会话浏览器实例、标签和 Cookie 分区",
+      "acceptance": "两会话不误关对方浏览器；停止释放进程和句柄",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "lib/tools/browser-tool.ts",
+        "lib/browser/",
+        "desktop/main.cjs",
+        "desktop/src/react/settings/tabs/BrowserTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BROWSER-002",
+      "domain": "BROWSER",
+      "title": "导航与多标签",
+      "entry": "浏览器查看器",
+      "io": "URL、新标签、后退、前进、刷新 → 当前网页",
+      "states": "关闭 → 启动 → 空闲 / 操作中 → 回收 / 错误",
+      "failures": "危险协议拒绝；过期 tabId 不猜测替代",
+      "dataOwner": "会话浏览器实例、标签和 Cookie 分区",
+      "acceptance": "标签前进后退正确，开新页遵守用户设置",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "lib/tools/browser-tool.ts",
+        "lib/browser/",
+        "desktop/main.cjs",
+        "desktop/src/react/settings/tabs/BrowserTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BROWSER-003",
+      "domain": "BROWSER",
+      "title": "页面观察和截图",
+      "entry": "浏览器工具",
+      "io": "tabId → DOM / 可访问性快照和图片",
+      "states": "关闭 → 启动 → 空闲 / 操作中 → 回收 / 错误",
+      "failures": "截图失败不伪造；截断标注",
+      "dataOwner": "会话浏览器实例、标签和 Cookie 分区",
+      "acceptance": "观察结果能定位当前元素；截图实际显示当前页",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "lib/tools/browser-tool.ts",
+        "lib/browser/",
+        "desktop/main.cjs",
+        "desktop/src/react/settings/tabs/BrowserTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BROWSER-004",
+      "domain": "BROWSER",
+      "title": "网页交互",
+      "entry": "点击、输入、选择、按键、滚动",
+      "io": "快照中的元素引用和输入 → 页面变化",
+      "states": "关闭 → 启动 → 空闲 / 操作中 → 回收 / 错误",
+      "failures": "旧引用重新观察；副作用操作走权限",
+      "dataOwner": "会话浏览器实例、标签和 Cookie 分区",
+      "acceptance": "在本机夹具完成表单；错误 ref 不点击任意坐标",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "lib/tools/browser-tool.ts",
+        "lib/browser/",
+        "desktop/main.cjs",
+        "desktop/src/react/settings/tabs/BrowserTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BROWSER-005",
+      "domain": "BROWSER",
+      "title": "等待和脚本计算",
+      "entry": "wait / evaluate",
+      "io": "条件或受限表达式 → 有界结果",
+      "states": "关闭 → 启动 → 空闲 / 操作中 → 回收 / 错误",
+      "failures": "超时、页面跳转和宿主访问拒绝",
+      "dataOwner": "会话浏览器实例、标签和 Cookie 分区",
+      "acceptance": "仅网页上下文可计算，不能读宿主文件",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "lib/tools/browser-tool.ts",
+        "lib/browser/",
+        "desktop/main.cjs",
+        "desktop/src/react/settings/tabs/BrowserTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-BROWSER-006",
+      "domain": "BROWSER",
+      "title": "Cookie 与紧急停止",
+      "entry": "浏览器设置和停止按钮",
+      "io": "接受 / 清除 Cookie、停止 → 立即生效",
+      "states": "关闭 → 启动 → 空闲 / 操作中 → 回收 / 错误",
+      "failures": "清理失败可见；停止中断队列",
+      "dataOwner": "会话浏览器实例、标签和 Cookie 分区",
+      "acceptance": "清除后测试站会话消失；紧急停止后无新动作",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "lib/tools/browser-tool.ts",
+        "lib/browser/",
+        "desktop/main.cjs",
+        "desktop/src/react/settings/tabs/BrowserTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COMPUTER-001",
+      "domain": "COMPUTER",
+      "title": "平台能力与总开关",
+      "entry": "实验 / 电脑操作设置",
+      "io": "Windows UIA、macOS 支持声明 → 真实可用性",
+      "states": "关闭 → 待系统权限 → 待用户批准 → 租用 → 终止 / 超时",
+      "failures": "Linux 未实现时不可用；不能把 mock 当真机结果",
+      "dataOwner": "本机用户明确批准的应用租约",
+      "acceptance": "未启用时工具不执行；缺辅助程序 / 权限说明具体原因",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "core/computer-use/platform-support.ts",
+        "core/computer-use/lease-registry.ts",
+        "lib/tools/computer-use-tool.ts",
+        "desktop/src/react/settings/tabs/ComputerUseSection.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COMPUTER-002",
+      "domain": "COMPUTER",
+      "title": "应用枚举与租用",
+      "entry": "电脑操作工具",
+      "io": "应用 ID → 授权应用与租约 ID",
+      "states": "关闭 → 待系统权限 → 待用户批准 → 租用 → 终止 / 超时",
+      "failures": "必须明确应用范围；并发租约冲突拒绝",
+      "dataOwner": "本机用户明确批准的应用租约",
+      "acceptance": "只操作获准应用；撤销后下一动作失败",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "core/computer-use/platform-support.ts",
+        "core/computer-use/lease-registry.ts",
+        "lib/tools/computer-use-tool.ts",
+        "desktop/src/react/settings/tabs/ComputerUseSection.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COMPUTER-003",
+      "domain": "COMPUTER",
+      "title": "界面观察",
+      "entry": "应用状态查询",
+      "io": "租约、应用 → 当前界面树 / 截图",
+      "states": "关闭 → 待系统权限 → 待用户批准 → 租用 → 终止 / 超时",
+      "failures": "窗口不存在、最小化、受保护内容报告限制",
+      "dataOwner": "本机用户明确批准的应用租约",
+      "acceptance": "状态对应目标窗口，不错误复用另一个窗口",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "core/computer-use/platform-support.ts",
+        "core/computer-use/lease-registry.ts",
+        "lib/tools/computer-use-tool.ts",
+        "desktop/src/react/settings/tabs/ComputerUseSection.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COMPUTER-004",
+      "domain": "COMPUTER",
+      "title": "元素操作",
+      "entry": "click / type / key / scroll / secondary",
+      "io": "租约、观察版本、元素引用 → 系统操作",
+      "states": "关闭 → 待系统权限 → 待用户批准 → 租用 → 终止 / 超时",
+      "failures": "过期元素、失焦或越界拒绝；屏幕文字不授予额外权限",
+      "dataOwner": "本机用户明确批准的应用租约",
+      "acceptance": "测试应用完成点击和输入；拒绝时没有系统副作用",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "core/computer-use/platform-support.ts",
+        "core/computer-use/lease-registry.ts",
+        "lib/tools/computer-use-tool.ts",
+        "desktop/src/react/settings/tabs/ComputerUseSection.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COMPUTER-005",
+      "domain": "COMPUTER",
+      "title": "可见控制与停止",
+      "entry": "电脑操作覆盖层",
+      "io": "状态、用户停止 → 中止租约和队列",
+      "states": "关闭 → 待系统权限 → 待用户批准 → 租用 → 终止 / 超时",
+      "failures": "停止优先于剩余操作",
+      "dataOwner": "本机用户明确批准的应用租约",
+      "acceptance": "停止后下一步不执行，覆盖层显示实际终态",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "core/computer-use/platform-support.ts",
+        "core/computer-use/lease-registry.ts",
+        "lib/tools/computer-use-tool.ts",
+        "desktop/src/react/settings/tabs/ComputerUseSection.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-COMPUTER-006",
+      "domain": "COMPUTER",
+      "title": "系统权限管理",
+      "entry": "权限设置",
+      "io": "请求 / 撤销辅助权限 → OS 状态",
+      "states": "关闭 → 待系统权限 → 待用户批准 → 租用 → 终止 / 超时",
+      "failures": "平台拒绝不能伪装成功",
+      "dataOwner": "本机用户明确批准的应用租约",
+      "acceptance": "在各平台真机检查权限拒绝、授予、撤销路径",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION"
+      ],
+      "evidence": [
+        "core/computer-use/platform-support.ts",
+        "core/computer-use/lease-registry.ts",
+        "lib/tools/computer-use-tool.ts",
+        "desktop/src/react/settings/tabs/ComputerUseSection.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-001",
+      "domain": "SKILL",
+      "title": "技能发现和预览",
+      "entry": "Skills 面板",
+      "io": "目录、SKILL.md 元数据 → 来源可区分清单及文件树",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "缺文件、坏元数据隔离；同名不能串用",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "展示具体来源；技能正文可读且不自动执行",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-002",
+      "domain": "SKILL",
+      "title": "技能包安装和删除",
+      "entry": "拖入技能包 / 文件夹",
+      "io": "用户选定包 → 安装报告",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "ZIP 路径穿越、symlink、超限和撞名拒绝",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "安装成功后能启用；删除只删除所选用户技能",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-003",
+      "domain": "SKILL",
+      "title": "每助手技能选择",
+      "entry": "助手 / Skills 设置",
+      "io": "启用、可见性 → 本轮有效技能集合",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "禁用技能不继续注入；非聚焦助手设置不串线",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "A 启用、B 禁用时各自上下文正确",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-004",
+      "domain": "SKILL",
+      "title": "技能分组与导出",
+      "entry": "Skills 分组",
+      "io": "分组名、成员、顺序 → 可导出的技能包",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "解散只取消分组，不删技能；不可导出项报告",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "排序重启保持；导出包再导入清单一致",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-005",
+      "domain": "SKILL",
+      "title": "外部兼容目录",
+      "entry": "Skills 外部路径",
+      "io": "路径及显式授权 → 只读来源",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "不能通过兼容路径静默扩大文件权限",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "移除路径后不再发现；原外部文件没有被修改",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-006",
+      "domain": "SKILL",
+      "title": "工作区规则与技能",
+      "entry": "工作设置",
+      "io": "AGENTS.md / CLAUDE.md 开关、项目技能开关 → 该目录上下文",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "来源与优先级可解释；越根 / 排除目录不加载",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "切项目使用不同规则；关闭开关后不注入",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-007",
+      "domain": "SKILL",
+      "title": "刷新和元数据翻译",
+      "entry": "刷新 / 翻译按钮",
+      "io": "来源变化、语言 → 新索引和显示标题",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "失败保留原始标题；不改写技能原文",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "同一技能多次刷新无重复；翻译缓存按内容版本更新",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SKILL-008",
+      "domain": "SKILL",
+      "title": "按需加载",
+      "entry": "Agent 工具发现",
+      "io": "任务相关技能 / 工具查询 → 所需说明和 schema",
+      "states": "发现 → 预览 → 安装 / 外部引用 → 启用 / 禁用 → 删除",
+      "failures": "搜索结果不等于执行授权",
+      "dataOwner": "全局技能、外部只读来源、工作区来源、助手启用集",
+      "acceptance": "未用技能不占整份上下文；加载后权限仍执行前检查",
+      "phase": 3,
+      "dependencies": [
+        "AGENT",
+        "FILE",
+        "AUTH"
+      ],
+      "evidence": [
+        "server/routes/skills.ts",
+        "core/skill-manager.ts",
+        "lib/skills/",
+        "core/workspace-instruction-files.ts",
+        "desktop/src/react/settings/tabs/SkillsTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MCP-001",
+      "domain": "MCP",
+      "title": "连接器配置和导入",
+      "entry": "MCP 设置",
+      "io": "单个 / 批量 JSON、stdio / HTTP / SSE → 校验后的配置",
+      "states": "停止 → 连接中 → 就绪 / 需授权 / 错误 → 重连 / 停止",
+      "failures": "命令 / URL 缺失、撞名和含凭据导出需处理",
+      "dataOwner": "连接器全局配置；助手启用集；会话 grants",
+      "acceptance": "一次导入多项逐项报告；错误项不能破坏已有连接",
+      "phase": 3,
+      "dependencies": [
+        "AUTH",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/mcp.ts",
+        "core/mcp/",
+        "core/tool-catalog.ts",
+        "desktop/src/react/settings/tabs/McpTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MCP-002",
+      "domain": "MCP",
+      "title": "启动、停止和刷新",
+      "entry": "连接器卡",
+      "io": "serverId → 状态、工具清单",
+      "states": "停止 → 连接中 → 就绪 / 需授权 / 错误 → 重连 / 停止",
+      "failures": "连接超时、版本不兼容、进程退出有原因",
+      "dataOwner": "连接器全局配置；助手启用集；会话 grants",
+      "acceptance": "模拟 MCP 服务握手成功；停止释放子进程 / 网络连接",
+      "phase": 3,
+      "dependencies": [
+        "AUTH",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/mcp.ts",
+        "core/mcp/",
+        "core/tool-catalog.ts",
+        "desktop/src/react/settings/tabs/McpTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MCP-003",
+      "domain": "MCP",
+      "title": "工具发现和调用",
+      "entry": "模型工具目录",
+      "io": "name、schema 参数、会话权限 → MCP 工具结果",
+      "states": "停止 → 连接中 → 就绪 / 需授权 / 错误 → 重连 / 停止",
+      "failures": "JSON-RPC id / 形状校验；超大帧和未知工具拒绝",
+      "dataOwner": "连接器全局配置；助手启用集；会话 grants",
+      "acceptance": "有界输入、正确结果、错误映射、取消在三种 transport 分别测试",
+      "phase": 3,
+      "dependencies": [
+        "AUTH",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/mcp.ts",
+        "core/mcp/",
+        "core/tool-catalog.ts",
+        "desktop/src/react/settings/tabs/McpTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MCP-004",
+      "domain": "MCP",
+      "title": "OAuth 与认证恢复",
+      "entry": "连接器授权",
+      "io": "state、回调、令牌刷新、注销 → 授权状态",
+      "states": "停止 → 连接中 → 就绪 / 需授权 / 错误 → 重连 / 停止",
+      "failures": "一次状态、取消和超时处理；共享连接不误关闭",
+      "dataOwner": "连接器全局配置；助手启用集；会话 grants",
+      "acceptance": "取消一个调用不破坏另一调用；注销后访问失败",
+      "phase": 3,
+      "dependencies": [
+        "AUTH",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/mcp.ts",
+        "core/mcp/",
+        "core/tool-catalog.ts",
+        "desktop/src/react/settings/tabs/McpTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MCP-005",
+      "domain": "MCP",
+      "title": "资源和 MCP Apps",
+      "entry": "连接器资源 / App 页面",
+      "io": "资源 URI、App 工具 → 受控资源与 UI",
+      "states": "停止 → 连接中 → 就绪 / 需授权 / 错误 → 重连 / 停止",
+      "failures": "iframe 不得拿宿主 token；读资源执行权限检查",
+      "dataOwner": "连接器全局配置；助手启用集；会话 grants",
+      "acceptance": "未授权 App 工具拒绝；资源外链范围受限",
+      "phase": 3,
+      "dependencies": [
+        "AUTH",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/mcp.ts",
+        "core/mcp/",
+        "core/tool-catalog.ts",
+        "desktop/src/react/settings/tabs/McpTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MCP-006",
+      "domain": "MCP",
+      "title": "总开关和助手权限",
+      "entry": "MCP 设置",
+      "io": "全局开关、助手集合、会话授权 → 最终可用工具",
+      "states": "停止 → 连接中 → 就绪 / 需授权 / 错误 → 重连 / 停止",
+      "failures": "任何上层禁用都不可被局部设置覆盖",
+      "dataOwner": "连接器全局配置；助手启用集；会话 grants",
+      "acceptance": "A 助手禁用后即便目录缓存仍拒绝调用",
+      "phase": 3,
+      "dependencies": [
+        "AUTH",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/mcp.ts",
+        "core/mcp/",
+        "core/tool-catalog.ts",
+        "desktop/src/react/settings/tabs/McpTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MCP-007",
+      "domain": "MCP",
+      "title": "延迟 schema 和固定工具",
+      "entry": "MCP 高级设置",
+      "io": "defer、pin、搜索词 → 按需 schema",
+      "states": "停止 → 连接中 → 就绪 / 需授权 / 错误 → 重连 / 停止",
+      "failures": "来源名字不改变授权；刷新替换旧目录",
+      "dataOwner": "连接器全局配置；助手启用集；会话 grants",
+      "acceptance": "大量工具时仅加载选中 schema，调用仍同一稳定身份",
+      "phase": 3,
+      "dependencies": [
+        "AUTH",
+        "MODEL",
+        "DATA"
+      ],
+      "evidence": [
+        "server/routes/mcp.ts",
+        "core/mcp/",
+        "core/tool-catalog.ts",
+        "desktop/src/react/settings/tabs/McpTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-001",
+      "domain": "PLUGIN",
+      "title": "插件安装和卸载",
+      "entry": "插件面板",
+      "io": "目录或包、manifest → 可管理插件",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "路径穿越、版本不兼容、撞名拒绝；旧包不就地污染",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "安装后能力注册；卸载撤销所有注册和进程",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-002",
+      "domain": "PLUGIN",
+      "title": "信任等级",
+      "entry": "插件权限页",
+      "io": "restricted / full-access 及批准 → 真实宿主权限",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "未批准 full-access 不加载；restricted 不等于无防护动态 import",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "受限插件尝试读私有文件被阻止；拒绝升级不能启动",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-003",
+      "domain": "PLUGIN",
+      "title": "配置 schema",
+      "entry": "插件配置面板",
+      "io": "字段 schema、全局 / 助手配置 → 验证和遮罩",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "未知字段、非法类型、秘密字段脱敏",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "A 助手改配置不影响 B；重启和热重载保持",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-004",
+      "domain": "PLUGIN",
+      "title": "工具、路由、命令和事件",
+      "entry": "插件 API",
+      "io": "版本化贡献声明 → 可撤销能力注册",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "重名拒绝；插件异常不拖垮主进程",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "示例原创插件注册 / 调用 / 卸载全流程验证",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-005",
+      "domain": "PLUGIN",
+      "title": "页面、组件和卡片",
+      "entry": "插件 UI",
+      "io": "页面、设置页、widget、卡片 → 隔离 UI",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "短期票据、来源校验、有限 host bridge",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "插件页面无法调用未授权宿主动作，主题变化正常",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-006",
+      "domain": "PLUGIN",
+      "title": "市场与版本管理",
+      "entry": "插件市场",
+      "io": "明确来源、版本、兼容性 → 详情和安装计划",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "源不可达、hash 不符、降级明确处理",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "测试 registry 正确展示安装 / 更新 / 重装 / 降级；真实市场来源待配置",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-007",
+      "domain": "PLUGIN",
+      "title": "开发诊断和热重载",
+      "entry": "插件开发面板",
+      "io": "本地路径、reload、scenario → 注册和错误报告",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "仅用户启用开发功能后允许；失败不残留双注册",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "开发夹具热重载后旧句柄清理，诊断可定位插件",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-008",
+      "domain": "PLUGIN",
+      "title": "Office 扩展",
+      "entry": "office 工具",
+      "io": "文档读取、HTML→PDF → 可下载真实文档",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "未安装转换器明确不可用；打印不得执行宿主脚本",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "原创测试 HTML 导出可读 PDF，分页和中文可见",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-009",
+      "domain": "PLUGIN",
+      "title": "媒体和封面扩展",
+      "entry": "media / beautify 工具",
+      "io": "受支持参数 → 媒体任务或文档封面",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "实际凭据缺失拒绝；未实现不返回假图片",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "经媒体服务生成的文件可读取；封面变更可撤销",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-010",
+      "domain": "PLUGIN",
+      "title": "即梦 CLI 扩展",
+      "entry": "本地媒体扩展",
+      "io": "用户安装的 CLI、登录态、参数 → 图片 / 视频任务",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "CLI 缺失、登录过期、版本不兼容明确",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "对官方 CLI 作独立适配；真实收费运行需用户明确触发",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PLUGIN-011",
+      "domain": "PLUGIN",
+      "title": "独立插件协议与 SDK",
+      "entry": "开发者接口",
+      "io": "新命名空间、版本、示例 → 原创协议和开发文档",
+      "states": "校验 → 安装 → 已禁用 / 激活 → 错误 / 卸载",
+      "failures": "旧插件不宣称即插即用；只在显式兼容层转换",
+      "dataOwner": "插件目录、插件 scoped 配置、运行实例、隔离 UI",
+      "acceptance": "一个外部原创示例可从文档完成工具 / 页面 / 配置开发",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SKILL",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/plugins.ts",
+        "core/plugin-manager.ts",
+        "core/plugin-config.ts",
+        "packages/plugin-protocol/src/index.ts",
+        "packages/plugin-sdk/src/index.ts",
+        "packages/plugin-runtime/src/index.ts",
+        "plugins/office/manifest.json",
+        "plugins/media/manifest.json",
+        "plugins/beautify/manifest.json",
+        "plugins/jimeng-cli/manifest.json"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-001",
+      "domain": "MEDIA",
+      "title": "媒体供应商与模型",
+      "entry": "媒体设置",
+      "io": "协议、模型、凭据、默认项 → 能力清单",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "未知协议明确缺适配器，不隐藏已保存模型",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "配置、删除、默认切换重启一致；每模型只显示支持的参数",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-002",
+      "domain": "MEDIA",
+      "title": "图片生成与编辑",
+      "entry": "图片工具",
+      "io": "文字、参考图片、数量、尺寸 → 可追溯生成任务",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "参数不兼容前置拒绝；下载失败不当完成",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "本机 mock 验证请求和输出 hash；真实每协议另验收",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-003",
+      "domain": "MEDIA",
+      "title": "视频生成",
+      "entry": "视频工具",
+      "io": "文字 / 图片、长度、尺寸 → 异步视频任务",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "轮询有界；取消 / 重试不会重复计费而无提示",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "任务恢复和最终下载有效；失败带供应商任务 ID",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-004",
+      "domain": "MEDIA",
+      "title": "任务批次与重试",
+      "entry": "媒体任务列表",
+      "io": "batchId、taskId、retry → 有序结果和新尝试",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "部分失败单独展示；重试只重试失败项",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "混合成功 / 失败批次正确，不覆写原始结果",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-005",
+      "domain": "MEDIA",
+      "title": "录音与转写",
+      "entry": "输入区语音按钮和快捷键",
+      "io": "麦克风音频、ASR 模型 → 文本草稿或附件",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "无权限、录音为空、超限、服务失败可见",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "用户可停止 / 取消，失败保留音频供重试，转写不自动发送",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-006",
+      "domain": "MEDIA",
+      "title": "ASR 协议",
+      "entry": "语音设置",
+      "io": "OpenAI 音频、DashScope、MiMo、火山、系统语音 → 转写文本",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "平台能力与模型支持单独声明",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "各 adapter 独立夹具，系统语音需真机权限验收",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-007",
+      "domain": "MEDIA",
+      "title": "媒体查看与保管",
+      "entry": "图片 / 音视频查看器",
+      "io": "资源 ID → 缩放、播放、下载",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "资源票据过期自动刷新或提示；不泄露密钥",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "图片 / 视频 / 音频均能读取实际字节；跨会话拒绝",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-MEDIA-008",
+      "domain": "MEDIA",
+      "title": "语音合成占位识别",
+      "entry": "媒体设置",
+      "io": "旧版 coming soon 标记 → 明确未提供状态",
+      "states": "提交 → 排队 → 生成 / 轮询 → 完成 / 失败 / 取消",
+      "failures": "不得把占位当已存在能力或默认扣费服务",
+      "dataOwner": "供应商配置、会话媒体任务及输出文件",
+      "acceptance": "规格标为 planned；若后续实现需新增协议与验收",
+      "phase": 4,
+      "dependencies": [
+        "MODEL",
+        "FILE",
+        "AUTO"
+      ],
+      "evidence": [
+        "server/routes/media.ts",
+        "server/routes/speech-recognition.ts",
+        "core/media/",
+        "core/media-adapters/",
+        "core/speech-recognition/",
+        "desktop/src/react/settings/tabs/MediaTab.tsx"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "planned"
+    },
+    {
+      "id": "CA-CLIENT-001",
+      "domain": "CLIENT",
+      "title": "网络监听设置",
+      "entry": "访问设置",
+      "io": "LAN 开关、端口 → 实际监听地址和重启提示",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "默认 loopback；端口冲突解释而非悄悄暴露公网",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "关闭 LAN 时其他设备不可达；开启后需要鉴权",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CLIENT-002",
+      "domain": "CLIENT",
+      "title": "设备配对和撤销",
+      "entry": "设备列表、二维码",
+      "io": "一次码、设备名、审批 → scoped 设备凭据",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "一次码过期、重复审批、未批准拒绝",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "设备批准后可访问允许资源；撤销后旧令牌立即失效",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CLIENT-003",
+      "domain": "CLIENT",
+      "title": "本地账号与网页登录",
+      "entry": "访问设置 / 登录页",
+      "io": "用户名、密码 → hash 凭据与会话 cookie",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "密码不明文；暴力请求限流；logout 撤销会话",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "正确密码可登录，错误不泄露账号细节；注销后无访问",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CLIENT-004",
+      "domain": "CLIENT",
+      "title": "远端服务器切换",
+      "entry": "远程连接表单",
+      "io": "URL、名称、凭据 → 明确服务器身份和连接",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "旧连接数据不能串到新服务器；TLS 错误可见",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "切 A/B 会话列表隔离，返回本机能恢复",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CLIENT-005",
+      "domain": "CLIENT",
+      "title": "移动聊天",
+      "entry": "移动 Web / PWA",
+      "io": "触屏输入、附件、流式、停止 → 同一服务端会话",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "后台断线能重连；无本机能力按钮需说明",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "手机真机发送 / 停止 / 重连 / 恢复历史专项验收",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CLIENT-006",
+      "domain": "CLIENT",
+      "title": "移动工作台",
+      "entry": "移动文件页",
+      "io": "列表、搜索、预览、上传、文件动作 → 限定工作区资源",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "上传超限和权限不足明确",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "真实手机操作 Unicode 文件；桌面同时看到变更",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CLIENT-007",
+      "domain": "CLIENT",
+      "title": "命令行聊天和服务",
+      "entry": "cagent CLI",
+      "io": "serve / status / sessions / continue / chat、URL、session → 正确输出和退出码",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "错误参数非零退出；Ctrl+C 取消而非破坏数据",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "独立临时目录启动服务，用 CLI 发消息并继续同一会话",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-CLIENT-008",
+      "domain": "CLIENT",
+      "title": "CLI 资源更新与恢复",
+      "entry": "CLI 运维命令",
+      "io": "bundle 状态 / 拉取、data diagnose / checkpoints / restore → 检查报告",
+      "states": "未配对 → 请求 → 已批准 → 已连接 / 失联 → 撤销",
+      "failures": "恢复必须明确目标和确认；降级保护",
+      "dataOwner": "本地账号、配对设备、远端实例和客户端偏好",
+      "acceptance": "只读诊断不写用户数据；确认后恢复有备份与核对",
+      "phase": 4,
+      "dependencies": [
+        "AUTH",
+        "SESSION",
+        "WORK"
+      ],
+      "evidence": [
+        "server/routes/access.ts",
+        "server/routes/devices.ts",
+        "server/routes/web-auth.ts",
+        "server/routes/mobile-workbench.ts",
+        "desktop/src/react/mobile/MobileApp.tsx",
+        "cli/args.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-001",
+      "domain": "PREF",
+      "title": "主题与字体",
+      "entry": "界面设置",
+      "io": "浅色 / 深色 / 跟随系统、字体、字号、宽度 → 即时外观",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "无字体回退；非法数值不落盘",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "切换主题后所有原创界面可读；刷新保持",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-002",
+      "domain": "PREF",
+      "title": "语言与时区",
+      "entry": "界面设置",
+      "io": "简中、繁中、英文、日文、韩文、IANA 时区 → 独立文案与日期",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "未知语言有回退；时区不改底层 UTC 时间",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "五种语言逐页检查无裸 key；显示跨日符合选择时区",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-003",
+      "domain": "PREF",
+      "title": "编辑器排版",
+      "entry": "编辑器设置",
+      "io": "字体、字号、行高、宽度、边距 → 文档排版",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "不修改文档内容",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "更改排版前后文件 hash 不变",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-004",
+      "domain": "PREF",
+      "title": "侧栏与工作区布局",
+      "entry": "侧栏和面板控制",
+      "io": "单行列表、分栏尺寸、固定文件 → UI 偏好",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "窄屏布局可恢复；跨设备不强制套用像素",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "重启保留布局；移动端不横向溢出",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-005",
+      "domain": "PREF",
+      "title": "装饰与动态效果",
+      "entry": "界面偏好",
+      "io": "原创纸张 / 装饰效果开关 → 可关闭视觉效果",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "尊重减少动画；不带入旧素材",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "关闭后无装饰动画，正文对比度仍可读",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-006",
+      "domain": "PREF",
+      "title": "GPU 与故障恢复",
+      "entry": "系统设置",
+      "io": "硬件加速开关 → 下次启动配置",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "需重启提示；崩溃可回退并报告",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "验证 GPU 关闭启动路径，诊断不伪称性能更好",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-007",
+      "domain": "PREF",
+      "title": "一致的设置快照",
+      "entry": "所有设置页",
+      "io": "revision、scope → 一次读取的一致配置",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "慢响应不得覆盖刚保存的新值",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "快速切助手并保存，最终只修改目标助手",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-008",
+      "domain": "PREF",
+      "title": "实验功能",
+      "entry": "实验设置",
+      "io": "压缩策略、简化压缩、记忆观察、主动派工、模型角色推理开关 → 明确实验状态",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "默认关闭危险 / 额外费用能力；观察模式不写回",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "开关逐项可撤销；未知 ID 拒绝；禁用无隐藏调用",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-PREF-009",
+      "domain": "PREF",
+      "title": "可访问性",
+      "entry": "全应用",
+      "io": "键盘、焦点、屏幕阅读器 → 可操作入口",
+      "states": "加载 → 草稿 → 保存中 → 生效 / 错误；需重启配置单独标识",
+      "failures": "错误反馈可读；不只靠颜色区分",
+      "dataOwner": "全局 / 平台 / 助手 / 会话四层显式归属",
+      "acceptance": "键盘完成新会话 / 设置 / 取消；对话框焦点回到触发元素",
+      "phase": 2,
+      "dependencies": [
+        "DATA"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/InterfaceTab.tsx",
+        "desktop/src/react/settings/tabs/GeneralTab.tsx",
+        "desktop/src/react/settings/tabs/SharingTab.tsx",
+        "desktop/src/react/settings/tabs/ExperimentsTab.tsx",
+        "server/routes/preferences.ts",
+        "server/routes/settings-snapshot.ts"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-001",
+      "domain": "DATA",
+      "title": "独立版本化数据根",
+      "entry": "首次运行和 CLI home 参数",
+      "io": "全新 home → schemaVersion 和独立数据库",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "不得默认打开 / 修改 .hanako；旧 appId 不复用",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "首次启动旧数据目录 hash 和修改时间不变；新目录可独立移走",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-002",
+      "domain": "DATA",
+      "title": "事务和并发写入",
+      "entry": "所有修改 API",
+      "io": "预期 revision + 变更 → 原子提交和新 revision",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "冲突拒绝；中途失败不产生半份记录",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "并发保存一个成功一个冲突，重启后 JSON / DB 完整",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-003",
+      "domain": "DATA",
+      "title": "崩溃恢复",
+      "entry": "启动扫描",
+      "io": "未结束任务、持久化事件 → 中断状态和可恢复历史",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "不得自动重放命令或收费请求",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "运行中杀进程再启动，任务为中断且已保存输出仍在",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-004",
+      "domain": "DATA",
+      "title": "新格式备份与恢复",
+      "entry": "数据管理",
+      "io": "导出快照 / 导入计划 → hash 清单、数量、差异和备份",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "不带密钥默认；无效 checksum / 新版本拒绝",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "往返导入比对助手 / 会话 / 消息数量及内容；失败零半导入",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-005",
+      "domain": "DATA",
+      "title": "旧格式显式导入",
+      "entry": "旧数据迁移器",
+      "io": "用户指定的旧导出 / 目录 → 中立格式 dry-run 报告",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "只读扫描，未知记录隔离报告；凭据默认不迁移",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "核对会话数、消息数、时间、模型、附件 hash；旧源逐文件不变",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-006",
+      "domain": "DATA",
+      "title": "迁移幂等与回滚",
+      "entry": "迁移报告",
+      "io": "来源指纹、导入批次 → 可重复执行或撤销",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "同源重复导入不制造重复会话",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "运行两次数量相同；撤销只删该批导入，不动后续新增",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-007",
+      "domain": "DATA",
+      "title": "文件修改历史",
+      "entry": "文件历史页",
+      "io": "目标文件、版本 / 检查点 → 差异和恢复",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "超大文件 / 保留期跳过有报告；恢复前备份当前版",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "选旧版恢复成功；恢复前内容仍可找回",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-008",
+      "domain": "DATA",
+      "title": "数据版本升级与降级",
+      "entry": "启动和维护命令",
+      "io": "schema 版本、检查点 → 可验证迁移",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "高版本数据不得被旧程序静默覆写",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "人工构造高版本数据启动拒绝写；失败迁移回滚",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-DATA-009",
+      "domain": "DATA",
+      "title": "数据保留和清理",
+      "entry": "数据设置",
+      "io": "保留期、范围、确认 → 清理报告",
+      "states": "新建 → 使用 → 备份 → 校验 → 迁移 / 还原；未知高版本拒绝写入",
+      "failures": "活跃任务引用和未导出资源不能被误删",
+      "dataOwner": "新数据根 .cagent；旧 .hanako 只作显式导入源",
+      "acceptance": "仅清理超期目标；取消不产生删除；数量可核对",
+      "phase": 1,
+      "dependencies": [],
+      "evidence": [
+        "shared/persistence/store-registry.ts",
+        "shared/safe-fs.ts",
+        "core/data-epoch-coordinator.ts",
+        "core/data-epoch-restore.ts",
+        "server/routes/checkpoints.ts",
+        "server/routes/file-history.ts",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-001",
+      "domain": "SHIP",
+      "title": "独立源码与出处",
+      "entry": "开发目录",
+      "io": "仅本规格和标准库 / 合规依赖 → 新实现",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "不复制旧源码、测试、CSS、素材、提示词、文档",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "源码无旧项目 import；旧 tracked 文件 hash 全部保持；独立根历史",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-002",
+      "domain": "SHIP",
+      "title": "可重复构建和依赖说明",
+      "entry": "开发命令",
+      "io": "锁定依赖、类型检查、测试、build → 可运行构建",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "无依赖脚本偷偷发布；依赖许可证保留",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "全新安装依赖后验证成功，第三方声明可重建",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-003",
+      "domain": "SHIP",
+      "title": "运行诊断",
+      "entry": "About / 状态页",
+      "io": "版本、平台、运行状态、日志 → 脱敏诊断",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "错误不是空白页；复制报告不含密钥",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "模拟服务启动失败、断流、代理失败能定位阶段",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-004",
+      "domain": "SHIP",
+      "title": "Windows 安装与卸载",
+      "entry": "独立安装包",
+      "io": "新 appId / 文件名、用户路径 → 可启动安装",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "不得覆盖旧安装和 .hanako；卸载默认保留用户数据",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "干净 VM 和升级 VM 分别安装验证；没有安装测试不能称可发布",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-005",
+      "domain": "SHIP",
+      "title": "检查更新和历史",
+      "entry": "About 页",
+      "io": "GitHub 源、频道 → 版本、说明、状态",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "断网、无发布、限流、跳转、校验失败分别可见",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "真实 HTTP 跳转和代理测试；没有版本时显示尚无发布",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-006",
+      "domain": "SHIP",
+      "title": "更新完整性和回退",
+      "entry": "下载 / 安装动作",
+      "io": "签名清单、SHA-256、版本约束 → 验证后的候选",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "校验失败绝不执行；中断保留当前可用安装",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "篡改文件 / 签名测试均拒绝；更新失败能重新启动旧安装",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-007",
+      "domain": "SHIP",
+      "title": "组件更新兼容",
+      "entry": "可选组件供货",
+      "io": "前端 / 服务 / 壳版本 + 数据版本 → 相容组合",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "不支持的热更组合禁止；需要整包升级明确",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "恢复场景只启用校验通过的组合；旧组件种子不复用",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-008",
+      "domain": "SHIP",
+      "title": "跨平台交付",
+      "entry": "macOS / Linux 构建",
+      "io": "平台目标 → DMG / ZIP / AppImage / deb 等候选",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "签名 / 公证 / 原生依赖缺失独立记录",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "各平台真实安装启动、权限和退出通过才记已验证",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-009",
+      "domain": "SHIP",
+      "title": "发布门禁",
+      "entry": "本地验收报告",
+      "io": "全部必需功能、测试证据、平台矩阵 → 可审阅候选",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "有未完成项不得标完整独立版；发布是单独动作",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "禁止发布之前的改造版，禁止上传旧 dist / seed；本任务不执行 push / release / 覆盖安装",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "required"
+    },
+    {
+      "id": "CA-SHIP-010",
+      "domain": "SHIP",
+      "title": "旧商业服务占位",
+      "entry": "关于页原邀请 / 频道机制",
+      "io": "旧服务标识 → 明确不连接旧专属后端",
+      "states": "源码 → 检查 → 本地构建 → 验收 → 候选；更新检查 → 下载 → 校验 → 待安装 → 安装 / 回退",
+      "failures": "无自有服务不声称激活成功；不冒用旧签名身份",
+      "dataOwner": "独立源码仓库、构建产物和本机安装实例",
+      "acceptance": "原邀请兑换功能记录为外部依赖待定，独立版默认无旧服务请求",
+      "phase": 5,
+      "dependencies": [
+        "BOOT",
+        "DATA",
+        "MODEL",
+        "AUTH",
+        "CLIENT",
+        "PLUGIN"
+      ],
+      "evidence": [
+        "desktop/src/react/settings/tabs/AboutTab.tsx",
+        "desktop/src/shared/update-transport.cjs",
+        "cli/args.ts",
+        "package.json",
+        ".codex/HANDOFF.md"
+      ],
+      "evidenceLevel": "static-contract",
+      "referenceRuntime": "not-verified-in-this-run",
+      "status": "specified",
+      "tests": [],
+      "scope": "external-decision"
+    }
+  ]
+}
