@@ -414,3 +414,59 @@ export function sharedRuns(ours: Int32Array[], theirs: Int32Array[], options: Ma
   });
   return runs;
 }
+
+export type ExceptionKind = 'code' | 'pair' | 'prose' | 'style';
+/** A reviewed overlap that is a public convention (a standard string, a protocol field…), not copied expression. */
+export type Exception = {
+  kind: ExceptionKind;
+  /** Our file, relative to the repository root. */
+  ours: string;
+  /** Reference file; left out when the same convention appears in several reference files. */
+  reference?: string;
+  /** Normalized wording a prose finding must contain. */
+  contains?: string;
+  /** Largest size the review covered: tokens, share, units or declarations. */
+  max: number;
+  reason: string;
+  reviewed: string;
+};
+export type Finding = {
+  kind: ExceptionKind;
+  ours: string;
+  reference: string;
+  size: number;
+  text?: string;
+};
+
+const KINDS = new Set<string>(['code', 'pair', 'prose', 'style']);
+
+/** Validates the reviewed-exception list; every entry needs a kind, a file, a size, a reason and a date. */
+export function readExceptions(raw: unknown): Exception[] {
+  const list = (raw as { exceptions?: unknown } | null)?.exceptions;
+  if (!Array.isArray(list)) throw new Error('exceptions must be an array');
+  return list.map((entry, index) => {
+    const e = (entry ?? {}) as Partial<Record<keyof Exception, unknown>>;
+    const invalid = [
+      !KINDS.has(String(e.kind)) && 'kind',
+      typeof e.ours !== 'string' && 'ours',
+      !(typeof e.max === 'number' && e.max > 0) && 'max',
+      !(typeof e.reason === 'string' && e.reason.trim()) && 'reason',
+      !(typeof e.reviewed === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.reviewed)) && 'reviewed',
+      e.reference !== undefined && typeof e.reference !== 'string' && 'reference',
+      e.contains !== undefined && typeof e.contains !== 'string' && 'contains',
+    ].filter(Boolean);
+    if (invalid.length) throw new Error(`exception ${index}: invalid ${invalid.join(', ')}`);
+    return entry as Exception;
+  });
+}
+
+/** An exception covers a finding of the same kind in the same file, never a larger one than reviewed. */
+export const findException = (list: Exception[], finding: Finding) =>
+  list.find(
+    (e) =>
+      e.kind === finding.kind &&
+      e.ours === finding.ours &&
+      (e.reference === undefined || e.reference === finding.reference) &&
+      finding.size <= e.max &&
+      (e.contains === undefined || (finding.text ?? '').includes(e.contains)),
+  );

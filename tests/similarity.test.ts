@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
   Codebook,
   encodeProse,
+  findException,
   prosePieces,
+  readExceptions,
   scanScript,
   scanStyle,
   sharedRuns,
@@ -149,4 +151,50 @@ test('CA-SHIP-001 相似度：重新排版的 CSS 声明序列被识别，调换
   assert.equal(reformatted.lines[0], 3);
   assert.deepEqual([...reformatted.classes], ['box']);
   assert.deepEqual(sharedRuns([reordered.codes], [theirs.codes], styleOptions), []);
+});
+
+test('CA-SHIP-001 相似度：已审核例外只放行同一文件、同一类别且不超过审核尺寸的公共约定', () => {
+  const list = readExceptions({
+    exceptions: [
+      {
+        kind: 'prose',
+        ours: 'scripts/a.mjs',
+        contains: 'mozilla 5 0',
+        max: 20,
+        reason: '标准浏览器标识',
+        reviewed: '2026-09-27',
+      },
+      {
+        kind: 'pair',
+        ours: 'src/c.ts',
+        reference: 'r.ts',
+        max: 0.5,
+        reason: '协议规定的字段',
+        reviewed: '2026-09-27',
+      },
+    ],
+  });
+  const prose = {
+    kind: 'prose' as const,
+    ours: 'scripts/a.mjs',
+    reference: 'x.cjs',
+    size: 16,
+    text: 'mozilla 5 0 windows nt',
+  };
+  assert.equal(findException(list, prose)?.reason, '标准浏览器标识');
+  assert.equal(findException(list, { ...prose, size: 21 }), undefined, 'grew beyond the review');
+  assert.equal(findException(list, { ...prose, ours: 'src/b.ts' }), undefined, 'another file');
+  assert.equal(findException(list, { ...prose, kind: 'code' }), undefined, 'another kind');
+  assert.equal(findException(list, { ...prose, text: '其他文字' }), undefined, 'other wording');
+  const pair = { kind: 'pair' as const, ours: 'src/c.ts', reference: 'r.ts', size: 0.45 };
+  assert.equal(findException(list, pair)?.reason, '协议规定的字段');
+  assert.equal(findException(list, { ...pair, reference: 'other.ts' }), undefined);
+  assert.throws(
+    () =>
+      readExceptions({
+        exceptions: [{ kind: 'prose', ours: 'a', max: 5, reviewed: '2026-09-27' }],
+      }),
+    /reason/,
+  );
+  assert.throws(() => readExceptions({ exceptions: [{ kind: 'guess', ours: 'a' }] }), /kind/);
 });

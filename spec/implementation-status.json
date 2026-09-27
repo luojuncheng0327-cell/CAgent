@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-27T08:30:09.933Z",
+  "updatedAt": "2026-09-27T09:14:47.644Z",
   "milestone": "P1/P2 附件、历史分支、压缩、用量与工作区切片已补充，完整重写仍进行中",
   "counts": {
     "partial": 56,
@@ -2104,6 +2104,7 @@
         "scripts/check-independent.mjs",
         ".artifacts/independence-check.json",
         "scripts/check-similarity.ts",
+        "scripts/similarity-exceptions.json",
         "tests/similarity.test.ts",
         ".artifacts/similarity-report.json"
       ],

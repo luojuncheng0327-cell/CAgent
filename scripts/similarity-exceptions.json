@@ -1,0 +1,4 @@
+{
+  "note": "只登记公共约定（标准浏览器标识、协议规定的字段或字符串、通用写法等），不登记原版的独创代码、文案或样式。每条写明 kind（code / pair / prose / style）、ours（我们的文件）、max（审核时的最大尺寸：词元数 / 比例 / 单位数 / 声明条数）、reason 和 reviewed（YYYY-MM-DD）；可选 reference（参考文件）和 contains（文字必须包含的片段）。重合变大、换了文件或类别都会重新判为越线。",
+  "exceptions": []
+}

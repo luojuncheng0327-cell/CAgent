@@ -21,7 +21,7 @@
 
 ## 验证和边界
 
-- `pnpm run verify`：格式、类型、52 项本机测试、UI / Electron build、独立性检查、相似度检查通过。相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）已由用户确认；它能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。
+- `pnpm run verify`：格式、类型、52 项本机测试、UI / Electron build、独立性检查、相似度检查通过。相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）已由用户确认；它能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。复制尺度：用户选择“只放宽公共约定”，公共约定的重合登记到 `scripts/similarity-exceptions.json`（写理由和最大尺寸），原版独创代码 / 文案 / 样式仍不复制。
 - `pnpm run test:desktop`：原桌面链路和新的 `tests/desktop-p1-p2.mjs` 均通过；页面异常 0。新脚本实际操作附件、历史、分支、压缩、用量、多标签、冲突、恢复、watcher 和重启草稿。
 - 已实际查看 `.artifacts/usage-p1-p2.png`、`workspace-p1-p2.png`、`attachments-p1-p2.png`。隐藏窗口 capturePage 会抓前一帧：先 invalidate，再等两帧，之后截图。
 - 原目录 2,901 个 tracked 文件指纹一致，28 个独立应用源文件检查无违规。指纹 / import 检查不是法律鉴定。

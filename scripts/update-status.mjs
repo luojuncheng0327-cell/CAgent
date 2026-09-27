@@ -39,6 +39,7 @@ mark(
     'scripts/check-independent.mjs',
     '.artifacts/independence-check.json',
     'scripts/check-similarity.ts',
+    'scripts/similarity-exceptions.json',
     'tests/similarity.test.ts',
     '.artifacts/similarity-report.json',
   ],

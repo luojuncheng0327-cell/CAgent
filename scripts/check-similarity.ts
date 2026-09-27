@@ -6,11 +6,15 @@ import { performance } from 'node:perf_hooks';
 import {
   Codebook,
   encodeProse,
+  findException,
   prosePieces,
   proseUnits,
+  readExceptions,
   scanScript,
   scanStyle,
   sharedRuns,
+  type Exception,
+  type Finding,
   type MatchOptions,
   type Prose,
   type Run,
@@ -20,6 +24,8 @@ import {
 
 const REFERENCE = 'F:/CAgent';
 const SNAPSHOT = path.join(REFERENCE, '.codex/rewrite-spec/original-state.json');
+/** Reviewed overlaps that are public conventions; each entry carries its reason. */
+const EXCEPTIONS = 'scripts/similarity-exceptions.json';
 const GENERATED = new Set(['docs/IMPLEMENTATION-STATUS.md', 'docs/CAgent-功能清单与验收规格.md']);
 const OPTIONS: Record<'code' | 'style' | 'prose', MatchOptions> = {
   code: { seed: 20, min: 20, common: 10 },
@@ -375,23 +381,65 @@ const literals = [...literalSpread]
   }))
   .sort((a, b) => b.text.length - a.text.length);
 
-const violations = [
+const candidates: (Finding & { message: string })[] = [
   ...code
     .filter((f) => f.tokens >= POLICY.codeRun)
-    .map((f) => `代码结构连续相同 ${f.tokens} 词元：${where(f.ours)} ↔ ${where(f.reference)}`),
+    .map((f) => ({
+      kind: 'code' as const,
+      ours: f.ours.file,
+      reference: f.reference.file,
+      size: f.tokens,
+      message: `代码结构连续相同 ${f.tokens} 词元：${where(f.ours)} ↔ ${where(f.reference)}`,
+    })),
   ...pairs
     .filter((p) => p.tokens >= POLICY.pairMinTokens && p.share >= POLICY.pairShare)
-    .map((p) => `文件累计重合 ${percent(p.share)}：${p.ours} ↔ ${p.reference}`),
+    .map((p) => ({
+      kind: 'pair' as const,
+      ours: p.ours,
+      reference: p.reference,
+      size: p.share,
+      message: `文件累计重合 ${percent(p.share)}：${p.ours} ↔ ${p.reference}`,
+    })),
   ...prose
     .filter((f) => f.units >= POLICY.proseRun)
-    .map(
-      (f) =>
-        `相同文字 ${f.units} 单位：${f.ours.file}:${f.ours.line} ↔ ${f.reference.file}:${f.reference.line}`,
-    ),
+    .map((f) => ({
+      kind: 'prose' as const,
+      ours: f.ours.file,
+      reference: f.reference.file,
+      size: f.units,
+      text: f.text,
+      message: `相同文字 ${f.units} 单位：${f.ours.file}:${f.ours.line} ↔ ${f.reference.file}:${f.reference.line}`,
+    })),
   ...style
     .filter((f) => f.declarations >= POLICY.styleRun)
-    .map((f) => `连续相同 CSS 声明 ${f.declarations} 条：${where(f.ours)} ↔ ${where(f.reference)}`),
+    .map((f) => ({
+      kind: 'style' as const,
+      ours: f.ours.file,
+      reference: f.reference.file,
+      size: f.declarations,
+      message: `连续相同 CSS 声明 ${f.declarations} 条：${where(f.ours)} ↔ ${where(f.reference)}`,
+    })),
 ];
+const exceptions: Exception[] = fs.existsSync(EXCEPTIONS)
+  ? readExceptions(JSON.parse(fs.readFileSync(EXCEPTIONS, 'utf8')))
+  : [];
+const used = new Set<Exception>(),
+  violations: string[] = [],
+  excused: { finding: string; reason: string; reviewed: string }[] = [];
+for (const candidate of candidates) {
+  const exception = findException(exceptions, candidate);
+  if (!exception) {
+    violations.push(candidate.message);
+    continue;
+  }
+  used.add(exception);
+  excused.push({
+    finding: candidate.message,
+    reason: exception.reason,
+    reviewed: exception.reviewed,
+  });
+}
+const staleExceptions = exceptions.filter((e) => !used.has(e));
 lap('analysis');
 
 const ownTokens = ownScripts.reduce((n, s) => n + s.script!.shape.length, 0),
@@ -419,6 +467,8 @@ const report = {
   options: { ...OPTIONS, listedRun: LISTED_RUN, variety: VARIETY },
   policy: POLICY,
   violations,
+  excused,
+  staleExceptions,
   summary: {
     code: {
       coveredTokens,
@@ -483,6 +533,12 @@ const md: string[] = [
   violations.length
     ? `**未通过：${violations.length} 项。**\n\n${violations.map((v) => '- ' + v).join('\n')}`
     : '**通过：没有越过任何限值。**',
+  '',
+  `已审核例外（\`${EXCEPTIONS}\`，公共约定，不计为越线）：${excused.length} 项。`,
+  ...excused.map((e) => `- ${e.finding} —— ${e.reason}（${e.reviewed} 审核）`),
+  ...staleExceptions.map(
+    (e) => `- 已不再命中，可删除：${e.kind} · ${e.ours}${e.reference ? ' ↔ ' + e.reference : ''}`,
+  ),
   '',
   '## 总览',
   '',
@@ -593,6 +649,8 @@ console.log(
       ours: report.ours,
       policy: POLICY,
       violations,
+      excused,
+      staleExceptions,
       summary: report.summary,
       closestPairs: judged.slice(0, 3).map((p) => ({
         ours: p.ours,
