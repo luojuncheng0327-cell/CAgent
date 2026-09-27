@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
-import type { Message, RunEvent, Stored } from '../shared/contracts.ts';
+import type { Message, MessagePage, RunEvent, Stored } from '../shared/contracts.ts';
 import { AppError, invariant, stamp } from './errors.ts';
 
 export class Store {
@@ -15,10 +15,11 @@ export class Store {
     invariant(!this.home.split(/[\\/]/).some(s=>s.toLowerCase()==='.hanako'),'LEGACY_HOME','请选择独立的新数据目录');
     this.db=new DatabaseSync(path.join(this.home,'cagent.sqlite'),{timeout:5000});
     const version=this.db.prepare('PRAGMA user_version').get() as {user_version:number};
-    if(version.user_version>1){this.db.close();throw new AppError('NEWER_SCHEMA','数据由较新版本创建，已停止写入',409);}
+    if(version.user_version>2){this.db.close();throw new AppError('NEWER_SCHEMA','数据由较新版本创建，已停止写入',409);}
     this.db.exec(`
       PRAGMA journal_mode=WAL;
       PRAGMA synchronous=FULL;
+      BEGIN IMMEDIATE;
       CREATE TABLE IF NOT EXISTS records (
         kind TEXT NOT NULL, id TEXT NOT NULL, revision INTEGER NOT NULL, created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL, body TEXT NOT NULL CHECK(json_valid(body)), PRIMARY KEY(kind,id)
@@ -35,8 +36,10 @@ export class Store {
       ) STRICT;
       CREATE INDEX IF NOT EXISTS event_session ON events(session_id,id);
       CREATE TABLE IF NOT EXISTS secrets (id TEXT PRIMARY KEY, codec TEXT NOT NULL, value BLOB NOT NULL) STRICT;
+      CREATE TABLE IF NOT EXISTS resource_blobs (id TEXT PRIMARY KEY, bytes BLOB NOT NULL) STRICT;
       CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, action TEXT NOT NULL, target TEXT, outcome TEXT NOT NULL) STRICT;
-      PRAGMA user_version=1;
+      PRAGMA user_version=2;
+      COMMIT;
     `);
   }
   transaction<T>(fn:()=>T):T {
@@ -76,6 +79,22 @@ export class Store {
   }
   messages(sessionId:string,after=0,limit=1000):Message[]{
     return (this.db.prepare('SELECT body FROM messages WHERE session_id=? AND position>? ORDER BY position LIMIT ?').all(sessionId,after,Math.min(limit,10000)) as {body:string}[]).map(x=>JSON.parse(x.body));
+  }
+  allMessages(sessionId:string):Message[]{
+    return (this.db.prepare('SELECT body FROM messages WHERE session_id=? ORDER BY position').all(sessionId) as {body:string}[]).map(r=>{
+      const m=JSON.parse(r.body);invariant(m&&typeof m.text==='string'&&['user','assistant','tool'].includes(m.role),'HISTORY_CORRUPT','历史中存在损坏记录，请先检查导出或备份',409);return m;
+    });
+  }
+  runMessages(sessionId:string,runId:string):Message[]{
+    return (this.db.prepare("SELECT body FROM messages WHERE session_id=? AND json_extract(body,'$.runId')=? ORDER BY position").all(sessionId,runId) as {body:string}[]).map(r=>JSON.parse(r.body));
+  }
+  messagePage(sessionId:string,before=Number.MAX_SAFE_INTEGER,limit=80):MessagePage{
+    invariant(Number.isSafeInteger(before)&&before>0&&Number.isInteger(limit)&&limit>=1&&limit<=200,'INVALID_PAGE','分页参数无效');
+    const rows=this.db.prepare('SELECT position,body FROM messages WHERE session_id=? AND position<? ORDER BY position DESC LIMIT ?').all(sessionId,before,limit+1) as {position:number;body:string}[];
+    const hasMore=rows.length>limit,page=rows.slice(0,limit).reverse(),messages:Message[]=[],corruptPositions:number[]=[];
+    for(const r of page){try{const m=JSON.parse(r.body);if(m.sessionId!==sessionId||m.position!==r.position||typeof m.text!=='string'||!['user','assistant','tool'].includes(m.role))throw new Error();messages.push(m);}catch{corruptPositions.push(r.position);}}
+    const {total}=this.db.prepare('SELECT count(*) AS total FROM messages WHERE session_id=?').get(sessionId) as {total:number};
+    return {messages,before:page[0]?.position??null,hasMore,total,corruptPositions};
   }
   event(runId:string,sessionId:string,kind:string,payload:unknown):RunEvent {
     return this.transaction(()=>{

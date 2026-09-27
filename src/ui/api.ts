@@ -1,6 +1,6 @@
-import type { Agent, Provider, Model, Session, Preferences, Run, Message, Approval, RunEvent } from '../shared/contracts.ts';
+import type { Agent, Provider, Model, Session, Preferences, Run, Message, Approval, RunEvent, MessagePage, Resource, Compaction } from '../shared/contracts.ts';
 export interface Bootstrap {preferences:Preferences;agents:Agent[];providers:Provider[];models:Model[];sessions:Session[];runs:Run[];capabilities:Record<string,boolean>}
-export interface SessionDetail {session:Session;messages:Message[];runs:Run[];approvals:Approval[];eventCursor:number;live:{text:string;reasoning:string}}
+export interface SessionDetail {session:Session;messages:Message[];pagination:Omit<MessagePage,'messages'>;resources:Resource[];compaction:Compaction|null;runs:Run[];approvals:Approval[];eventCursor:number;live:{text:string;reasoning:string}}
 export class ApiError extends Error {code:string;constructor(code:string,message:string){super(message);this.code=code;}}
 export async function api<T>(path:string,method='GET',body?:unknown):Promise<T>{
   const result=await fetch('/api/v1'+path,{method,credentials:'same-origin',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});

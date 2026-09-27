@@ -1,9 +1,10 @@
 import type { Model, Provider, Message, ToolDefinition, ToolCall, ModelDelta, ModelResult } from '../shared/contracts.ts';
 import { AppError, invariant } from './errors.ts';
+import type { InputMessage } from './resources.ts';
 
 export type Fetcher = (input:string|URL,init?:RequestInit)=>Promise<Response>;
 export interface Inference {
-  provider:Provider; model:Model; key:string|null; messages:Message[]; instructions:string;
+  provider:Provider; model:Model; key:string|null; messages:InputMessage[]; instructions:string;
   reasoning:string; tools:ToolDefinition[]; signal:AbortSignal; timeoutMs:number;
   onDelta:(delta:ModelDelta)=>void; fetcher?:Fetcher;
 }
@@ -17,10 +18,21 @@ export function requestFor(o:Inference):{url:string;headers:Record<string,string
   const headers:Record<string,string>={'Content-Type':'application/json','Accept':'text/event-stream',...p.headers};
   let endpoint='',body:Record<string,unknown>={};
   const tools=m.supportsTools?o.tools:[];
+  invariant(m.supportsImages||!o.messages.some(msg=>msg.images?.length),'MODEL_IMAGE_UNSUPPORTED','此模型不支持图片');
+  const content=(msg:InputMessage,format:'chat'|'responses'|'anthropic'|'gemini'):unknown=>{
+    if(format==='chat'&&!msg.images?.length)return msg.text||null;
+    if(format==='responses'&&!msg.images?.length)return msg.text;
+    const parts:unknown[]=msg.text?[format==='gemini'?{text:msg.text}:format==='responses'?{type:msg.role==='assistant'?'output_text':'input_text',text:msg.text}:{type:'text',text:msg.text}]:[];
+    for(const image of msg.images??[]){
+      const url=`data:${image.mime};base64,${image.base64}`;
+      parts.push(format==='chat'?{type:'image_url',image_url:{url}}:format==='responses'?{type:'input_image',image_url:url,detail:'auto'}:format==='anthropic'?{type:'image',source:{type:'base64',media_type:image.mime,data:image.base64}}:{inlineData:{mimeType:image.mime,data:image.base64}});
+    }
+    return parts;
+  };
   if(p.protocol==='openai-completions'){
     endpoint='chat/completions';
     body={model:m.model,stream:true,stream_options:{include_usage:true},max_completion_tokens:m.maxOutput,messages:[
-      {role:'system',content:o.instructions},...o.messages.map(msg=>msg.role==='tool'?{role:'tool',tool_call_id:msg.callId,content:msg.text}:{role:msg.role,content:msg.text||null,...(msg.calls?.length?{tool_calls:msg.calls.map(c=>({id:c.id,type:'function',function:{name:c.name,arguments:c.arguments}}))}:{}),...(msg.reasoning?{reasoning_content:msg.reasoning}:{})})]};
+      {role:'system',content:o.instructions},...o.messages.map(msg=>msg.role==='tool'?{role:'tool',tool_call_id:msg.callId,content:msg.text}:{role:msg.role,content:content(msg,'chat'),...(msg.calls?.length?{tool_calls:msg.calls.map(c=>({id:c.id,type:'function',function:{name:c.name,arguments:c.arguments}}))}:{}),...(msg.reasoning?{reasoning_content:msg.reasoning}:{})})]};
     if(effort)body.reasoning_effort=effort;
     if(tools.length)body.tools=tools.map(t=>({type:'function',function:t}));
   }else if(p.protocol==='openai-responses'||p.protocol==='openai-codex-responses'){
@@ -30,7 +42,7 @@ export function requestFor(o:Inference):{url:string;headers:Record<string,string
       if(msg.role==='tool'){input.push({type:'function_call_output',call_id:msg.callId,output:msg.text});continue;}
       if(msg.providerBlocks?.length)input.push(...msg.providerBlocks);
       else{
-        if(msg.text)input.push({role:msg.role,content:msg.text});
+        if(msg.text||msg.images?.length)input.push({role:msg.role,content:content(msg,'responses')});
         for(const c of msg.calls??[])input.push({type:'function_call',call_id:c.id,name:c.name,arguments:c.arguments});
       }
     }
@@ -39,14 +51,14 @@ export function requestFor(o:Inference):{url:string;headers:Record<string,string
     if(tools.length)body.tools=tools.map(t=>({type:'function',name:t.name,description:t.description,parameters:t.parameters,strict:false}));
   }else if(p.protocol==='anthropic-messages'){
     endpoint='messages';headers['anthropic-version']='2023-06-01';
-    const messages=o.messages.map(msg=>({role:msg.role==='tool'?'user':msg.role,content:msg.role==='tool'?[{type:'tool_result',tool_use_id:msg.callId,content:msg.text}]:msg.providerBlocks?.length?msg.providerBlocks:[...(msg.text?[{type:'text',text:msg.text}]:[]),...(msg.calls??[]).map(c=>({type:'tool_use',id:c.id,name:c.name,input:parseArguments(c.arguments)}))]}));
+    const messages=o.messages.map(msg=>({role:msg.role==='tool'?'user':msg.role,content:msg.role==='tool'?[{type:'tool_result',tool_use_id:msg.callId,content:msg.text}]:msg.providerBlocks?.length?msg.providerBlocks:[...content(msg,'anthropic') as unknown[],...(msg.calls??[]).map(c=>({type:'tool_use',id:c.id,name:c.name,input:parseArguments(c.arguments)}))]}));
     body={model:m.model,stream:true,max_tokens:m.maxOutput,system:o.instructions,messages};
     if(effort){body.thinking={type:'adaptive'};body.output_config={effort};}
     if(tools.length)body.tools=tools.map(t=>({name:t.name,description:t.description,input_schema:t.parameters}));
   }else{
     endpoint=`models/${encodeURIComponent(m.model)}:streamGenerateContent`;
     const calls=new Map(o.messages.flatMap(msg=>msg.calls??[]).map(c=>[c.id,c.name]));
-    body={systemInstruction:{parts:[{text:o.instructions}]},contents:o.messages.map(msg=>({role:msg.role==='assistant'?'model':'user',parts:msg.role==='tool'?[{functionResponse:{name:calls.get(msg.callId??'')??'tool',response:{result:msg.text}}}]:msg.providerBlocks?.length?msg.providerBlocks:[...(msg.text?[{text:msg.text}]:[]),...(msg.calls??[]).map(c=>({functionCall:{name:c.name,args:parseArguments(c.arguments)},...(c.signature?{thoughtSignature:c.signature}:{})}))]})),generationConfig:{maxOutputTokens:m.maxOutput}};
+    body={systemInstruction:{parts:[{text:o.instructions}]},contents:o.messages.map(msg=>({role:msg.role==='assistant'?'model':'user',parts:msg.role==='tool'?[{functionResponse:{name:calls.get(msg.callId??'')??'tool',response:{result:msg.text}}}]:msg.providerBlocks?.length?msg.providerBlocks:[...content(msg,'gemini') as unknown[],...(msg.calls??[]).map(c=>({functionCall:{name:c.name,args:parseArguments(c.arguments)},...(c.signature?{thoughtSignature:c.signature}:{})}))]})),generationConfig:{maxOutputTokens:m.maxOutput}};
     if(effort)(body.generationConfig as Record<string,unknown>).thinkingConfig={thinkingLevel:effort};
     if(tools.length)body.tools=[{functionDeclarations:tools}];
   }
@@ -102,9 +114,14 @@ export async function infer(o:Inference):Promise<ModelResult>{
   const calls=new Map<string,ToolCall>();const blocks=new Map<number,Record<string,any>>();
   let terminal=false,finishReason:string|undefined;
   function text(value:unknown,reasoning=false){if(typeof value!=='string'||!value)return;if(reasoning)result.reasoning+=value;else result.text+=value;o.onDelta({kind:reasoning?'reasoning':'text',text:value});}
-  function usage(u:Record<string,any>|undefined){if(!u)return;const input=u.input_tokens??u.prompt_tokens??u.promptTokenCount,output=u.output_tokens??u.completion_tokens??u.candidatesTokenCount,cached=u.input_tokens_details?.cached_tokens??u.prompt_tokens_details?.cached_tokens??u.cachedContentTokenCount??u.cache_read_input_tokens;if(Number.isFinite(input))result.usage.input=input;if(Number.isFinite(output))result.usage.output=output;if(Number.isFinite(cached))result.usage.cached=cached;}
+  function usage(u:Record<string,any>|undefined){if(!u)return;let input=u.input_tokens??u.prompt_tokens??u.promptTokenCount;const output=u.output_tokens??u.completion_tokens??u.candidatesTokenCount,cached=u.input_tokens_details?.cached_tokens??u.prompt_tokens_details?.cached_tokens??u.cachedContentTokenCount??u.cache_read_input_tokens;
+    if(o.provider.protocol==='anthropic-messages'&&Number.isFinite(input))input+=(u.cache_read_input_tokens??0)+(u.cache_creation_input_tokens??0);
+    if(Number.isFinite(input)&&input>=0)result.usage.input=input;if(Number.isFinite(output)&&output>=0)result.usage.output=output;if(Number.isFinite(cached)&&cached>=0)result.usage.cached=cached;
+    // Report known counters immediately: a later truncation or network error must not erase them.
+    o.onDelta({kind:'usage',input:result.usage.input??undefined,output:result.usage.output??undefined,cached:result.usage.cached??undefined,unpricedInput:Number(u.cache_creation_input_tokens)>0});
+  }
   function consume(e:Record<string,any>){
-    if(e.error||e.type==='error'||e.type==='response.failed')throw new AppError('MODEL_ERROR','模型服务报告执行失败',502);
+    if(e.error||e.type==='error'||e.type==='response.failed'){usage(e.response?.usage??e.usage);throw new AppError('MODEL_ERROR','模型服务报告执行失败',502);}
     if(o.provider.protocol==='openai-completions'){
       usage(e.usage);const c=e.choices?.[0];if(!c)return;
       const d=c.delta??c.message??{};text(d.content);text(d.reasoning_content??d.reasoning,true);
@@ -116,7 +133,7 @@ export async function infer(o:Inference):Promise<ModelResult>{
       if(e.type==='response.output_item.added'&&e.item?.type==='function_call')calls.set(String(e.output_index),{id:e.item.call_id,name:e.item.name,arguments:e.item.arguments??''});
       if(e.type==='response.function_call_arguments.delta'){const c=calls.get(String(e.output_index));if(c)c.arguments+=e.delta??'';}
       if(e.type==='response.output_item.done')blocks.set(e.output_index,e.item);
-      if(e.type==='response.incomplete')throw new AppError('MODEL_INCOMPLETE','模型输出未完成，可能已达到输出上限',502);
+      if(e.type==='response.incomplete'){usage(e.response?.usage);throw new AppError('MODEL_INCOMPLETE','模型输出未完成，可能已达到输出上限',502);}
       if(e.type==='response.completed'||e.object==='response'){
         const r=e.response??e;invariant(r.status==='completed','MODEL_INCOMPLETE','模型响应没有完成',502);terminal=true;usage(r.usage);
         if(!result.text)for(const b of r.output??[])if(b.type==='message')for(const c of b.content??[])text(c.text??c.refusal);

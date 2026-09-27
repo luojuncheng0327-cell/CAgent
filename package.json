@@ -19,7 +19,7 @@
     "cli": "node src/cli.ts",
     "check:independent": "node scripts/check-independent.mjs",
     "verify": "pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent",
-    "test:desktop": "node tests/desktop-smoke.mjs"
+    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-p1-p2.mjs"
   },
   "dependencies": {
     "react": "19.3.0",
