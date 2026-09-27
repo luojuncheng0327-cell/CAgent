@@ -139,6 +139,8 @@ try {
   await page.getByRole('button', { name: '压缩上下文', exact: true }).click();
   await page.getByText('上下文摘要 · 原始历史完整保留', { exact: true }).waitFor();
   await page.getByRole('button', { name: '发送消息', exact: true }).waitFor();
+  await page.getByRole('button', { name: '界面设置', exact: true }).click();
+  await page.getByRole('button', { name: '供应商', exact: true }).click();
   await page.getByRole('button', { name: '用量', exact: true }).click();
   await page.getByRole('heading', { name: '模型用量', exact: true }).waitFor();
   await page.getByText('上下文压缩', { exact: true }).waitFor();
@@ -167,11 +169,14 @@ try {
     await fs.writeFile(file, Buffer.from(bytes, 'base64'));
   };
   await capture('.artifacts/usage-p1-p2.png');
-  await page.getByRole('button', { name: '对话', exact: true }).click();
-  await page.getByRole('button', { name: '工作区与文件', exact: true }).click();
+  await page.getByRole('button', { name: '关闭对话框', exact: true }).click();
+  assert.equal(
+    await page.getByRole('button', { name: '书桌', exact: true }).getAttribute('aria-expanded'),
+    'true',
+  );
   await page.locator('.file-list').getByRole('button', { name: 'a.md', exact: true }).click();
   await page.getByLabel('文件内容', { exact: true }).fill('标签 A 的未保存草稿');
-  await page.getByRole('button', { name: '关闭对话框', exact: true }).click();
+  await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
   await page.locator('.file-list').getByRole('button', { name: 'b.md', exact: true }).click();
   await page.getByRole('tab', { name: 'a.md *', exact: true }).click();
   assert.equal(
@@ -201,7 +206,7 @@ try {
   );
   assert.equal(await fs.readFile(path.join(workspace, 'a.md'), 'utf8'), '外部进程修改');
   await capture('.artifacts/workspace-p1-p2.png');
-  await page.getByRole('button', { name: '关闭对话框', exact: true }).click();
+  await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
   await fs.writeFile(path.join(workspace, 'watcher.txt'), '外部新建');
   await page
     .locator('.file-list')

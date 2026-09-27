@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-27T09:34:30.586Z",
-  "milestone": "P1/P2 附件、历史分支、压缩、用量与工作区切片已补充，完整重写仍进行中",
+  "updatedAt": "2026-09-27T10:42:20.432Z",
+  "milestone": "界面基础与主界面已形成可对照版本，六步引导和完整设置复刻待继续；完整重写仍进行中",
   "counts": {
     "partial": 56,
     "not_started": 130,
@@ -508,11 +508,11 @@
       "scope": "required",
       "status": "partial",
       "evidence": [
-        "src/ui/App.tsx",
         "src/ui/components.tsx",
-        "tests/desktop-smoke.mjs"
+        "src/ui/shell.css",
+        "tests/desktop-layout.mjs"
       ],
-      "remaining": "已有思考 / 工具显示、基本 Markdown、复制 / 分叉、批准、权限模式与滚动；公式 / 图示、引用、计划模式、完整卡片和导航未齐。"
+      "remaining": "独立 Markdown 排版、代码换行与复制、表格和引用样式已有桌面证据；公式、图示、代码高亮与全部语言渲染矩阵仍待实现。"
     },
     {
       "id": "CA-CHAT-005",
@@ -745,9 +745,11 @@
       "evidence": [
         "tests/p1-p2.test.ts",
         "tests/desktop-p1-p2.mjs",
-        "src/ui/Workspace.tsx"
+        "src/ui/Workspace.tsx",
+        "src/ui/shell.css",
+        "tests/desktop-layout.mjs"
       ],
-      "remaining": "UTF-8 编辑、十个文件标签的草稿 / 滚动、外部变更提醒、冲突拒绝和历史恢复已实现。文件草稿仅在当前进程保留，退出会提示；多媒体 / PDF 独立查看器未实现。"
+      "remaining": "右侧多标签 UTF-8 编辑、Markdown / 文本草稿预览、外部冲突和历史恢复已有本机验收；尚无富文本直接编辑、多媒体 / PDF 查看器和崩溃后的文件草稿恢复。"
     },
     {
       "id": "CA-WORK-005",
@@ -758,9 +760,11 @@
       "evidence": [
         "tests/p1-p2.test.ts",
         "tests/desktop-p1-p2.mjs",
-        "src/ui/Workspace.tsx"
+        "src/ui/Workspace.tsx",
+        "src/ui/shell.css",
+        "tests/desktop-layout.mjs"
       ],
-      "remaining": "UTF-8 编辑、十个文件标签的草稿 / 滚动、外部变更提醒、冲突拒绝和历史恢复已实现。文件草稿仅在当前进程保留，退出会提示；多媒体 / PDF 独立查看器未实现。"
+      "remaining": "右侧多标签 UTF-8 编辑、Markdown / 文本草稿预览、外部冲突和历史恢复已有本机验收；尚无富文本直接编辑、多媒体 / PDF 查看器和崩溃后的文件草稿恢复。"
     },
     {
       "id": "CA-WORK-006",

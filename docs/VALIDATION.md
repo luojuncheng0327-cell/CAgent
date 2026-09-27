@@ -155,3 +155,24 @@
 - 已查看 .artifacts/ui-replica/foundation-compare.png（左原版 / 右独立版，各 1280×800）和 foundation-warm.png。这一步只验基础，不把旧布局记作已完成复刻。
 - 参考仅从交接指定临时副本启动。Windows 离屏窗口原生边框导致视口偏移，采用运行时 Emulation.setDeviceMetricsOverride 固定 1280×800、deviceScaleFactor=1；原版与本版输出 PNG 均核对为 1280×800。截图合成首次因尺寸不符主动失败（Expected two 1280 x 800 screenshots.），校准后通过；没有拉伸图片充数。
 - Start-Process 后台命令曾被自动审批拦截，改为终端直接运行已审核的 driver.mjs 成功；未安装或启动打包原版，测试使用显式 CAGENT_HOME。
+
+## 界面复刻第 2 步：主界面 · 2026-09-27
+
+实现范围：独立的 Shell.tsx / shell.css 承载 44px 顶栏、240px 左栏、聊天 / 频道分段、欢迎页、输入卡、消息和 260px 书桌；沿用既有服务与会话逻辑。用量移到设置 → 供应商 → 用量，记忆由欢迎页进入，多标签文件改为右侧编辑 / 预览区域。未实现的主界面入口禁用并标注“即将提供”（图标入口通过名称 / 悬停说明标注）。主界面共使用 48 个自绘几何图标，没有引用原版组件、CSS 或资产。
+
+- 欢迎输入卡宽 640px，普通聊天输入卡上限 740px（两栏同时展开的当前实例可用宽 732px），圆角 16px、内距 16 / 16 / 8px。用户气泡靠右；助手头像 32px、衬线正文、折叠思考、代码换行 / 复制、表格及引用均可实际操作。输入框随多行文字增高，空数据首次打开会建立可输入的空白会话。
+- 文件编辑保留十个标签、草稿、外部冲突及历史恢复。新增 Markdown / 文本预览读取当前草稿，切回编辑不丢内容；文本编辑与渲染预览是两个模式，尚无原版的直接富文本编辑。编辑器新配置默认改为实测的 PT Serif 16px / 1.5；已有用户保存的字号和行高保持。
+- 参考程序只从临时副本启动。最终所有原始截图均为 1280×800，无缩放拼成 2560×842（顶部 42px 是对照标题）。对照图已逐张实际查看：.artifacts/ui-replica/main-welcome-compare.png、main-chat-compare.png、main-night-compare.png、main-preview-compare.png。基础阶段保留 foundation-compare.png。参考窗口和本轮创建的参考测试文件已关闭 / 清理，临时副本保留供后续引导与设置使用。
+- 同尺寸普通聊天的正文 / 标题 / 列表 / 表格 / 引用抽测：横坐标与宽度一致，纵坐标偏差约 0.28px；欢迎输入卡 y=472.203px，参考 y=472.078px。数值在 main-measurements.json / reference-measurements.json。只代表这个固定场景和这些节点，不是全界面像素一致或完整交互验收。
+- 头像、欢迎文案、未实现入口标记和测试会话数量是已知的对照差别；设置仍沿用现有五类页面（供应商内含用量），六步引导 / 17 类设置复刻尚未做。模型与权限选择目前复用已有原生选择控件；完整弹出菜单样式、富文本直接编辑和其他未完成能力仍需后续补齐。
+
+本轮最终验证：pnpm run format、pnpm run verify 全过（53 项测试，0 失败 / 0 跳过；构建、独立性和相似度通过）；pnpm run test:desktop 四组全过，页面异常 0。独立性检查 155 个文件，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元，文件累计最高 24.4%，CSS 最长 5 条；仍只有标准 UA 这 1 条已审核例外。
+
+过程中的失败原样摘要及处理：
+
+1. 新布局测量曾报 Cannot read properties of null (reading 'getBoundingClientRect')：切换会话暂时卸载了书桌。测试增加等待输入框 / 书桌加载完成，保留原尺寸断言。
+2. 文件预览用例曾报 locator.click: Timeout 12000ms exceeded，等待 ui-replica-example.md：测试工作台误放在 CAGENT_HOME 内，应用按设计提示“不能通过工作区工具访问应用私有数据”。已将 home 和 workspace 分开到两个独立临时根，没有放宽安全检查。
+3. 原 smoke 的 page.screenshot: Timeout 30000ms exceeded（waiting for fonts to load... fonts loaded）：改为交接中已验证的 Electron capturePage，并等待字体 / repaint。旧聊天、取消、改名、记忆、退出草稿与重启历史断言全部保留。
+4. 一轮重复启动被 PowerShell 的日志占用拦截：The process cannot access the file ... because it is being used by another process. 这次桌面测试没有启动，退出码不能当作通过证据；停止重叠运行后，用独立日志重新串行执行全部检查。最终日志为 .artifacts/main-verify-final.log 和 .artifacts/main-desktop-delivery.log。
+
+验证边界：代码复制检查仅和冻结的一个原工作区比较；没有真实账号、收费模型、安装包、跨平台或全部窗口宽度验收。新增复制代码检查使用剪贴板替身核对负载，未改用户系统剪贴板。状态计数仍为 22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision；发布仍禁止。

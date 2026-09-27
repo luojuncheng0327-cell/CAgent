@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { Session, Preferences, Stored } from '../shared/contracts.ts';
+import type { Session, Preferences, Stored, Resource } from '../shared/contracts.ts';
 import { api } from './api.ts';
-import { Icon, Modal, Field } from './components.tsx';
+import { Icon, Modal, Field, Markdown } from './components.tsx';
+import { Soon } from './Shell.tsx';
+import { ResourceLinks } from './Attachments.tsx';
 
 interface FileTab {
   path: string;
@@ -25,7 +27,13 @@ export function Workspace({
   preferences,
   choose,
   report,
+  resources,
+  modelName,
+  hasMessages,
 }: {
+  resources: Resource[];
+  modelName: string;
+  hasMessages: boolean;
   session: Session;
   preferences: Preferences;
   choose: () => Promise<void>;
@@ -33,6 +41,8 @@ export function Workspace({
 }) {
   const key = session.id + '|' + session.workspace,
     prefix = `/sessions/${session.id}`;
+  const [area, setArea] = useState<'files' | 'resources'>('files');
+  const [preview, setPreview] = useState(false);
   const [folder, setFolder] = useState('.'),
     [entries, setEntries] = useState<{ name: string; kind: string }[]>([]),
     [truncated, setTruncated] = useState(false),
@@ -49,6 +59,7 @@ export function Workspace({
     [busy, setBusy] = useState(false),
     [history, setHistory] = useState<Version[] | null>(null);
   const editor = useRef<HTMLTextAreaElement>(null),
+    searchInput = useRef<HTMLInputElement>(null),
     tabRef = useRef(tabs),
     listRequest = useRef(0),
     file = tabs.find((t) => t.path === active);
@@ -112,7 +123,7 @@ export function Workspace({
   useEffect(() => {
     if (editor.current && file) editor.current.scrollTop = file.scroll;
     setHistory(null);
-  }, [active, show]);
+  }, [active, show, preview]);
   function updateTab(target: string, values: Partial<FileTab>) {
     setTabs((old) => old.map((t) => (t.path === target ? { ...t, ...values } : t)));
   }
@@ -191,98 +202,185 @@ export function Workspace({
   }
   const readonly = session.permission === 'read';
   return (
-    <aside className="workspace-panel">
-      <div className="section-heading">
-        <h3>工作区</h3>
-        <button className="icon-button" aria-label="更换工作区" onClick={() => void choose()}>
-          <Icon name="folder" />
-        </button>
-      </div>
-      {!session.workspace ? (
-        <div className="panel-empty">
-          <p>为这个会话选择一个文件夹</p>
-          <button onClick={() => void choose()}>选择工作区</button>
+    <aside className={'workspace-panel' + (show && file ? ' editing' : '')} aria-label="书桌文件区">
+      <div className="desk-card">
+        <div className="desk-heading">
+          <h3 title={session.workspace ?? '工作台'}>
+            {session.workspace?.split(/[\\/]/).at(-1) ?? '工作台'}
+          </h3>
+          <Soon label="项目技能" icon="sparkle" />
         </div>
-      ) : (
-        <>
-          <div className="workspace-path">{session.workspace}</div>
-          <p className="watch-state" role="status">
-            {watchState}
-          </p>
-          <div className="file-crumb">
-            <button onClick={() => setFolder('.')}>根目录</button>
-            <button
-              disabled={folder === '.'}
-              onClick={() =>
-                setFolder(folder.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : '.')
-              }
-            >
-              上一级
-            </button>
-            <span>{folder}</span>
-            <button onClick={() => void load().catch(report)}>刷新</button>
-          </div>
-          <input
-            aria-label="筛选当前目录"
-            placeholder="筛选文件名"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-          <div className="file-operations">
-            <button
-              disabled={readonly}
-              onClick={() => {
-                setName('');
-                setOperation('create-file');
-              }}
-            >
-              新建文件
-            </button>
-            <button
-              disabled={readonly}
-              onClick={() => {
-                setName('');
-                setOperation('create-directory');
-              }}
-            >
-              新建目录
-            </button>
-          </div>
-          {loading ? (
-            <p className="muted">正在读取…</p>
-          ) : (
-            <div className="file-list">
-              {entries
-                .filter((e) => e.name.toLowerCase().includes(filter.toLowerCase()))
-                .map((e) => (
-                  <button
-                    key={e.name}
-                    disabled={e.kind === 'link'}
-                    onClick={() => {
-                      const target = (folder === '.' ? '' : folder + '/') + e.name;
-                      if (e.kind === 'directory') setFolder(target);
-                      else void openFile(target).catch(report);
-                    }}
-                  >
-                    <Icon name={e.kind === 'directory' ? 'folder' : 'memory'} size={15} />
-                    <span>{e.name}</span>
-                  </button>
-                ))}
-              {!entries.length && <p className="muted">此目录为空</p>}
-              {truncated && <p className="inline-error">目录超过 500 项，只显示前 500 项。</p>}
+        <div className="desk-tabs" role="tablist" aria-label="书桌内容">
+          <button
+            role="tab"
+            aria-selected={area === 'resources'}
+            onClick={() => setArea('resources')}
+          >
+            对话文件
+          </button>
+          <button role="tab" aria-selected={area === 'files'} onClick={() => setArea('files')}>
+            工作台
+          </button>
+        </div>
+        <input
+          className="desk-search"
+          ref={searchInput}
+          aria-label="筛选当前目录"
+          placeholder="搜索工作台"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          disabled={area !== 'files' || !session.workspace}
+        />
+        <div className="desk-tools">
+          <button
+            aria-label="新建文件"
+            title="新建文件"
+            disabled={!session.workspace || readonly}
+            onClick={() => {
+              setName('');
+              setOperation('create-file');
+            }}
+          >
+            <Icon name="filePlus" size={14} />
+          </button>
+          <button
+            aria-label="新建目录"
+            title="新建目录"
+            disabled={!session.workspace || readonly}
+            onClick={() => {
+              setName('');
+              setOperation('create-directory');
+            }}
+          >
+            <Icon name="folderPlus" size={14} />
+          </button>
+          <button aria-label="更换工作区" title="选择工作台" onClick={() => void choose()}>
+            <Icon name="folder" size={14} />
+          </button>
+          <button
+            aria-label="刷新文件"
+            title="刷新文件"
+            disabled={!session.workspace}
+            onClick={() => void load().catch(report)}
+          >
+            <Icon name="refresh" size={13} />
+          </button>
+          <button
+            aria-label="过滤文件"
+            title="过滤文件"
+            onClick={() => searchInput.current?.focus()}
+          >
+            <Icon name="filter" size={13} />
+            过滤
+          </button>
+          <Soon label="时间" icon="sort" />
+        </div>
+        <span className="sr-only" role="status">
+          {watchState}
+        </span>
+        <div className="desk-files" role="tabpanel">
+          {area === 'resources' ? (
+            resources.length ? (
+              <ResourceLinks
+                ids={resources.map((r) => r.id)}
+                resources={resources}
+                sessionId={session.id}
+              />
+            ) : (
+              <div className="panel-empty">暂无对话文件</div>
+            )
+          ) : !session.workspace ? (
+            <div className="panel-empty">
+              <p>为这个会话选择一个文件夹</p>
+              <button onClick={() => void choose()}>选择工作区</button>
             </div>
+          ) : (
+            <>
+              {folder !== '.' && (
+                <div className="file-crumb">
+                  <button onClick={() => setFolder('.')}>根目录</button>
+                  <button
+                    onClick={() =>
+                      setFolder(
+                        folder.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : '.',
+                      )
+                    }
+                  >
+                    上一级
+                  </button>
+                  <span>{folder}</span>
+                </div>
+              )}
+              {loading ? (
+                <div className="panel-empty">正在读取…</div>
+              ) : entries.length ? (
+                <div className="file-list">
+                  {entries
+                    .filter((e) => e.name.toLowerCase().includes(filter.toLowerCase()))
+                    .map((entry) => (
+                      <button
+                        key={entry.name}
+                        disabled={entry.kind === 'link'}
+                        onClick={() => {
+                          const target = (folder === '.' ? '' : folder + '/') + entry.name;
+                          if (entry.kind === 'directory') setFolder(target);
+                          else void openFile(target).catch(report);
+                        }}
+                      >
+                        <Icon name={entry.kind === 'directory' ? 'folder' : 'file'} size={14} />
+                        <span>{entry.name}</span>
+                      </button>
+                    ))}
+                  {!entries.some((e) => e.name.toLowerCase().includes(filter.toLowerCase())) && (
+                    <p className="panel-empty">没有匹配的文件</p>
+                  )}
+                  {truncated && <p className="inline-error">目录超过 500 项，只显示前 500 项。</p>}
+                </div>
+              ) : (
+                <div className="panel-empty">暂无文件</div>
+              )}
+              {!!tabs.length && (
+                <button className="reopen-files" onClick={() => setShow(true)}>
+                  已打开 {tabs.length} 个文件
+                  {tabs.some((t) => t.text !== t.saved) ? ' · 有未保存修改' : ''}
+                </button>
+              )}
+            </>
           )}
-          {!!tabs.length && (
-            <button className="reopen-files" onClick={() => setShow(true)}>
-              已打开 {tabs.length} 个文件
-              {tabs.some((t) => t.text !== t.saved) ? ' · 有未保存修改' : ''}
-            </button>
-          )}
-        </>
+        </div>
+        <div className="desk-note">
+          <span>
+            笺<small>即将提供</small>
+          </span>
+          <Soon label="展开笺" icon="up" compact />
+        </div>
+      </div>
+      {hasMessages && (
+        <details className="desk-session" open>
+          <summary>本次对话</summary>
+          <dl>
+            <dt>工作目录</dt>
+            <dd title={session.workspace ?? ''}>
+              {session.workspace?.split(/[\\/]/).at(-1) ?? '未选择'}
+            </dd>
+            <dt>执行权限</dt>
+            <dd>
+              {session.permission === 'read'
+                ? '只读'
+                : session.permission === 'ask'
+                  ? '操作前询问'
+                  : '工作区可写'}
+            </dd>
+            <dt>模型</dt>
+            <dd title={modelName}>{modelName}</dd>
+            <dt>文件</dt>
+            <dd>{resources.length}</dd>
+          </dl>
+        </details>
       )}
       {show && file && (
-        <Modal title="工作区文件" onClose={() => setShow(false)} wide>
-          <div className="file-editor">
+        <section className="desk-editor" aria-label="文件预览与编辑">
+          <div className="desk-editor-heading">
             <div className="file-tabs" role="tablist" aria-label="打开的文件">
               {tabs.map((tab) => (
                 <div key={tab.path}>
@@ -299,6 +397,23 @@ export function Workspace({
                   </button>
                 </div>
               ))}
+            </div>
+            <button
+              className="icon-button"
+              aria-label="关闭文件预览"
+              onClick={() => setShow(false)}
+            >
+              <Icon name="close" size={15} />
+            </button>
+          </div>
+          <div className="file-editor">
+            <div className="editor-modes" aria-label="文件显示方式">
+              <button aria-pressed={!preview} onClick={() => setPreview(false)}>
+                编辑
+              </button>
+              <button aria-pressed={preview} onClick={() => setPreview(true)}>
+                预览
+              </button>
             </div>
             {file.changed && (
               <p role="alert" className="inline-error">
@@ -317,17 +432,31 @@ export function Workspace({
               </p>
             )}
             <textarea
+              hidden={preview}
               ref={editor}
               aria-label="文件内容"
               value={file.text}
               onChange={(e) => updateTab(file.path, { text: e.target.value })}
               onScroll={(e) => updateTab(file.path, { scroll: e.currentTarget.scrollTop })}
               style={{
-                fontSize: preferences.editorFontSize ?? 13,
-                lineHeight: preferences.editorLineHeight ?? 1.7,
+                fontSize: preferences.editorFontSize ?? 16,
+                lineHeight: preferences.editorLineHeight ?? 1.5,
               }}
               spellCheck={false}
             />
+            {preview && (
+              <div
+                className="file-preview"
+                role="region"
+                aria-label="文件预览"
+                style={{
+                  fontSize: preferences.editorFontSize ?? 16,
+                  lineHeight: preferences.editorLineHeight ?? 1.5,
+                }}
+              >
+                {/\.md$/i.test(file.path) ? <Markdown text={file.text} /> : <pre>{file.text}</pre>}
+              </div>
+            )}
             <div className="file-operations">
               <button
                 disabled={readonly || busy || file.text !== file.saved}
@@ -417,7 +546,7 @@ export function Workspace({
               </button>
             </div>
           </div>
-        </Modal>
+        </section>
       )}
       {operation && (
         <Modal

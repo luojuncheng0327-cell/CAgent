@@ -13,7 +13,7 @@ import type {
 import { Icon, Portrait, Modal, Field, Markdown, download } from './components.tsx';
 import { Settings, Setup } from './Settings.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
-import { UsagePage } from './UsagePage.tsx';
+import { TopStrip, SessionRail, Soon } from './Shell.tsx';
 import { Workspace, hasUnsavedFiles, discardFileDrafts } from './Workspace.tsx';
 
 export function App() {
@@ -25,12 +25,13 @@ export function App() {
     [sessionId, setSessionId] = useState<string | null>(null),
     [draft, setDraft] = useState('');
   const [settings, setSettings] = useState(false),
-    [view, setView] = useState<'chat' | 'memory' | 'usage'>('chat'),
+    [view, setView] = useState<'chat' | 'memory'>('chat'),
     [toast, setToast] = useState('');
   const [search, setSearch] = useState(''),
     [archived, setArchived] = useState(false),
     [sessions, setSessions] = useState<Session[]>([]),
-    [right, setRight] = useState(false);
+    [right, setRight] = useState(true),
+    [rail, setRail] = useState(true);
   const [workspace, setWorkspace] = useState(false),
     [workspaceValue, setWorkspaceValue] = useState(''),
     [confirm, setConfirm] = useState<{ title: string; action: () => Promise<void> } | null>(null);
@@ -41,6 +42,7 @@ export function App() {
     [connection, setConnection] = useState(''),
     [sending, setSending] = useState(false);
   const [navigating, setNavigating] = useState(false);
+  const [awayFromEnd, setAwayFromEnd] = useState(false);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]),
     [uploading, setUploading] = useState(false),
     [historyBusy, setHistoryBusy] = useState(false),
@@ -53,6 +55,7 @@ export function App() {
     currentDraft = useRef(''),
     cursor = useRef(new Map<string, number>()),
     saving = useRef<Promise<void>>(Promise.resolve());
+  const composeEditor = useRef<HTMLTextAreaElement>(null);
   const messagesEnd = useRef<HTMLDivElement>(null),
     follow = useRef(true),
     initial = useRef(false);
@@ -251,7 +254,16 @@ export function App() {
           await authenticate(value);
         }
         const next = await refresh();
-        const first = next.sessions.find((s) => !s.archived);
+        let first = next.sessions.find((s) => !s.archived);
+        if (!first && next.preferences.setupComplete) {
+          const owner =
+            next.agents.find((a) => a.id === next.preferences.primaryAgentId) ?? next.agents[0];
+          first = await api<Session>('/sessions', 'POST', {
+            agentId: owner.id,
+            modelId: owner.modelId,
+          });
+          await refresh();
+        }
         if (first) {
           selected.current = first.id;
           setSessionId(first.id);
@@ -460,6 +472,12 @@ export function App() {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   });
+  useEffect(() => {
+    const editor = composeEditor.current;
+    if (!editor) return;
+    editor.style.height = 'auto';
+    editor.style.height = Math.min(180, editor.scrollHeight) + 'px';
+  }, [draft, sessionId, detail?.messages.length]);
   const notify = (
     <div role="status" aria-live="polite" className={toast ? 'toast visible' : 'toast'}>
       {toast}
@@ -538,529 +556,486 @@ export function App() {
     agent = data.agents.find((a) => a.id === current?.agentId);
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="brand-mark small">C</div>
-          <span>CAgent</span>
-          <button
-            className="icon-button"
-            title="界面设置"
-            aria-label="界面设置"
-            onClick={() => setSettings(true)}
-          >
-            <Icon name="gear" size={17} />
-          </button>
-        </div>
-        <button className="new-chat" disabled={navigating} onClick={() => void createSession()}>
-          <Icon name="plus" />
-          新对话<span>Ctrl + N</span>
-        </button>
-        <nav className="main-nav" aria-label="主导航">
-          <button className={view === 'chat' ? 'selected' : ''} onClick={() => setView('chat')}>
-            <Icon name="chat" />
-            对话
-          </button>
-          <button className={view === 'memory' ? 'selected' : ''} onClick={() => setView('memory')}>
-            <Icon name="memory" />
-            记忆
-          </button>
-          <button className={view === 'usage' ? 'selected' : ''} onClick={() => setView('usage')}>
-            <Icon name="panel" />
-            用量
-          </button>
-        </nav>
-        <div className="search-box">
-          <Icon name="search" size={15} />
-          <input
-            aria-label="搜索会话"
-            placeholder="搜索对话"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+      <TopStrip
+        rail={rail}
+        desk={right}
+        toggleRail={() => setRail(!rail)}
+        toggleDesk={() => setRight(!right)}
+        chat={() => setView('chat')}
+      />
+      <div className="work-area">
+        {rail && (
+          <SessionRail
+            data={data}
+            sessions={sessions}
+            selected={sessionId}
+            search={search}
+            archived={archived}
+            busy={navigating || uploading}
+            onSearch={setSearch}
+            onArchive={() => setArchived(!archived)}
+            create={() => void createSession()}
+            settings={() => setSettings(true)}
+            collapse={() => setRail(false)}
+            choose={(id) => void selectSession(id)}
           />
-        </div>
-        <div className="list-heading">
-          <span>{archived ? '已归档' : '最近对话'}</span>
-          <button
-            className="icon-button"
-            aria-label={archived ? '查看活动会话' : '查看归档会话'}
-            onClick={() => setArchived(!archived)}
-          >
-            <Icon name="archive" size={15} />
-          </button>
-        </div>
-        <div className="session-list">
-          {sessions.map((s) => (
-            <button
-              key={s.id}
-              className={s.id === sessionId ? 'session-item selected' : 'session-item'}
-              disabled={navigating}
-              onClick={() => void selectSession(s.id)}
-            >
-              {s.pinned && <Icon name="pin" size={13} />}
-              <span>{s.title}</span>
-              {data.runs.some((r) => r.sessionId === s.id) && <i className="running-dot" />}
-            </button>
-          ))}
-          {!sessions.length && (
-            <p className="empty-list">{search ? '没有匹配的对话' : '这里还没有对话'}</p>
-          )}
-        </div>
-        <div className="sidebar-bottom">
-          <button className="profile-button" onClick={() => setSettings(true)}>
-            <Portrait name="呈平安" size={27} />
-            <span>
-              <b>我的工作空间</b>
-              <small>本机 · 呈平安</small>
-            </span>
-            <Icon name="gear" size={17} />
-          </button>
-        </div>
-      </aside>
-      <main className="main-pane">
-        <header className="topbar">
-          <div className="breadcrumb">
-            <span>
-              {view === 'usage'
-                ? '模型用量'
-                : view === 'memory'
-                  ? '记忆'
-                  : (agent?.name ?? current?.agentName ?? '工作空间')}
-            </span>
-            <Icon name="arrow" size={12} />
-            <span>
-              {view === 'usage'
-                ? '请求与费用记录'
-                : view === 'memory'
-                  ? '为助手保存的背景'
-                  : (current?.title ?? '新对话')}
-            </span>
-          </div>
-          <div className="topbar-actions">
-            {current && view === 'chat' && (
-              <>
-                <button
-                  className="icon-button"
-                  title="工作区与文件"
-                  aria-label="工作区与文件"
-                  onClick={() => setRight(!right)}
+        )}
+        <main className="main-pane">
+          {view === 'memory' ? (
+            <MemoryPage data={data} report={report} />
+          ) : (
+            <div className="content-columns">
+              <section className={`conversation${!detail?.messages.length ? ' resting' : ''}`}>
+                {connection && (
+                  <div className="connection-note" role="status">
+                    {connection}
+                  </div>
+                )}
+                <div
+                  className="transcript"
+                  ref={transcript}
+                  onScroll={(e) => {
+                    const el = e.currentTarget;
+                    follow.current = el.scrollHeight - el.scrollTop - el.clientHeight < 130;
+                    setAwayFromEnd(!follow.current);
+                  }}
                 >
-                  <Icon name="panel" />
-                </button>
-                <details className="session-menu">
-                  <summary aria-label="会话操作">···</summary>
-                  <div>
-                    <button
-                      onClick={() => {
-                        setNewTitle(current.title);
-                        setRenaming(true);
-                      }}
-                    >
-                      重命名
-                    </button>
-                    <button onClick={() => void patch({ pinned: !current.pinned }).catch(report)}>
-                      {current.pinned ? '取消置顶' : '置顶'}
-                    </button>
-                    <button
-                      disabled={!!active}
-                      onClick={() => void patch({ archived: !current.archived }).catch(report)}
-                    >
-                      {current.archived ? '恢复会话' : '归档会话'}
-                    </button>
-                    <button
-                      disabled={!!active || sending}
-                      onClick={() =>
-                        void api<Run>(`/sessions/${current.id}/compact`, 'POST', {
-                          requestId: crypto.randomUUID(),
-                        })
-                          .then((run) => {
-                            setActive(run);
-                            report('正在压缩上下文，保留最后两轮和完整历史');
-                          })
-                          .catch(report)
-                      }
-                    >
-                      压缩上下文
-                    </button>
-                    <button
-                      onClick={() =>
-                        void api<any>(`/sessions/${current.id}/export`)
-                          .then((v) => download(current.title + '.md', v.markdown, 'text/markdown'))
-                          .catch(report)
-                      }
-                    >
-                      导出 Markdown
-                    </button>
-                    {current.archived && (
-                      <button
-                        className="danger"
-                        onClick={() =>
-                          setConfirm({
-                            title: '永久删除此会话？',
-                            action: async () => {
-                              await api('/sessions/' + current.id, 'DELETE');
-                              setDetail(null);
-                              selected.current = null;
-                              setSessionId(null);
-                              await refresh();
-                            },
-                          })
-                        }
-                      >
-                        永久删除
-                      </button>
-                    )}
-                  </div>
-                </details>
-              </>
-            )}
-            {window.cagent && (
-              <div className="window-controls">
-                <button aria-label="最小化" onClick={() => window.cagent!.minimize()}>
-                  −
-                </button>
-                <button aria-label="最大化" onClick={() => window.cagent!.maximize()}>
-                  □
-                </button>
-                <button aria-label="关闭窗口" onClick={() => window.cagent!.close()}>
-                  ×
-                </button>
-              </div>
-            )}
-          </div>
-        </header>
-        {view === 'usage' ? (
-          <UsagePage data={data} report={report} />
-        ) : view === 'memory' ? (
-          <MemoryPage data={data} report={report} />
-        ) : (
-          <div className="content-columns">
-            <section className="conversation">
-              {connection && (
-                <div className="connection-note" role="status">
-                  {connection}
-                </div>
-              )}
-              <div
-                className="transcript"
-                ref={transcript}
-                onScroll={(e) => {
-                  const el = e.currentTarget;
-                  follow.current = el.scrollHeight - el.scrollTop - el.clientHeight < 130;
-                }}
-              >
-                {current?.parentId && (
-                  <div className="branch-origin">
-                    <span>此会话是独立分支</span>
-                    <button
-                      disabled={!data.sessions.some((s) => s.id === current.parentId)}
-                      onClick={() => void selectSession(current.parentId!)}
-                    >
-                      查看来源会话
-                    </button>
-                    {detail?.runs[0]?.preventWrites && (
-                      <small>
-                        重试复用已有工具结果；本轮禁止重复写入。需要新操作时请发送新消息。
-                      </small>
-                    )}
-                  </div>
-                )}
-                {current && !agent && (
-                  <div className="run-error">
-                    <p>
-                      原助手“{current.agentName ?? current.agentId}
-                      ”已删除。历史仍可阅读；选择接管助手后才能继续。
-                    </p>
-                    <select
-                      aria-label="接管会话的助手"
-                      value=""
-                      onChange={(e) => void patch({ agentId: e.target.value }).catch(report)}
-                    >
-                      <option value="">选择新助手</option>
-                      {data.agents.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {detail?.pagination.hasMore && (
-                  <button
-                    className="history-more"
-                    disabled={historyBusy}
-                    onClick={() => void moreHistory()}
-                  >
-                    {historyBusy ? '正在读取…' : '加载更早消息'}
-                  </button>
-                )}
-                {!!detail?.pagination.corruptPositions.length && (
-                  <p role="alert" className="inline-error">
-                    以下历史记录损坏，已单独隔离：{detail.pagination.corruptPositions.join(', ')}
-                    。其他消息仍可阅读。
-                  </p>
-                )}
-                {detail?.compaction && (
-                  <details className="compaction-card">
-                    <summary>上下文摘要 · 原始历史完整保留</summary>
-                    <Markdown text={detail.compaction.text} />
-                  </details>
-                )}
-                {!detail || detail.messages.length === 0 ? (
-                  <div className="welcome">
-                    <Portrait name={agent?.name ?? 'CAgent'} size={96} />
-                    <p className="eyebrow">属于你的工作空间</p>
-                    <h1>今天，想一起做些什么？</h1>
-                    <p>从一个问题、一份文档，或一个新的想法开始。</p>
-                    <div className="suggestions">
-                      {['梳理一个复杂问题', '整理工作区中的资料', '一起制定行动计划'].map((x) => (
+                  <div className="transcript-inner">
+                    {current?.parentId && (
+                      <div className="branch-origin">
+                        <span>此会话是独立分支</span>
                         <button
-                          key={x}
-                          onClick={() => {
-                            if (!current) void createSession();
-                            else setDraft(x);
-                          }}
+                          disabled={!data.sessions.some((s) => s.id === current.parentId)}
+                          onClick={() => void selectSession(current.parentId!)}
                         >
-                          {x}
-                          <Icon name="arrow" size={14} />
+                          查看来源会话
                         </button>
-                      ))}
-                    </div>
-                    {!current && (
-                      <button className="primary" onClick={() => void createSession()}>
-                        开启新对话
-                      </button>
+                        {detail?.runs[0]?.preventWrites && (
+                          <small>
+                            重试复用已有工具结果；本轮禁止重复写入。需要新操作时请发送新消息。
+                          </small>
+                        )}
+                      </div>
                     )}
-                  </div>
-                ) : (
-                  detail.messages.map((m) => (
-                    <MessageView
-                      key={m.id}
-                      message={m}
-                      resources={detail.resources}
-                      timeZone={data.preferences.timezone}
-                      disabled={!!active || sending}
-                      onEdit={() => {
-                        setEditing(m);
-                        setEditText(m.text);
-                      }}
-                      onRetry={() => void revise(m, 'retry')}
-                      agentName={agent?.name ?? 'CAgent'}
-                      onCopy={() =>
-                        void navigator.clipboard
-                          .writeText(m.text)
-                          .then(() => report('已复制'))
-                          .catch(report)
-                      }
-                      onFork={() =>
-                        void api<Session>(`/sessions/${m.sessionId}/fork`, 'POST', {
-                          messageId: m.id,
-                        })
-                          .then(async (s) => {
-                            await refresh();
-                            await selectSession(s.id);
-                          })
-                          .catch(report)
-                      }
-                    />
-                  ))
-                )}
-                {(active || live.text) && (
-                  <article className="message assistant live">
-                    <div className="message-heading">
-                      <Portrait name={agent?.name ?? 'CAgent'} />
-                      <b>{agent?.name ?? 'CAgent'}</b>
-                      <span className="muted">
-                        {detail?.approvals.length ? '等待确认' : '正在处理'}
-                      </span>
-                    </div>
-                    {live.reasoning && (
-                      <details className="thinking">
-                        <summary>思考过程</summary>
-                        <p>{live.reasoning}</p>
-                      </details>
-                    )}
-                    {live.text ? (
-                      <Markdown text={live.text} />
-                    ) : (
-                      <span className="thinking-dots">● ● ●</span>
-                    )}
-                  </article>
-                )}
-                {detail?.approvals.map((a) => (
-                  <div className="approval-card" key={a.id}>
-                    <span className="eyebrow">需要你的确认</span>
-                    <h3>
-                      {a.tool === 'run_command'
-                        ? '运行本机命令'
-                        : ['write_file', 'edit_file'].includes(a.tool)
-                          ? '写入工作区文件'
-                          : '保存记忆'}
-                    </h3>
-                    {a.tool === 'run_command' && <p>此命令在本机执行，没有操作系统沙盒隔离。</p>}
-                    <pre>{JSON.stringify(a.arguments, null, 2)}</pre>
-                    <div>
-                      <button
-                        onClick={() =>
-                          void api(`/approvals/${a.id}`, 'POST', {
-                            runId: a.runId,
-                            approved: false,
-                          }).catch(report)
-                        }
-                      >
-                        拒绝
-                      </button>
-                      <button
-                        className="primary"
-                        onClick={() =>
-                          void api(`/approvals/${a.id}`, 'POST', {
-                            runId: a.runId,
-                            approved: true,
-                          }).catch(report)
-                        }
-                      >
-                        允许这一次
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {detail && !active && detail.runs[0]?.status === 'failed' && (
-                  <div className="run-error">
-                    <p>{detail.runs[0].error?.message}</p>
-                    <button onClick={() => void send(true)}>重试最近请求</button>
-                  </div>
-                )}
-                <div ref={messagesEnd} />
-              </div>
-              {current && (
-                <div className="composer-wrap">
-                  <div className="composer">
-                    <AttachmentPicker
-                      key={current.id}
-                      sessionId={current.id}
-                      ids={attachmentIds}
-                      resources={detail.resources}
-                      disabled={current.archived || sending || navigating}
-                      onChange={attachmentsChanged}
-                      onBusy={setUploading}
-                      onUploaded={(resource) =>
-                        setDetail((d) =>
-                          d && d.session.id === resource.sessionId
-                            ? { ...d, resources: [...d.resources, resource] }
-                            : d,
-                        )
-                      }
-                    />
-                    <textarea
-                      aria-label="消息"
-                      placeholder={
-                        current.archived ? '此会话已归档，恢复后可继续' : '写下你的问题…'
-                      }
-                      value={draft}
-                      disabled={current.archived || navigating}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                          e.preventDefault();
-                          if (!active) void send();
-                        }
-                      }}
-                    />
-                    <div className="composer-toolbar">
-                      <div className="composer-options">
+                    {current && !agent && (
+                      <div className="run-error">
+                        <p>
+                          原助手“{current.agentName ?? current.agentId}
+                          ”已删除。历史仍可阅读；选择接管助手后才能继续。
+                        </p>
                         <select
-                          aria-label="聊天模型"
-                          disabled={!!active}
-                          value={current.modelId ?? ''}
-                          onChange={(e) => {
-                            const m = data.models.find((m) => m.id === e.target.value);
-                            void patch({
-                              modelId: m?.id ?? null,
-                              reasoning: m?.defaultReasoning ?? 'off',
-                            }).catch(report);
-                          }}
+                          aria-label="接管会话的助手"
+                          value=""
+                          onChange={(e) => void patch({ agentId: e.target.value }).catch(report)}
                         >
-                          <option value="">选择模型</option>
-                          {data.models.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.name}
+                          <option value="">选择新助手</option>
+                          {data.agents.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
                             </option>
                           ))}
-                        </select>
-                        <select
-                          aria-label="推理档位"
-                          disabled={!!active}
-                          value={current.reasoning}
-                          onChange={(e) => void patch({ reasoning: e.target.value }).catch(report)}
-                        >
-                          {['off', ...(model?.reasoning ?? [])].map((l) => (
-                            <option key={l} value={l}>
-                              {l === 'off' ? '默认推理' : l}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          aria-label="执行权限"
-                          value={current.permission}
-                          onChange={(e) => void patch({ permission: e.target.value }).catch(report)}
-                        >
-                          <option value="read">只读</option>
-                          <option value="ask">操作前询问</option>
-                          <option value="operate">允许工作区写入</option>
                         </select>
                       </div>
-                      {active ? (
+                    )}
+                    {detail?.pagination.hasMore && (
+                      <button
+                        className="history-more"
+                        disabled={historyBusy}
+                        onClick={() => void moreHistory()}
+                      >
+                        {historyBusy ? '正在读取…' : '加载更早消息'}
+                      </button>
+                    )}
+                    {!!detail?.pagination.corruptPositions.length && (
+                      <p role="alert" className="inline-error">
+                        以下历史记录损坏，已单独隔离：
+                        {detail.pagination.corruptPositions.join(', ')}
+                        。其他消息仍可阅读。
+                      </p>
+                    )}
+                    {detail?.compaction && (
+                      <details className="compaction-card">
+                        <summary>上下文摘要 · 原始历史完整保留</summary>
+                        <Markdown text={detail.compaction.text} />
+                      </details>
+                    )}
+                    {!detail || detail.messages.length === 0 ? (
+                      <div className="welcome">
+                        <Portrait name={agent?.name ?? 'CAgent'} size={100} />
+                        <h1>今天，想一起做些什么？</h1>
                         <button
-                          className="send-button stop"
-                          aria-label="停止生成"
-                          onClick={() =>
-                            void api(`/sessions/${current.id}/cancel`, 'POST', {
-                              runId: active.id,
-                            }).catch(report)
-                          }
+                          className="welcome-workspace"
+                          title={current?.workspace ?? '选择工作台'}
+                          onClick={() => (current ? void workspaceChoose() : void createSession())}
                         >
-                          <Icon name="stop" size={17} />
+                          <Icon name="folder" size={15} />
+                          {current?.workspace
+                            ? '工作台：' + current.workspace.split(/[\\/]/).at(-1)
+                            : '选择一个工作台'}
+                          <Icon name="refresh" size={13} />
                         </button>
-                      ) : (
-                        <button
-                          className="send-button"
-                          aria-label="发送消息"
-                          disabled={
-                            (!draft.trim() && !attachmentIds.length) ||
-                            sending ||
-                            uploading ||
-                            navigating ||
-                            current.archived ||
-                            !agent
+                        <button className="welcome-memory" onClick={() => setView('memory')}>
+                          <Icon name="memory" size={14} />
+                          记忆
+                        </button>
+                        {!current && (
+                          <button className="text-button" onClick={() => void createSession()}>
+                            开启新对话
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      detail.messages.map((m) => (
+                        <MessageView
+                          key={m.id}
+                          message={m}
+                          resources={detail.resources}
+                          timeZone={data.preferences.timezone}
+                          disabled={!!active || sending}
+                          onEdit={() => {
+                            setEditing(m);
+                            setEditText(m.text);
+                          }}
+                          onRetry={() => void revise(m, 'retry')}
+                          agentName={agent?.name ?? 'CAgent'}
+                          onCopy={() =>
+                            void navigator.clipboard
+                              .writeText(m.text)
+                              .then(() => report('已复制'))
+                              .catch(report)
                           }
-                          onClick={() => void send()}
-                        >
-                          <Icon name="send" size={19} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="composer-caption">
-                    <button onClick={() => void workspaceChoose()}>
-                      <Icon name="folder" size={13} />
-                      {current.workspace ? current.workspace.split(/[\\/]/).at(-1) : '选择工作区'}
-                    </button>
-                    <span>Enter 发送 · Shift + Enter 换行</span>
+                          onFork={() =>
+                            void api<Session>(`/sessions/${m.sessionId}/fork`, 'POST', {
+                              messageId: m.id,
+                            })
+                              .then(async (s) => {
+                                await refresh();
+                                await selectSession(s.id);
+                              })
+                              .catch(report)
+                          }
+                        />
+                      ))
+                    )}
+                    {(active || live.text) && (
+                      <article className="message assistant live">
+                        <div className="message-heading">
+                          <Portrait name={agent?.name ?? 'CAgent'} />
+                          <b>{agent?.name ?? 'CAgent'}</b>
+                          <span className="muted">
+                            {detail?.approvals.length ? '等待确认' : '正在处理'}
+                          </span>
+                        </div>
+                        {live.reasoning && (
+                          <details className="thinking">
+                            <summary>思考过程</summary>
+                            <p>{live.reasoning}</p>
+                          </details>
+                        )}
+                        {live.text ? (
+                          <Markdown text={live.text} />
+                        ) : (
+                          <span className="thinking-dots">● ● ●</span>
+                        )}
+                      </article>
+                    )}
+                    {detail?.approvals.map((a) => (
+                      <div className="approval-card" key={a.id}>
+                        <span className="eyebrow">需要你的确认</span>
+                        <h3>
+                          {a.tool === 'run_command'
+                            ? '运行本机命令'
+                            : ['write_file', 'edit_file'].includes(a.tool)
+                              ? '写入工作区文件'
+                              : '保存记忆'}
+                        </h3>
+                        {a.tool === 'run_command' && (
+                          <p>此命令在本机执行，没有操作系统沙盒隔离。</p>
+                        )}
+                        <pre>{JSON.stringify(a.arguments, null, 2)}</pre>
+                        <div>
+                          <button
+                            onClick={() =>
+                              void api(`/approvals/${a.id}`, 'POST', {
+                                runId: a.runId,
+                                approved: false,
+                              }).catch(report)
+                            }
+                          >
+                            拒绝
+                          </button>
+                          <button
+                            className="primary"
+                            onClick={() =>
+                              void api(`/approvals/${a.id}`, 'POST', {
+                                runId: a.runId,
+                                approved: true,
+                              }).catch(report)
+                            }
+                          >
+                            允许这一次
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {detail && !active && detail.runs[0]?.status === 'failed' && (
+                      <div className="run-error">
+                        <p>{detail.runs[0].error?.message}</p>
+                        <button onClick={() => void send(true)}>重试最近请求</button>
+                      </div>
+                    )}
+                    <div ref={messagesEnd} />
                   </div>
                 </div>
+                {current && (
+                  <div className="composer-wrap">
+                    {awayFromEnd && !!detail.messages.length && (
+                      <button
+                        className="jump-latest"
+                        aria-label="回到最新消息"
+                        onClick={() => {
+                          follow.current = true;
+                          messagesEnd.current?.scrollIntoView({
+                            block: 'end',
+                            behavior: 'instant',
+                          });
+                          setAwayFromEnd(false);
+                        }}
+                      >
+                        <Icon name="down" size={16} />
+                      </button>
+                    )}
+                    <div className="composer">
+                      <AttachmentPicker
+                        key={current.id}
+                        sessionId={current.id}
+                        ids={attachmentIds}
+                        resources={detail.resources}
+                        disabled={current.archived || sending || navigating}
+                        onChange={attachmentsChanged}
+                        onBusy={setUploading}
+                        onUploaded={(resource) =>
+                          setDetail((d) =>
+                            d && d.session.id === resource.sessionId
+                              ? { ...d, resources: [...d.resources, resource] }
+                              : d,
+                          )
+                        }
+                      >
+                        <textarea
+                          ref={composeEditor}
+                          rows={1}
+                          aria-label="消息"
+                          placeholder={
+                            current.archived ? '此会话已归档，恢复后可继续' : '写下你的问题…'
+                          }
+                          value={draft}
+                          disabled={current.archived || navigating}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                              e.preventDefault();
+                              if (!active) void send();
+                            }
+                          }}
+                        />
+                        <div className="composer-toolbar">
+                          <div className="composer-options">
+                            <Soon label="命令菜单" icon="sparkle" compact />
+                            <label
+                              className="icon-choice"
+                              title={'执行权限：' + current.permission}
+                            >
+                              <Icon name="shield" size={15} />{' '}
+                              <select
+                                aria-label="执行权限"
+                                value={current.permission}
+                                onChange={(e) =>
+                                  void patch({ permission: e.target.value }).catch(report)
+                                }
+                              >
+                                <option value="read">只读</option>
+                                <option value="ask">操作前询问</option>
+                                <option value="operate">允许工作区写入</option>
+                              </select>
+                            </label>
+                            <details className="session-menu">
+                              <summary aria-label="会话操作" title="上下文与会话操作">
+                                <Icon name="more" size={17} />
+                              </summary>
+                              <div
+                                onClick={(event) => {
+                                  if ((event.target as HTMLElement).closest('button'))
+                                    event.currentTarget.closest('details')?.removeAttribute('open');
+                                }}
+                              >
+                                <button
+                                  onClick={() => {
+                                    setNewTitle(current.title);
+                                    setRenaming(true);
+                                  }}
+                                >
+                                  重命名
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    void patch({ pinned: !current.pinned }).catch(report)
+                                  }
+                                >
+                                  {current.pinned ? '取消置顶' : '置顶'}
+                                </button>
+                                <button
+                                  disabled={!!active}
+                                  onClick={() =>
+                                    void patch({ archived: !current.archived }).catch(report)
+                                  }
+                                >
+                                  {current.archived ? '恢复会话' : '归档会话'}
+                                </button>
+                                <button
+                                  disabled={!!active || sending}
+                                  onClick={() =>
+                                    void api<Run>(`/sessions/${current.id}/compact`, 'POST', {
+                                      requestId: crypto.randomUUID(),
+                                    })
+                                      .then((run) => {
+                                        setActive(run);
+                                        report('正在压缩上下文，保留最后两轮和完整历史');
+                                      })
+                                      .catch(report)
+                                  }
+                                >
+                                  压缩上下文
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    void api<any>(`/sessions/${current.id}/export`)
+                                      .then((v) =>
+                                        download(
+                                          current.title + '.md',
+                                          v.markdown,
+                                          'text/markdown',
+                                        ),
+                                      )
+                                      .catch(report)
+                                  }
+                                >
+                                  导出 Markdown
+                                </button>
+                                {current.archived && (
+                                  <button
+                                    className="danger"
+                                    onClick={() =>
+                                      setConfirm({
+                                        title: '永久删除此会话？',
+                                        action: async () => {
+                                          await api('/sessions/' + current.id, 'DELETE');
+                                          setDetail(null);
+                                          selected.current = null;
+                                          setSessionId(null);
+                                          await refresh();
+                                        },
+                                      })
+                                    }
+                                  >
+                                    永久删除
+                                  </button>
+                                )}
+                              </div>
+                            </details>
+                            <span className="grow" />
+                            <label className="icon-choice" title={'推理档位：' + current.reasoning}>
+                              <Icon name="bulb" size={15} />{' '}
+                              <select
+                                aria-label="推理档位"
+                                disabled={!!active}
+                                value={current.reasoning}
+                                onChange={(e) =>
+                                  void patch({ reasoning: e.target.value }).catch(report)
+                                }
+                              >
+                                {['off', ...(model?.reasoning ?? [])].map((l) => (
+                                  <option key={l} value={l}>
+                                    {l === 'off' ? '默认推理' : l}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="model-choice">
+                              <Icon name="model" size={14} />{' '}
+                              <select
+                                aria-label="聊天模型"
+                                disabled={!!active}
+                                value={current.modelId ?? ''}
+                                onChange={(e) => {
+                                  const m = data.models.find((m) => m.id === e.target.value);
+                                  void patch({
+                                    modelId: m?.id ?? null,
+                                    reasoning: m?.defaultReasoning ?? 'off',
+                                  }).catch(report);
+                                }}
+                              >
+                                <option value="">选择模型</option>
+                                {data.models.map((m) => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                          {active ? (
+                            <button
+                              className="send-button stop"
+                              aria-label="停止生成"
+                              onClick={() =>
+                                void api(`/sessions/${current.id}/cancel`, 'POST', {
+                                  runId: active.id,
+                                }).catch(report)
+                              }
+                            >
+                              <Icon name="stop" size={17} />
+                            </button>
+                          ) : (
+                            <button
+                              className="send-button"
+                              aria-label="发送消息"
+                              disabled={
+                                (!draft.trim() && !attachmentIds.length) ||
+                                sending ||
+                                uploading ||
+                                navigating ||
+                                current.archived ||
+                                !agent
+                              }
+                              onClick={() => void send()}
+                            >
+                              <Icon name="send" size={14} />
+                              发送
+                            </button>
+                          )}
+                        </div>
+                      </AttachmentPicker>
+                    </div>
+                  </div>
+                )}
+              </section>
+              {right && current && (
+                <Workspace
+                  key={current.id + current.workspace}
+                  session={current}
+                  preferences={data.preferences}
+                  choose={workspaceChoose}
+                  report={report}
+                  resources={detail.resources}
+                  modelName={model?.model ?? '未选择模型'}
+                  hasMessages={!!detail.messages.length}
+                />
               )}
-            </section>
-            {right && current && (
-              <Workspace
-                key={current.id + current.workspace}
-                session={current}
-                preferences={data.preferences}
-                choose={workspaceChoose}
-                report={report}
-              />
-            )}
-          </div>
-        )}
-      </main>
+            </div>
+          )}
+        </main>
+      </div>
       {settings && (
         <Settings
           data={data}
@@ -1219,6 +1194,26 @@ function MessageView({
       <div className="message-heading">
         <Portrait name={m.role === 'user' ? '我' : agentName} />
         <b>{m.role === 'user' ? '你' : agentName}</b>
+      </div>
+      <div className="message-content">
+        {m.reasoning && (
+          <details className="thinking">
+            <summary>思考完成</summary>
+            <p>{m.reasoning}</p>
+          </details>
+        )}
+        <Markdown text={m.text} />
+        {!!m.attachmentIds?.length && (
+          <ResourceLinks ids={m.attachmentIds} resources={resources} sessionId={m.sessionId} />
+        )}{' '}
+        {m.calls?.map((c) => (
+          <details className="tool-call" key={c.id}>
+            <summary>{c.name}</summary>
+            <pre>{c.arguments}</pre>
+          </details>
+        ))}
+      </div>
+      <div className="message-actions">
         <time>
           {new Date(m.at).toLocaleTimeString('zh-CN', {
             hour: '2-digit',
@@ -1226,39 +1221,34 @@ function MessageView({
             timeZone,
           })}
         </time>
-      </div>
-      {m.reasoning && (
-        <details className="thinking">
-          <summary>思考过程</summary>
-          <p>{m.reasoning}</p>
-        </details>
-      )}
-      <Markdown text={m.text} />
-      {!!m.attachmentIds?.length && (
-        <ResourceLinks ids={m.attachmentIds} resources={resources} sessionId={m.sessionId} />
-      )}{' '}
-      {m.calls?.map((c) => (
-        <details className="tool-call" key={c.id}>
-          <summary>{c.name}</summary>
-          <pre>{c.arguments}</pre>
-        </details>
-      ))}
-      <div className="message-actions">
-        <button aria-label="复制消息" onClick={onCopy}>
-          <Icon name="copy" size={14} />
-        </button>
-        {!m.calls?.length && <button onClick={onFork}>从这里分叉</button>}
+
+        {!m.calls?.length && (
+          <button aria-label="从这里分叉" title="从这里分叉" onClick={onFork}>
+            <Icon name="branch" size={14} />
+          </button>
+        )}
         {m.role === 'user' ? (
-          <button disabled={disabled} onClick={onEdit}>
-            编辑并重发
+          <button aria-label="编辑并重发" title="编辑并重发" disabled={disabled} onClick={onEdit}>
+            <Icon name="edit" size={14} />
           </button>
         ) : (
           !m.calls?.length && (
-            <button disabled={disabled} onClick={onRetry}>
-              重试为分支
+            <button
+              aria-label="重试为分支"
+              title="重试为分支"
+              disabled={disabled}
+              onClick={onRetry}
+            >
+              <Icon name="refresh" size={14} />
             </button>
           )
         )}
+        <button aria-label="复制消息" onClick={onCopy}>
+          <Icon name="copy" size={14} />
+        </button>
+        <Soon label="对话截图" icon="camera" compact />
+        <Soon label="全选消息" icon="selectAll" compact />
+        <Soon label="选择消息" icon="selection" compact />
       </div>
     </article>
   );

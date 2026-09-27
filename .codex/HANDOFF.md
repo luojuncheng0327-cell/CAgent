@@ -1,6 +1,6 @@
 # CAgent 独立重写交接
 
-最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，新增词元级相似度检查（已并入 verify）；界面 1:1 复刻进行中：第 1 步基础已完成并通过桌面验收，下一步为第 2 步主界面。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
+最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，新增词元级相似度检查（已并入 verify）；界面 1:1 复刻进行中：第 1 步基础已完成，主界面首轮已通过最终串行回归，同尺寸对照图已保存；剩余交互差别见下文。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
 
 ## 用户边界（已授权，无需重问）
 
@@ -17,13 +17,13 @@
 4. 历史 position 游标分页、损坏行隔离、完整导出 / 分支读取。编辑 / 重试创建新分支，重试复用工具结果并在该轮禁止写工具，不重复原用户消息。
 5. 手动 / 实验自动压缩保留最后两轮和完整历史，失败 / 取消 / 过期摘要不提交；自动压缩默认关闭。用量筛选、分页、已知 / 未知合计与失败计量 UI。
 6. 多标签 UTF-8 编辑、实际 watcher、外部冲突、新建文件 / 目录、文本复制 / 移动、历史恢复及恢复前留档。助手删除后显式接管、逐工具禁用、公开规则字段，字体 / 时区 / 编辑器排版和预算设置。
-7. `pnpm run check:similarity`：代码结构（名字 / 字面值抽象）、文案和 CSS 声明与原工作区逐段比对，另算文件对累计覆盖。阳性对照中改名 + 每 3–12 行插句的 6 个原文件全部判为不通过；本仓库 0 项越线（最长 65 词元，文件累计最高 24.4%，文案最长 10 单位，CSS 0）。报告在 `.artifacts/`，含原工作区片段，不提交。公共约定的重合可登记为已审核例外（`0ccb9c1`）。
-8. 界面字体（`4bcea86`）：Inter、EB Garamond、PT Serif、Noto Serif SC、JetBrains Mono，均 SIL OFL，由 `scripts/fetch-fonts.mjs` 从 Google Fonts 官方获取，115 个 woff2 共 6.37 MB，许可证和来源清单在 `src/ui/fonts/`。样式里尚未使用，下一步设计变量接入。
+7. `pnpm run check:similarity`：代码结构（名字 / 字面值抽象）、文案和 CSS 声明与原工作区逐段比对，另算文件对累计覆盖。阳性对照中改名 + 每 3–12 行插句的 6 个原文件全部判为不通过；本仓库 0 项越线（最长 78 词元，文件累计最高 24.4%，文案最长 16 单位（标准 UA 例外），CSS 最长 5 条）。报告在 `.artifacts/`，含原工作区片段，不提交。公共约定的重合可登记为已审核例外（`0ccb9c1`）。
+8. 界面字体（`4bcea86`）：Inter、EB Garamond、PT Serif、Noto Serif SC、JetBrains Mono，均 SIL OFL，由 `scripts/fetch-fonts.mjs` 从 Google Fonts 官方获取，115 个 woff2 共 6.37 MB，许可证和来源清单在 `src/ui/fonts/`。已通过 appearance.css 接入，使用位置和桌面证据见下方界面复刻。
 
 ## 验证和边界
 
 - `pnpm run verify`：格式、类型、53 项本机测试、UI / Electron build、独立性检查、相似度检查通过（1 项已审核例外：字体脚本里的标准浏览器标识）。相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）已由用户确认；它能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。复制尺度：用户选择“只放宽公共约定”，公共约定的重合登记到 `scripts/similarity-exceptions.json`（写理由和最大尺寸），原版独创代码 / 文案 / 样式仍不复制。
-- `pnpm run test:desktop`：原桌面链路和新的 `tests/desktop-p1-p2.mjs` 均通过；页面异常 0。新脚本实际操作附件、历史、分支、压缩、用量、多标签、冲突、恢复、watcher 和重启草稿。
+- `pnpm run test:desktop`：smoke / p1-p2 / appearance / layout 四组均通过；页面异常 0。新脚本实际操作附件、历史、分支、压缩、用量、多标签、冲突、恢复、watcher 和重启草稿。
 - 已实际查看 `.artifacts/usage-p1-p2.png`、`workspace-p1-p2.png`、`attachments-p1-p2.png`。隐藏窗口 capturePage 会抓前一帧：先 invalidate，再等两帧，之后截图。
 - 原目录 2,901 个 tracked 文件指纹一致，28 个独立应用源文件检查无违规。指纹 / import 检查不是法律鉴定。
 - 机器状态：22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision。完整重写仍未完成，`fullProductComplete=false`、`releaseAllowed=false`。
@@ -49,8 +49,8 @@
 
 步骤：
 
-1. 基础（已完成）：官方字体接入、暖纸 / 青夜 / 跟随系统变量、45 个自绘线条图标、固定种子纸纹理、圆底首字头像。三组桌面检查和 verify 全过；并排证据 .artifacts/ui-replica/foundation-compare.png。
-2. 主界面：顶栏、左栏、欢迎页、输入卡、消息样式、右侧书桌面板。把现有功能放到原版对应位置：用量进设置 → 供应商，记忆由欢迎页“记忆”入口进入，多标签编辑器对应右侧预览 / 编辑区。
+1. 基础（已完成）：官方字体接入、暖纸 / 青夜 / 跟随系统变量、48 个自绘线条图标（基础提交 45 个，主界面补 3 个）、固定种子纸纹理、圆底首字头像。三组桌面检查和 verify 全过；并排证据 .artifacts/ui-replica/foundation-compare.png。
+2. 主界面（首轮已完成）：顶栏、左栏、欢迎页、输入卡、消息、右侧书桌和编辑 / 预览已重排；用量在设置 → 供应商，记忆由欢迎页进入。1280×800 暖纸 / 青夜截图在 .artifacts/ui-replica/。原生选择框的完整弹出样式、原版直接富文本编辑等仍有差别，不能声称所有交互已 1:1。
 3. 引导 6 步，对应现有首次设置。
 4. 设置弹层：左侧 17 类加搜索，已有功能的页面先做，其余置灰。
 
@@ -87,3 +87,14 @@
 
 - 新增 tests/desktop-appearance.mjs，已并入 test:desktop；确认系统主题实时更新、手动主题覆盖、偏好重载、5 字体 loaded、纸纹理无交互遮挡和 1280×800 截图。
 - Windows 离屏窗口原生边框会使参考视口差几个像素：当前 driver 已添加 --force-device-scale-factor=1，参考进程运行时用 webContents.debugger 的 Emulation.setDeviceMetricsOverride 将视口固定 1280×800 / deviceScaleFactor=1。不要拉伸截图冒充同尺寸。
+
+### 本轮主界面交接
+
+- 基础提交 3757cc8；本次主界面提交见 git log -1（提交后保持工作区干净），仓库仍无 remote。
+- 新增 Shell.tsx / shell.css、tests/desktop-layout.mjs；test:desktop 现在依次跑 smoke、p1-p2、appearance、layout 四组。原 22 项桌面链路保留，只随入口变化调整导航。
+- 主界面默认展开左右栏；欢迎输入 640px、常态输入上限 740px；普通消息列 720px。编辑器新配置默认 16px / 1.5，旧保存值不重置。
+- 对照截图：main-welcome-compare.png / main-chat-compare.png / main-night-compare.png / main-preview-compare.png；均在 .artifacts/ui-replica/，不提交参考图。头像、欢迎文案、置灰提示按用户决定自行制作。
+- 下一轮先收敛主界面弹出菜单和编辑交互的剩余差别，再按顺序做 6 步引导、17 类设置弹层；直接富文本编辑仍需作为未完成能力继续补齐。不要把当前截图抽测当作所有界面 / 窗口宽度的像素验收。
+- 最终验证：pnpm run format、pnpm run verify 全过（53 项测试，0 失败 / 0 跳过；构建、独立性和相似度通过）；pnpm run test:desktop 四组全过，页面异常 0。独立性检查 155 个文件，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元，文件累计最高 24.4%，CSS 最长 5 条；仍只有标准 UA 这 1 条已审核例外。。原版参考进程已关闭；临时副本留待继续使用。本轮参考工作台的 ui-replica-example.md 已删除。
+
+- 本轮未执行跨平台、真实账号 / 计费模型、安装或发布验收；最终四组桌面验证没有跳过用例。中途失败输出与修复原因已写入 VALIDATION。

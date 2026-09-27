@@ -14,7 +14,6 @@ try {
   const agent = runtime.store.list('agent')[0];
   runtime.saveAgent({ ...agent, name: '示例助手' }, agent.id);
   runtime.savePreferences({ ...runtime.preferences(), setupComplete: true, theme: 'light' });
-  await runtime.createSession({ agentId: agent.id, title: '界面检查' });
   await runtime.close();
   app = await electron.launch({
     executablePath: require('electron'),
@@ -80,7 +79,7 @@ try {
     });
     await fs.writeFile(`.artifacts/ui-replica/${file}.png`, Buffer.from(bytes, 'base64'));
   }
-  await capture('foundation-warm');
+  await capture('palette-warm');
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
   await page.getByRole('button', { name: '界面外观', exact: true }).click();
   const theme = page.getByLabel('主题', { exact: true });
@@ -88,7 +87,7 @@ try {
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
   assert.equal((await palette()).canvas, '#3b4a54');
   await page.getByRole('button', { name: '关闭对话框', exact: true }).click();
-  await capture('foundation-night');
+  await capture('palette-night');
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
   await page.getByRole('button', { name: '界面外观', exact: true }).click();
   await theme.selectOption('system');

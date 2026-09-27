@@ -1,3 +1,4 @@
+import { UsagePage } from './UsagePage.tsx';
 import React, { useState } from 'react';
 import type { Bootstrap } from './api.ts';
 import { api } from './api.ts';
@@ -108,7 +109,7 @@ export function Settings({
 }) {
   const [tab, setTab] = useState('models');
   const tabs = [
-    ['models', '模型与接口'],
+    ['models', '供应商'],
     ['agents', '我的助手'],
     ['appearance', '界面外观'],
     ['data', '数据管理'],
@@ -127,12 +128,23 @@ export function Settings({
       <div className="settings-layout">
         <nav aria-label="设置分类">
           {tabs.map(([id, label]) => (
-            <button key={id} className={tab === id ? 'selected' : ''} onClick={() => setTab(id)}>
+            <button
+              key={id}
+              className={tab === id || (id === 'models' && tab === 'usage') ? 'selected' : ''}
+              onClick={() => setTab(id)}
+            >
               {label}
             </button>
           ))}
         </nav>
         <section className="settings-body">
+          {(tab === 'models' || tab === 'usage') && (
+            <div className="provider-sections">
+              <button onClick={() => setTab('models')}>模型与接口</button>
+              <button onClick={() => setTab('usage')}>用量</button>
+            </div>
+          )}
+          {tab === 'usage' && <UsagePage data={data} report={report} />}
           {tab === 'models' && <ModelSettings data={data} attempt={attempt} report={report} />}
           {tab === 'agents' && <Agents data={data} attempt={attempt} />}
           {tab === 'appearance' && <Appearance data={data} attempt={attempt} />}
@@ -857,7 +869,7 @@ function Appearance({
             type="number"
             min={12}
             max={24}
-            defaultValue={data.preferences.editorFontSize ?? 13}
+            defaultValue={data.preferences.editorFontSize ?? 16}
             onBlur={(e) =>
               void attempt(() =>
                 api('/preferences', 'PUT', {
@@ -876,7 +888,7 @@ function Appearance({
             min={1.2}
             max={2.5}
             step={0.1}
-            defaultValue={data.preferences.editorLineHeight ?? 1.7}
+            defaultValue={data.preferences.editorLineHeight ?? 1.5}
             onBlur={(e) =>
               void attempt(() =>
                 api('/preferences', 'PUT', {

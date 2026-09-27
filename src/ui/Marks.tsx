@@ -2,6 +2,14 @@ import React from 'react';
 
 // Drawn here on a 24-unit grid from simple geometric primitives.
 const strokes: Record<string, React.ReactNode> = {
+  camera: (
+    <>
+      <path d="M3 7h5l2-3h4l2 3h5v13H3Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
+  selectAll: <path d="M3 6h18M3 12h18M3 18h18M3 6v12" />,
+  selection: <rect x="4" y="4" width="16" height="16" rx="1.5" />,
   plus: <path d="M12 4.5v15M4.5 12h15" />,
   close: <path d="m6 6 12 12M18 6 6 18" />,
   minus: <path d="M5 12h14" />,

@@ -69,7 +69,24 @@ try {
   await page.getByText('这是新内核的真实界面测试回复。', { exact: true }).waitFor();
   await page.getByRole('button', { name: '发送消息', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => typeof globalThis.require), 'undefined');
-  await page.screenshot({ path: '.artifacts/chat-desktop.png' });
+  await page.evaluate(() => document.fonts.ready);
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].webContents.invalidate(),
+  );
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
+  const chatImage = await app.evaluate(async ({ BrowserWindow }) =>
+    (
+      await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, {
+        stayHidden: true,
+        stayAwake: true,
+      })
+    )
+      .toPNG()
+      .toString('base64'),
+  );
+  await fs.writeFile('.artifacts/chat-desktop.png', Buffer.from(chatImage, 'base64'));
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
   await page.getByRole('heading', { name: '模型与接口', exact: true }).waitFor();
   const settingsImage = await app.evaluate(async ({ BrowserWindow }) => {
@@ -91,6 +108,7 @@ try {
   await page.getByLabel('会话名称', { exact: true }).fill('独立桌面验收');
   await page.getByRole('button', { name: '保存名称', exact: true }).click();
   await page.getByRole('button', { name: '独立桌面验收', exact: true }).waitFor();
+  await page.getByRole('button', { name: '新对话', exact: true }).click();
   await page.getByRole('button', { name: '记忆', exact: true }).click();
   await page.getByLabel('新的记忆', { exact: true }).fill('这是一条独立界面保存的测试记忆');
   await page.getByRole('button', { name: '保存记忆', exact: true }).click();

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { Resource } from '../shared/contracts.ts';
 import { ApiError } from './api.ts';
+import { Icon } from './Marks.tsx';
 
 export function ResourceLinks({
   ids,
@@ -43,7 +44,9 @@ export function AttachmentPicker({
   onChange,
   onUploaded,
   onBusy,
+  children,
 }: {
+  children: React.ReactNode;
   sessionId: string;
   ids: string[];
   resources: Resource[];
@@ -111,8 +114,11 @@ export function AttachmentPicker({
         void upload([...e.dataTransfer.files]);
       }}
     >
-      <label className="button-file">
-        {busy ? '正在保存附件…' : '添加附件 / 拖入文件'}
+      <label
+        className="button-file attach-trigger"
+        title={busy ? '正在保存附件…' : '添加附件 / 拖入文件'}
+      >
+        <Icon name={busy ? 'clock' : 'plus'} size={16} />
         <input
           aria-label="添加附件"
           type="file"
@@ -125,6 +131,7 @@ export function AttachmentPicker({
           }}
         />
       </label>
+      {children}
       {ids.length > 0 && (
         <div className="draft-attachments">
           {ids.map((id) => (

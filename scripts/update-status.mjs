@@ -312,6 +312,20 @@ mark(
   '暖纸 / 青夜 / 跟随系统、五个官方字体、自绘图标、纸纹理和首字头像已有 Windows 桌面证据；其余主题、宽度 / 边距及完整设置复刻仍待完成。',
 );
 
+mark(
+  'CA-WORK-004 CA-WORK-005',
+  'partial',
+  [...continuation, 'src/ui/Workspace.tsx', 'src/ui/shell.css', 'tests/desktop-layout.mjs'],
+  '右侧多标签 UTF-8 编辑、Markdown / 文本草稿预览、外部冲突和历史恢复已有本机验收；尚无富文本直接编辑、多媒体 / PDF 查看器和崩溃后的文件草稿恢复。',
+);
+
+mark(
+  'CA-CHAT-004',
+  'partial',
+  ['src/ui/components.tsx', 'src/ui/shell.css', 'tests/desktop-layout.mjs'],
+  '独立 Markdown 排版、代码换行与复制、表格和引用样式已有桌面证据；公式、图示、代码高亮与全部语言渲染矩阵仍待实现。',
+);
+
 const records = features.map((f) => ({
   id: f.id,
   title: f.title,
@@ -336,7 +350,7 @@ for (const r of records) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const result = {
   schema: 1,
   updatedAt: new Date().toISOString(),
-  milestone: 'P1/P2 附件、历史分支、压缩、用量与工作区切片已补充，完整重写仍进行中',
+  milestone: '界面基础与主界面已形成可对照版本，六步引导和完整设置复刻待继续；完整重写仍进行中',
   counts,
   fullProductComplete: false,
   releaseAllowed: false,
