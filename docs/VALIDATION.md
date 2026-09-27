@@ -191,3 +191,27 @@
 文件区预检也已执行：在参考临时工作台创建 `interaction-sample.md`，双击打开，直接输入 X 后核对落盘，再用撤销还原；参考实际采用自动保存。预览按钮首次被浮层拦截导致点击超时，改用聚焦后 Enter 成功切换并截图，没有修改参考实现。用户已明确批准新增通用 ProseMirror 项目依赖，并选择独立版继续手动保存 + Ctrl+S；此菜单批次尚未接入该依赖或富文本编辑。
 
 最终串行验收：`pnpm run format`、`pnpm run verify`、`pnpm run test:desktop` 全部退出 0。53 项单元 / 服务测试，0 失败 / 0 跳过；桌面五组全部通过，页面异常 0。独立性检查原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元、文件累计最高 24.4%、CSS 最长 5 条，只保留既有标准 UA 公共约定例外。最终日志为 `.artifacts/menus-verify-final.log` 和 `.artifacts/menus-desktop-final.log`。状态由 `node scripts/update-status.mjs` 更新，计数不变，发布门禁仍关闭。
+
+## 主界面继续：文件直接编辑 · 2026-09-27
+
+本节工作由 Codex 在菜单提交 `a0b069f` 之后开始，桌面专项收尾时因额度用完中断；随后由 Claude Code 接手，核对未提交改动和中断前的测试日志，完成剩余测试修正、对照图、文档和提交。
+
+- 范围：Markdown 文件默认以“文档”模式打开，可以直接在排版后的内容上改字；另有“源码”“预览”两种模式。按用户决定保留手动保存并加 Ctrl+S（原版实测为自动保存，属于主动保留的差异）。编辑内核是用户批准的 ProseMirror 通用模块（版本和许可证见 DEPENDENCIES）；文档结构、原文保留、链接 / 图片安全、工具栏和样式由本项目编写，未复制原版组件、函数或 CSS。
+- 原文保留：`document-markdown.ts` 先判断文件能否安全地直接编辑。含表格、删除线、引用式链接、任务列表、脚注、公式、前置元数据、内嵌 HTML，或超过 20 万字符 / 3000 段的文件只能用源码模式编辑（“文档”按钮置灰并写明原因），预览仍可用。保存时未改动的段落原样写回，BOM、CRLF、`+` 列表、`~~~` 代码块等原写法不被改写，只有改过的段落重新生成 Markdown。
+- 编辑器：每个文件标签分别保留草稿、选区和撤销记录，切换模式或标签后仍可撤销 / 重做；有加粗、斜体、二级标题、正文、项目列表、引用和代码块按钮，状态栏显示选中字数和总字数。编辑器内的链接不会跳转，`javascript:` / `data:` / `file:` 等链接地址被去除；图片只显示“图片：说明”占位，不下载远程图片。只读权限下编辑、格式按钮和保存全部锁定。
+- 文件区：PDF / Office / 图片 / 音视频 / 压缩包等尚不能预览的文件在列表中置灰并标“即将提供”；复制、文件历史和文件操作收进文件工具栏，“添加封面”“文件截图”按原位置灰。编辑器视图按需加载（构建中单独约 171 KB 的分块）；判断能否直接编辑的解析部分随主界面加载，主脚本由菜单批次的 459.75 KB 增至 526.23 KB（gzip 152.48 → 174.73 KB），Vite 因此提示单个分块超过 500 KB。这只是提示、构建通过，本机桌面加载影响很小，暂不拆分，记为可选优化。
+- 测试：新增 `tests/document-markdown.test.ts` 8 项（原文 / BOM / CRLF 保留、插入与删除段落、重复段落、不支持格式回退、空文档、危险链接、大文件上限）。新增 `tests/desktop-documents.mjs` 并入 test:desktop 第六组，19 项桌面检查：默认文档编辑、原文不变、中文和表情输入、手动保存与 Ctrl+S、跨模式撤销 / 重做、多标签独立草稿、加粗、外部冲突拒绝、取消 / 确认重新读取、历史恢复、只读锁定、不支持格式回退源码、纯文本预览、不请求远程图片、复制内容（剪贴板替身）、置灰入口、未保存标签关闭确认、940px 不横向溢出、1280×800 暖纸 / 青夜截图。原有 p1-p2 与 layout 两组只随“编辑”改名为“源码”调整点击，断言未减少。
+- 对照：原版与独立版各 1280×800，未拉伸合成为 2560×842：`documents-rich-compare.png`（文档模式）、`documents-preview-compare.png`（预览模式），均在 `.artifacts/ui-replica/`，已实际查看。独立版另有 `documents-rich-night.png`（原版未采集同一场景）。标题、段落、列表文字和预览排版基本对齐。
+- 仍有差别（未声称 1:1）：1）原版用一个“眼睛”图标切换预览，工具栏平时隐藏；独立版是常显的“文档 / 源码 / 预览”三个按钮，源码模式用来保住不支持格式的原文。2）原版自动保存；独立版底部有保存栏和“保存文件”按钮（用户决定）。3）同一文件原版显示“共 64 字”，独立版“共 41 字”：原版按含 Markdown 符号和换行的源码字符计数，独立版只数可见文字。4）文档模式的列表圆点、标签页宽度（原版截断为“interaction-sample...”）和封面入口图标（原版为调色盘）不同。
+
+过程中的失败与处理（原样摘要）：
+
+1. 首次 verify 在 typecheck 失败：`tests/document-markdown.test.ts(115,17): error TS2352: Conversion of type 'DOMOutputSpec' to type 'unknown[]' may be a mistake`。改为先判断数组再断言，修正后 verify 通过。
+2. 桌面专项首次报 `assert.ok((await editor().locator('strong').count()) >= 2)` 为假：测试没等选区生效就按 Ctrl+B 并立即计数。改为先等状态栏出现“选中 2 字”，再等待包含该文字的加粗节点。
+3. 下一轮测试长时间不结束：失败后的退出流程因草稿未保存弹出原生提示“草稿尚未保存 / 退出前保存未完成。请检查当前会话后再次退出。”，挡住了失败输出。测试的失败分支改为只结束这个一次性测试实例（`app.exit(1)`），应用本身的退出保护不变。
+4. `locator.isDisabled: Timeout 12000ms exceeded`，等待 `getByRole('button', { name: '文档即将提供' })`：按钮的可访问名称由正文和“即将提供”小字拼成，匹配不稳定。按钮改为明确的 `aria-label`（“文档 · 即将提供”，文件列表同样如“unavailable.pdf · 即将提供”），测试按新名称断言。
+5. 同一轮随后报 `EBUSY: resource busy or locked, unlink '...\cagent.sqlite-shm'`：进程还没退出就清理临时目录。改为等进程 close 事件后再删除，删除带有限次重试。
+6. 修正后重跑（Codex 中断前启动，日志 `.artifacts/editor-desktop-recheck-2.log`），前面的检查全部通过，最后“控制台零错误”断言收到 `Failed to load resource: the server responded with a status of 409 (Conflict)`。这是冲突保护步骤故意触发的保存拒绝（FILE_CONFLICT 按设计返回 409），浏览器会自动把失败响应记为控制台错误。测试改为在这一步等待并核对恰好这一条 409 后清空，其余步骤仍要求零错误，覆盖没有降低；重跑 19 项全部通过（`.artifacts/editor-desktop-recheck-3.log`）。
+7. 对照图首次合成的中文标题是乱码：Windows PowerShell 5.1 按系统代码页读取了无 BOM 的 UTF-8 脚本 `compare.ps1`。改为按 UTF-8 读入后执行、重新合成，截图内容本身不受影响。
+
+最终串行验收：`node scripts/update-status.mjs`、`pnpm run format`、`pnpm run verify`、`pnpm run test:desktop` 全部退出 0。61 项单元 / 服务测试，0 失败 / 0 跳过；桌面六组共 68 项检查全部通过（smoke 10、p1-p2 12、appearance 7、layout 8、menus 12、documents 19），每组页面异常 0。独立性检查 161 个应用源文件无违规，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元、文件累计最高 24.4%、文字最长 16 单位（既有 UA 例外）、CSS 最长 5 条，没有新增例外。日志为 `.artifacts/editor-verify-final.log` 和 `.artifacts/editor-desktop-final.log`。状态计数不变（22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision），发布门禁仍关闭。中断运行遗留的两个测试临时目录（只含测试夹具）已确认后删除；原版参考程序已经由 driver 的 close 命令关闭，临时副本保留。

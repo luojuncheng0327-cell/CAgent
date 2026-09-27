@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-27T11:05:56.675Z",
-  "milestone": "主界面模型 / 推理 / 权限弹出菜单已补齐，继续文件编辑交互；六步引导和完整设置尚未开始复刻",
+  "updatedAt": "2026-09-27T11:54:57.368Z",
+  "milestone": "主界面选择菜单和文件直接编辑已完成首轮，剩余视觉细节待收敛；六步引导和完整设置尚未开始复刻",
   "counts": {
     "partial": 56,
     "not_started": 130,
@@ -746,10 +746,14 @@
         "tests/p1-p2.test.ts",
         "tests/desktop-p1-p2.mjs",
         "src/ui/Workspace.tsx",
+        "src/ui/DocumentEditor.tsx",
+        "src/ui/document-markdown.ts",
         "src/ui/shell.css",
-        "tests/desktop-layout.mjs"
+        "tests/document-markdown.test.ts",
+        "tests/desktop-layout.mjs",
+        "tests/desktop-documents.mjs"
       ],
-      "remaining": "右侧多标签 UTF-8 编辑、Markdown / 文本草稿预览、外部冲突和历史恢复已有本机验收；尚无富文本直接编辑、多媒体 / PDF 查看器和崩溃后的文件草稿恢复。"
+      "remaining": "右侧多标签 UTF-8 编辑、Markdown 文档直接编辑（文档 / 源码 / 预览，每个标签独立草稿和撤销，未改动段落保留原写法）、手动保存与 Ctrl+S、外部冲突拒绝、历史恢复和只读锁定已有本机验收；表格等扩展格式只能用源码模式编辑，多媒体 / PDF 查看器和崩溃后的文件草稿恢复尚未实现。"
     },
     {
       "id": "CA-WORK-005",
@@ -761,10 +765,14 @@
         "tests/p1-p2.test.ts",
         "tests/desktop-p1-p2.mjs",
         "src/ui/Workspace.tsx",
+        "src/ui/DocumentEditor.tsx",
+        "src/ui/document-markdown.ts",
         "src/ui/shell.css",
-        "tests/desktop-layout.mjs"
+        "tests/document-markdown.test.ts",
+        "tests/desktop-layout.mjs",
+        "tests/desktop-documents.mjs"
       ],
-      "remaining": "右侧多标签 UTF-8 编辑、Markdown / 文本草稿预览、外部冲突和历史恢复已有本机验收；尚无富文本直接编辑、多媒体 / PDF 查看器和崩溃后的文件草稿恢复。"
+      "remaining": "右侧多标签 UTF-8 编辑、Markdown 文档直接编辑（文档 / 源码 / 预览，每个标签独立草稿和撤销，未改动段落保留原写法）、手动保存与 Ctrl+S、外部冲突拒绝、历史恢复和只读锁定已有本机验收；表格等扩展格式只能用源码模式编辑，多媒体 / PDF 查看器和崩溃后的文件草稿恢复尚未实现。"
     },
     {
       "id": "CA-WORK-006",

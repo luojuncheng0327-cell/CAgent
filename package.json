@@ -24,10 +24,19 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
-    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs && node tests/desktop-layout.mjs && node tests/desktop-menus.mjs"
+    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs && node tests/desktop-layout.mjs && node tests/desktop-menus.mjs && node tests/desktop-documents.mjs"
   },
   "dependencies": {
     "markdown-it": "14.1.1",
+    "prosemirror-commands": "1.7.2",
+    "prosemirror-history": "1.5.0",
+    "prosemirror-inputrules": "1.5.1",
+    "prosemirror-keymap": "1.2.3",
+    "prosemirror-markdown": "1.13.8",
+    "prosemirror-model": "1.25.12",
+    "prosemirror-schema-list": "1.5.1",
+    "prosemirror-state": "1.4.4",
+    "prosemirror-view": "1.42.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "4.1.12"

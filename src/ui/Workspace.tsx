@@ -1,9 +1,17 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, Preferences, Stored, Resource } from '../shared/contracts.ts';
 import { api } from './api.ts';
 import { Icon, Modal, Field, Markdown } from './components.tsx';
 import { Soon } from './Shell.tsx';
 import { ResourceLinks } from './Attachments.tsx';
+import type { DocumentMemory } from './DocumentEditor.tsx';
+import { inspectDocument } from './document-markdown.ts';
+
+const DocumentEditor = lazy(() =>
+  import('./DocumentEditor.tsx').then((module) => ({ default: module.DocumentEditor })),
+);
+const futurePreview = (name: string) =>
+  /\.(pdf|docx?|xlsx?|pptx?|png|jpe?g|gif|webp|bmp|svg|mp[34]|wav|mov|avi|zip|7z)$/i.test(name);
 
 interface FileTab {
   path: string;
@@ -12,6 +20,9 @@ interface FileTab {
   sha256: string;
   scroll: number;
   changed: boolean;
+  mode: 'document' | 'source' | 'preview';
+  document?: DocumentMemory;
+  generation: number;
 }
 interface Version extends Stored {
   path: string;
@@ -42,7 +53,6 @@ export function Workspace({
   const key = session.id + '|' + session.workspace,
     prefix = `/sessions/${session.id}`;
   const [area, setArea] = useState<'files' | 'resources'>('files');
-  const [preview, setPreview] = useState(false);
   const [folder, setFolder] = useState('.'),
     [entries, setEntries] = useState<{ name: string; kind: string }[]>([]),
     [truncated, setTruncated] = useState(false),
@@ -57,12 +67,20 @@ export function Workspace({
     >(null),
     [name, setName] = useState(''),
     [busy, setBusy] = useState(false),
-    [history, setHistory] = useState<Version[] | null>(null);
+    [history, setHistory] = useState<Version[] | null>(null),
+    [fileMenu, setFileMenu] = useState(false);
   const editor = useRef<HTMLTextAreaElement>(null),
     searchInput = useRef<HTMLInputElement>(null),
     tabRef = useRef(tabs),
     listRequest = useRef(0),
     file = tabs.find((t) => t.path === active);
+  const savePending = useRef(false);
+  const markdownFile = /\.(md|markdown)$/i.test(file?.path ?? '');
+  const document = useMemo(() => {
+    if (!file || !markdownFile) return null;
+    if (file.document?.text === file.text) return { source: file.document.source };
+    return inspectDocument(file.text);
+  }, [file?.text, file?.document, markdownFile]);
   tabRef.current = tabs;
   const load = useCallback(async () => {
     if (!session.workspace) return;
@@ -123,7 +141,8 @@ export function Workspace({
   useEffect(() => {
     if (editor.current && file) editor.current.scrollTop = file.scroll;
     setHistory(null);
-  }, [active, show, preview]);
+    setFileMenu(false);
+  }, [active, show, file?.mode]);
   function updateTab(target: string, values: Partial<FileTab>) {
     setTabs((old) => old.map((t) => (t.path === target ? { ...t, ...values } : t)));
   }
@@ -141,7 +160,19 @@ export function Workspace({
     const value = await api<{ path: string; text: string; sha256: string }>(
       `${prefix}/file?path=${encodeURIComponent(target)}`,
     );
-    const tab: FileTab = { ...value, saved: value.text, scroll: old?.scroll ?? 0, changed: false };
+    const canEditDocument =
+      /\.(md|markdown)$/i.test(target) && !!inspectDocument(value.text).source;
+    const tab: FileTab = {
+      ...value,
+      saved: value.text,
+      scroll: old?.scroll ?? 0,
+      changed: false,
+      mode:
+        old?.mode === 'document' && !canEditDocument
+          ? 'source'
+          : (old?.mode ?? (canEditDocument ? 'document' : 'source')),
+      generation: (old?.generation ?? -1) + 1,
+    };
     setTabs((t) => (old ? t.map((x) => (x.path === target ? tab : x)) : [...t, tab]));
     setActive(target);
     setShow(true);
@@ -155,9 +186,11 @@ export function Workspace({
     if (!next.length) setShow(false);
   }
   async function save() {
-    if (!file) return;
+    if (!file || session.permission === 'read' || file.text === file.saved || savePending.current)
+      return;
     const target = file.path,
       text = file.text;
+    savePending.current = true;
     setBusy(true);
     try {
       const r = await api<{ sha256: string }>(prefix + '/file', 'PUT', {
@@ -171,6 +204,7 @@ export function Workspace({
     } catch (e) {
       report(e);
     } finally {
+      savePending.current = false;
       setBusy(false);
     }
   }
@@ -202,7 +236,21 @@ export function Workspace({
   }
   const readonly = session.permission === 'read';
   return (
-    <aside className={'workspace-panel' + (show && file ? ' editing' : '')} aria-label="书桌文件区">
+    <aside
+      className={'workspace-panel' + (show && file ? ' editing' : '')}
+      aria-label="书桌文件区"
+      onKeyDown={(event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && show && file) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!busy) void save();
+        }
+        if (event.key === 'Escape' && fileMenu) {
+          event.preventDefault();
+          setFileMenu(false);
+        }
+      }}
+    >
       <div className="desk-card">
         <div className="desk-heading">
           <h3 title={session.workspace ?? '工作台'}>
@@ -320,7 +368,22 @@ export function Workspace({
                     .map((entry) => (
                       <button
                         key={entry.name}
-                        disabled={entry.kind === 'link'}
+                        aria-label={
+                          entry.kind === 'link' ||
+                          (entry.kind === 'file' && futurePreview(entry.name))
+                            ? `${entry.name} · 即将提供`
+                            : entry.name
+                        }
+                        disabled={
+                          entry.kind === 'link' ||
+                          (entry.kind === 'file' && futurePreview(entry.name))
+                        }
+                        title={
+                          entry.kind === 'link' ||
+                          (entry.kind === 'file' && futurePreview(entry.name))
+                            ? entry.name + ' · 即将提供'
+                            : entry.name
+                        }
                         onClick={() => {
                           const target = (folder === '.' ? '' : folder + '/') + entry.name;
                           if (entry.kind === 'directory') setFolder(target);
@@ -329,6 +392,10 @@ export function Workspace({
                       >
                         <Icon name={entry.kind === 'directory' ? 'folder' : 'file'} size={14} />
                         <span>{entry.name}</span>
+                        {(entry.kind === 'link' ||
+                          (entry.kind === 'file' && futurePreview(entry.name))) && (
+                          <small>即将提供</small>
+                        )}
                       </button>
                     ))}
                   {!entries.some((e) => e.name.toLowerCase().includes(filter.toLowerCase())) && (
@@ -387,6 +454,7 @@ export function Workspace({
                   <button
                     role="tab"
                     aria-selected={tab.path === active}
+                    title={tab.path}
                     onClick={() => setActive(tab.path)}
                   >
                     {tab.path}
@@ -401,20 +469,92 @@ export function Workspace({
             <button
               className="icon-button"
               aria-label="关闭文件预览"
+              title="收起文件面板，保留草稿"
               onClick={() => setShow(false)}
             >
-              <Icon name="close" size={15} />
+              <Icon name="arrow" size={15} />
             </button>
           </div>
-          <div className="file-editor">
-            <div className="editor-modes" aria-label="文件显示方式">
-              <button aria-pressed={!preview} onClick={() => setPreview(false)}>
-                编辑
+          <div
+            className="file-editor"
+            style={{
+              fontSize: preferences.editorFontSize ?? 16,
+              lineHeight: preferences.editorLineHeight ?? 1.5,
+            }}
+          >
+            <div className="file-toolbar">
+              <button
+                aria-label="复制文件内容"
+                title="复制当前草稿"
+                onClick={() =>
+                  void navigator.clipboard
+                    .writeText(file.text)
+                    .then(() => report('文件内容已复制'))
+                    .catch(report)
+                }
+              >
+                <Icon name="copy" size={13} />
+                复制
               </button>
-              <button aria-pressed={preview} onClick={() => setPreview(true)}>
-                预览
+              <Soon label="添加封面" icon="sun" compact />
+              <button
+                aria-label="文件历史"
+                title="文件历史"
+                onClick={() =>
+                  void api<Version[]>(
+                    `${prefix}/file-history?path=${encodeURIComponent(file.path)}`,
+                  )
+                    .then(setHistory)
+                    .catch(report)
+                }
+              >
+                <Icon name="clock" size={14} />
+              </button>
+              <div className="file-view-modes" aria-label="文件显示方式">
+                {markdownFile && (
+                  <button
+                    aria-label={document?.source ? '文档' : '文档 · 即将提供'}
+                    aria-pressed={file.mode === 'document'}
+                    disabled={!document?.source}
+                    title={document?.reason ?? '直接编辑排版后的文档'}
+                    onClick={() => updateTab(file.path, { mode: 'document' })}
+                  >
+                    文档{!document?.source && <small>即将提供</small>}
+                  </button>
+                )}
+                <button
+                  aria-pressed={file.mode === 'source'}
+                  onClick={() => updateTab(file.path, { mode: 'source' })}
+                >
+                  源码
+                </button>
+                <button
+                  aria-pressed={file.mode === 'preview'}
+                  onClick={() => updateTab(file.path, { mode: 'preview' })}
+                >
+                  预览
+                </button>
+              </div>
+              <Soon label="文件截图" icon="camera" compact />
+              <button
+                aria-label="文件操作"
+                aria-expanded={fileMenu}
+                title="文件操作"
+                onClick={() => setFileMenu((open) => !open)}
+              >
+                <Icon name="more" size={14} />
               </button>
             </div>
+            {document?.reason && (
+              <p className="document-limit" role="status">
+                {document.reason}
+              </p>
+            )}
+            {readonly && (
+              <p className="document-limit" role="status">
+                当前会话为只读，文件内容不能修改。
+              </p>
+            )}
             {file.changed && (
               <p role="alert" className="inline-error">
                 磁盘文件已变化。编辑草稿保留；保存会校验原版本。
@@ -432,11 +572,18 @@ export function Workspace({
               </p>
             )}
             <textarea
-              hidden={preview}
+              hidden={file.mode !== 'source' && !(file.mode === 'document' && !document?.source)}
               ref={editor}
               aria-label="文件内容"
+              readOnly={readonly}
               value={file.text}
-              onChange={(e) => updateTab(file.path, { text: e.target.value })}
+              onChange={(e) =>
+                updateTab(file.path, {
+                  text: e.target.value,
+                  document: undefined,
+                  generation: file.generation + 1,
+                })
+              }
               onScroll={(e) => updateTab(file.path, { scroll: e.currentTarget.scrollTop })}
               style={{
                 fontSize: preferences.editorFontSize ?? 16,
@@ -444,7 +591,18 @@ export function Workspace({
               }}
               spellCheck={false}
             />
-            {preview && (
+            {file.mode === 'document' && document?.source && (
+              <Suspense fallback={<p className="document-limit">正在打开文档编辑器…</p>}>
+                <DocumentEditor
+                  key={file.path + ':' + file.generation}
+                  source={document.source}
+                  memory={file.document}
+                  readonly={readonly}
+                  onChange={(text, document) => updateTab(file.path, { text, document })}
+                />
+              </Suspense>
+            )}
+            {file.mode === 'preview' && (
               <div
                 className="file-preview"
                 role="region"
@@ -454,42 +612,41 @@ export function Workspace({
                   lineHeight: preferences.editorLineHeight ?? 1.5,
                 }}
               >
-                {/\.md$/i.test(file.path) ? <Markdown text={file.text} /> : <pre>{file.text}</pre>}
+                {markdownFile ? <Markdown text={file.text} /> : <pre>{file.text}</pre>}
               </div>
             )}
-            <div className="file-operations">
-              <button
-                disabled={readonly || busy || file.text !== file.saved}
-                onClick={() => {
-                  setName(file.path);
-                  setOperation('rename');
-                }}
-              >
-                重命名 / 移动
-              </button>
-              <button
-                disabled={readonly || busy || file.text !== file.saved}
-                onClick={() => {
-                  setName(file.path + '.copy');
-                  setOperation('copy');
-                }}
-              >
-                复制文件
-              </button>
-              <button
-                onClick={() =>
-                  void api<Version[]>(
-                    `${prefix}/file-history?path=${encodeURIComponent(file.path)}`,
-                  )
-                    .then(setHistory)
-                    .catch(report)
-                }
-              >
-                文件历史
-              </button>
-            </div>
+            {fileMenu && (
+              <div className="file-operations">
+                <button
+                  disabled={readonly || busy || file.text !== file.saved}
+                  onClick={() => {
+                    setName(file.path);
+                    setOperation('rename');
+                  }}
+                >
+                  重命名 / 移动
+                </button>
+                <button
+                  disabled={readonly || busy || file.text !== file.saved}
+                  onClick={() => {
+                    setName(file.path + '.copy');
+                    setOperation('copy');
+                  }}
+                >
+                  复制文件
+                </button>
+                <button onClick={() => setFileMenu(false)}>收起操作</button>
+              </div>
+            )}
             {history && (
               <div className="file-history">
+                <button
+                  className="history-close"
+                  aria-label="关闭文件历史"
+                  onClick={() => setHistory(null)}
+                >
+                  <Icon name="close" size={13} />
+                </button>
                 <h3>已保存的旧版本</h3>
                 {history.length ? (
                   history.map((v) => (
@@ -541,6 +698,7 @@ export function Workspace({
                 className="primary"
                 disabled={readonly || busy || file.text === file.saved}
                 onClick={() => void save()}
+                title="保存文件 · Ctrl+S"
               >
                 保存文件
               </button>

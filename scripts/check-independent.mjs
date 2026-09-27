@@ -5,7 +5,23 @@ import { builtinModules } from 'node:module';
 import ts from 'typescript';
 
 const root = path.resolve('.');
-const allowed = new Set(['react', 'react-dom', 'markdown-it', 'zod', 'electron']);
+// ProseMirror modules are generic editor infrastructure, explicitly approved on 2026-09-27.
+const allowed = new Set([
+  'react',
+  'react-dom',
+  'markdown-it',
+  'zod',
+  'electron',
+  'prosemirror-model',
+  'prosemirror-state',
+  'prosemirror-view',
+  'prosemirror-commands',
+  'prosemirror-history',
+  'prosemirror-keymap',
+  'prosemirror-markdown',
+  'prosemirror-schema-list',
+  'prosemirror-inputrules',
+]);
 const builtins = new Set(builtinModules.flatMap((x) => [x, 'node:' + x]));
 function walk(dir) {
   return fs

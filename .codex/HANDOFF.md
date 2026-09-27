@@ -1,6 +1,6 @@
 # CAgent 独立重写交接
 
-最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，新增词元级相似度检查（已并入 verify）；界面 1:1 复刻进行中：第 1 步基础已完成，主界面首轮已通过最终串行回归，同尺寸对照图已保存；剩余交互差别见下文。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
+最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，新增词元级相似度检查（已并入 verify）；界面 1:1 复刻进行中：第 1 步基础已完成；第 2 步主界面首轮、模型 / 推理 / 权限选择菜单和文件直接编辑均已通过串行回归，同尺寸对照图已保存；剩余差别见下文。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
 
 ## 用户边界（已授权，无需重问）
 
@@ -19,11 +19,12 @@
 6. 多标签 UTF-8 编辑、实际 watcher、外部冲突、新建文件 / 目录、文本复制 / 移动、历史恢复及恢复前留档。助手删除后显式接管、逐工具禁用、公开规则字段，字体 / 时区 / 编辑器排版和预算设置。
 7. `pnpm run check:similarity`：代码结构（名字 / 字面值抽象）、文案和 CSS 声明与原工作区逐段比对，另算文件对累计覆盖。阳性对照中改名 + 每 3–12 行插句的 6 个原文件全部判为不通过；本仓库 0 项越线（最长 78 词元，文件累计最高 24.4%，文案最长 16 单位（标准 UA 例外），CSS 最长 5 条）。报告在 `.artifacts/`，含原工作区片段，不提交。公共约定的重合可登记为已审核例外（`0ccb9c1`）。
 8. 界面字体（`4bcea86`）：Inter、EB Garamond、PT Serif、Noto Serif SC、JetBrains Mono，均 SIL OFL，由 `scripts/fetch-fonts.mjs` 从 Google Fonts 官方获取，115 个 woff2 共 6.37 MB，许可证和来源清单在 `src/ui/fonts/`。已通过 appearance.css 接入，使用位置和桌面证据见下方界面复刻。
+9. 文件直接编辑：Markdown 有文档 / 源码 / 预览三种模式，编辑内核是用户批准的 ProseMirror（MIT）；未改动的段落原样写回，表格等不支持的格式只能用源码模式；手动保存 + Ctrl+S，每个标签独立草稿和撤销。
 
 ## 验证和边界
 
-- `pnpm run verify`：格式、类型、53 项本机测试、UI / Electron build、独立性检查、相似度检查通过（1 项已审核例外：字体脚本里的标准浏览器标识）。相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）已由用户确认；它能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。复制尺度：用户选择“只放宽公共约定”，公共约定的重合登记到 `scripts/similarity-exceptions.json`（写理由和最大尺寸），原版独创代码 / 文案 / 样式仍不复制。
-- `pnpm run test:desktop`：smoke / p1-p2 / appearance / layout 四组均通过；页面异常 0。新脚本实际操作附件、历史、分支、压缩、用量、多标签、冲突、恢复、watcher 和重启草稿。
+- `pnpm run verify`：格式、类型、61 项本机测试、UI / Electron build、独立性检查、相似度检查通过（1 项已审核例外：字体脚本里的标准浏览器标识）。相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）已由用户确认；它能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。复制尺度：用户选择“只放宽公共约定”，公共约定的重合登记到 `scripts/similarity-exceptions.json`（写理由和最大尺寸），原版独创代码 / 文案 / 样式仍不复制。
+- `pnpm run test:desktop`：smoke / p1-p2 / appearance / layout / menus / documents 六组均通过；页面异常 0。documents 组会弹出原生确认框（重新读取、关闭未保存标签），由测试自动应答，运行时不要手动点。新脚本实际操作附件、历史、分支、压缩、用量、多标签、冲突、恢复、watcher 和重启草稿。
 - 已实际查看 `.artifacts/usage-p1-p2.png`、`workspace-p1-p2.png`、`attachments-p1-p2.png`。隐藏窗口 capturePage 会抓前一帧：先 invalidate，再等两帧，之后截图。
 - 原目录 2,901 个 tracked 文件指纹一致，28 个独立应用源文件检查无违规。指纹 / import 检查不是法律鉴定。
 - 机器状态：22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision。完整重写仍未完成，`fullProductComplete=false`、`releaseAllowed=false`。
@@ -50,7 +51,7 @@
 步骤：
 
 1. 基础（已完成）：官方字体接入、暖纸 / 青夜 / 跟随系统变量、48 个自绘线条图标（基础提交 45 个，主界面补 3 个）、固定种子纸纹理、圆底首字头像。三组桌面检查和 verify 全过；并排证据 .artifacts/ui-replica/foundation-compare.png。
-2. 主界面（首轮已完成）：顶栏、左栏、欢迎页、输入卡、消息、右侧书桌和编辑 / 预览已重排；用量在设置 → 供应商，记忆由欢迎页进入。1280×800 暖纸 / 青夜截图在 .artifacts/ui-replica/。原生选择框的完整弹出样式、原版直接富文本编辑等仍有差别，不能声称所有交互已 1:1。
+2. 主界面（首轮、选择菜单、文件直接编辑已完成）：顶栏、左栏、欢迎页、输入卡、消息、右侧书桌和编辑 / 预览已重排；用量在设置 → 供应商，记忆由欢迎页进入。模型 / 推理 / 权限弹出菜单（`a0b069f`）和 Markdown 直接编辑已补齐。1280×800 暖纸 / 青夜截图在 .artifacts/ui-replica/。预览切换方式、保存方式（用户选定手动）、字数口径、列表圆点等仍有差别，不能声称所有交互已 1:1。
 3. 引导 6 步，对应现有首次设置。
 4. 设置弹层：左侧 17 类加搜索，已有功能的页面先做，其余置灰。
 
@@ -107,3 +108,12 @@
 - 用户新增决定：允许加入通用 ProseMirror 基础库作为项目依赖；文件直接编辑继续采用手动保存，并加 Ctrl+S。原版实测为自动保存，这是主动保留的差异。
 - 继续顺序不变：文件预览与编辑、直接富文本编辑仍在第 2 步；不得跳到第 3 步引导或第 4 步设置。
 - 菜单批次最终 format / verify / test:desktop 串行全过，53 项单元 / 服务测试 + 五组桌面，0 失败 / 跳过，相似度越线 0。日志 menus-verify-final.log / menus-desktop-final.log；状态脚本已运行，计数不变。
+
+### 主界面继续交接：文件直接编辑
+
+- 本批由 Codex 在 `a0b069f` 之后开始，桌面专项收尾时额度用完中断；Claude Code 接手时核对了 13 个未提交文件和中断前日志，保留全部改动，只补测试修正、文档和提交。
+- 新增 `DocumentEditor.tsx`、`document-markdown.ts`、`document-editor.css`、`file-viewer.css`；Workspace 改为文档 / 源码 / 预览三模式。ProseMirror 直接依赖 9 个模块（锁文件新增 13 包，均 MIT），`check-independent.mjs` 允许列表和 DEPENDENCIES 已登记。
+- test:desktop 第六组 `desktop-documents.mjs`；单元测试新增 `document-markdown.test.ts` 8 项。并排证据 `.artifacts/ui-replica/documents-{rich,preview}-compare.png`，两侧均 1280×800；剩余差别（预览切换方式、保存栏、字数口径、列表圆点 / 标签宽度）和 500 KB 分块提示见 VALIDATION。
+- 继续顺序：先收敛第 2 步剩余差别（上面几项和其他主界面细节），再由用户决定何时进入第 3 步引导；不要擅自跳到第 3 / 4 步。
+- 最终 format / verify / test:desktop 串行全过：61 项单元 / 服务测试 + 六组桌面共 68 项检查，0 失败 / 跳过，页面异常 0，相似度越线 0，没有新增例外。日志 editor-verify-final.log / editor-desktop-final.log；状态脚本已运行，计数不变。
+- 原版参考程序已用 driver 的 close 命令关闭；参考工作台保留 `interaction-sample.md`（内容已还原为测试原文），供下一轮对照文件编辑细节。Windows PowerShell 5.1 会把无 BOM 的 UTF-8 脚本按系统代码页读取，运行 `compare.ps1` 请用 `[scriptblock]::Create([IO.File]::ReadAllText(路径, [Text.Encoding]::UTF8))` 调用，否则对照图标题乱码。

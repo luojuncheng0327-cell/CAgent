@@ -5,6 +5,7 @@ import './fonts/fonts.css';
 import './appearance.css';
 import './style.css';
 import './shell.css';
+import './file-viewer.css';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: boolean }> {
   state = { error: false };

@@ -1,0 +1,150 @@
+.workspace-panel.editing {
+  flex-basis: min(580px, 52vw);
+  width: min(580px, 52vw);
+  padding-right: 8px;
+}
+.desk-editor .file-tabs > div {
+  max-width: 190px;
+  flex-shrink: 0;
+}
+.desk-editor .file-tabs [role='tab'] {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 155px;
+}
+.desk-editor .file-editor {
+  padding: 0;
+  overflow: auto;
+}
+.desk-editor .file-editor:has(.file-preview) {
+  margin-left: -9px;
+  margin-right: 8px;
+}
+.file-list small {
+  font-size: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.file-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  min-height: 36px;
+  flex-shrink: 0;
+}
+.file-toolbar button {
+  padding: 3px 5px;
+  font-size: 11px;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  gap: 4px;
+}
+.file-toolbar .future-control {
+  padding: 3px;
+}
+.file-view-modes {
+  display: flex;
+  gap: 2px;
+}
+.file-view-modes [aria-pressed='true'] {
+  background: var(--tint-wash);
+  color: var(--tint-main);
+}
+.file-view-modes small {
+  font-size: 8px;
+  margin-left: 3px;
+}
+.desk-editor .file-editor > textarea {
+  font-family: var(--face-code);
+  border: 0;
+  border-radius: 0;
+  margin: 8px 0;
+  min-height: 400px;
+}
+.desk-editor .file-editor > textarea[hidden] {
+  display: none;
+}
+.desk-editor .file-editor > textarea:focus-visible {
+  outline-offset: -3px;
+}
+.desk-editor .file-preview {
+  padding: 26px 24px 30px;
+  overflow: visible;
+}
+.file-preview .prose h1 {
+  line-height: 36px;
+  letter-spacing: normal;
+  padding-bottom: 22px;
+  margin: 2px 0 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+.file-preview .prose h2 {
+  font: 500 21px/24px var(--face-editor);
+  padding-block: 12px;
+  margin: 24px 0 0;
+}
+.file-preview .prose p {
+  margin: 0 0 18px;
+}
+.file-preview .prose ul,
+.file-preview .prose ol {
+  padding-left: 32px;
+  margin: 0 0 28px;
+}
+.file-preview .prose li {
+  margin: 0;
+}
+.document-limit {
+  margin: 2px 12px 8px;
+  font-size: 11px;
+  padding: 6px 8px;
+  background: var(--note-tone);
+  border-radius: 5px;
+  color: var(--text-soft);
+}
+.file-editor > .inline-error {
+  margin: 8px 12px;
+}
+.file-editor .file-operations {
+  margin: 8px 12px;
+  padding: 6px;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.file-editor .file-operations button {
+  font-size: 11px;
+}
+.desk-editor .file-editor > .form-actions {
+  position: sticky;
+  bottom: 0;
+  padding: 8px 12px;
+  margin-top: auto;
+  background: var(--sheet-tone);
+  border-top: 1px solid var(--hairline);
+  flex-shrink: 0;
+}
+.desk-editor .form-actions > .muted {
+  font-size: 10px;
+}
+.desk-editor .form-actions button {
+  font-size: 11px;
+  padding: 6px 10px;
+}
+.file-history {
+  margin: 8px 12px;
+  position: relative;
+}
+.history-close {
+  float: right;
+  padding: 3px;
+  background: none;
+  border: 0;
+}
