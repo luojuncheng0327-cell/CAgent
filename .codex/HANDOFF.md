@@ -1,6 +1,6 @@
 # CAgent 独立重写交接
 
-最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，并新增词元级相似度检查。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
+最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，新增词元级相似度检查（已并入 verify）；界面 1:1 复刻进行中：原版参考已采集，界面字体已打包，下一步是设计变量 / 图标 / 纹理。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
 
 ## 用户边界（已授权，无需重问）
 
@@ -17,11 +17,12 @@
 4. 历史 position 游标分页、损坏行隔离、完整导出 / 分支读取。编辑 / 重试创建新分支，重试复用工具结果并在该轮禁止写工具，不重复原用户消息。
 5. 手动 / 实验自动压缩保留最后两轮和完整历史，失败 / 取消 / 过期摘要不提交；自动压缩默认关闭。用量筛选、分页、已知 / 未知合计与失败计量 UI。
 6. 多标签 UTF-8 编辑、实际 watcher、外部冲突、新建文件 / 目录、文本复制 / 移动、历史恢复及恢复前留档。助手删除后显式接管、逐工具禁用、公开规则字段，字体 / 时区 / 编辑器排版和预算设置。
-7. `pnpm run check:similarity`：代码结构（名字 / 字面值抽象）、文案和 CSS 声明与原工作区逐段比对，另算文件对累计覆盖。阳性对照中改名 + 每 3–12 行插句的 6 个原文件全部判为不通过；本仓库 0 项越线（最长 65 词元，文件累计最高 24.4%，文案最长 10 单位，CSS 0）。报告在 `.artifacts/`，含原工作区片段，不提交。
+7. `pnpm run check:similarity`：代码结构（名字 / 字面值抽象）、文案和 CSS 声明与原工作区逐段比对，另算文件对累计覆盖。阳性对照中改名 + 每 3–12 行插句的 6 个原文件全部判为不通过；本仓库 0 项越线（最长 65 词元，文件累计最高 24.4%，文案最长 10 单位，CSS 0）。报告在 `.artifacts/`，含原工作区片段，不提交。公共约定的重合可登记为已审核例外（`0ccb9c1`）。
+8. 界面字体（`4bcea86`）：Inter、EB Garamond、PT Serif、Noto Serif SC、JetBrains Mono，均 SIL OFL，由 `scripts/fetch-fonts.mjs` 从 Google Fonts 官方获取，115 个 woff2 共 6.37 MB，许可证和来源清单在 `src/ui/fonts/`。样式里尚未使用，下一步设计变量接入。
 
 ## 验证和边界
 
-- `pnpm run verify`：格式、类型、52 项本机测试、UI / Electron build、独立性检查、相似度检查通过。相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）已由用户确认；它能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。复制尺度：用户选择“只放宽公共约定”，公共约定的重合登记到 `scripts/similarity-exceptions.json`（写理由和最大尺寸），原版独创代码 / 文案 / 样式仍不复制。
+- `pnpm run verify`：格式、类型、53 项本机测试、UI / Electron build、独立性检查、相似度检查通过（1 项已审核例外：字体脚本里的标准浏览器标识）。相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）已由用户确认；它能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。复制尺度：用户选择“只放宽公共约定”，公共约定的重合登记到 `scripts/similarity-exceptions.json`（写理由和最大尺寸），原版独创代码 / 文案 / 样式仍不复制。
 - `pnpm run test:desktop`：原桌面链路和新的 `tests/desktop-p1-p2.mjs` 均通过；页面异常 0。新脚本实际操作附件、历史、分支、压缩、用量、多标签、冲突、恢复、watcher 和重启草稿。
 - 已实际查看 `.artifacts/usage-p1-p2.png`、`workspace-p1-p2.png`、`attachments-p1-p2.png`。隐藏窗口 capturePage 会抓前一帧：先 invalidate，再等两帧，之后截图。
 - 原目录 2,901 个 tracked 文件指纹一致，28 个独立应用源文件检查无违规。指纹 / import 检查不是法律鉴定。
@@ -35,18 +36,49 @@
 
 ## 下一步优先级
 
-0. 进行中：界面 1:1 视觉复刻（用户已选定先做）。外观对照原版实际运行效果，组件和 CSS 自己写；字体从官方来源按各自许可证获取，图片换成用户自己的；每步用 `check:similarity` 把关。
+0. 进行中：界面 1:1 视觉复刻（用户已选定先做，见下方“界面复刻”）。外观对照原版实际运行效果，组件和 CSS 自己写；每步用 `check:similarity` 把关。
 1. P1：历史搜索片段 / 定位 / 分页、项目分组和手动排序、多目录授权、恢复中断工具的完整矩阵；长前缀分批压缩、严格缓存计量和网络重试预算。
 2. P1/P2：完整图片解码 / 像素限制、PDF/Office 提取、资源票据 / 清理 / 工具产物登记；旧格式导入仍先做只读预检，核对数量 / hash，不读取真实密钥、不改 `.hanako`。
 3. P2：目录移动 / 回收 / 二进制复制、文件差异与保留期、编辑草稿持久化、完整偏好和五语言、助手头像 / 用户资料 / 排序 / 主助手入口。
 4. P3：后台记忆提取 / 编译、自动化 / 持续任务 / 多助手、Skills / MCP；之后插件、媒体、渠道、多端。
 5. 逐项补真实平台验收，最后才讨论新安装包、许可证 / 签名和发布。
 
+## 界面复刻
+
+用户决定（2026-09-27）：字体按 OFL 从官方获取（已完成）；图片先用自己画的占位图（圆形底色加首字的头像、简洁图标、程序生成的纸纹理），以后换成用户的图；原版有而我们未做的功能入口（频道、社交平台、助手活动、任务计划、Skills、项目技能、笺、设置里大部分分类）照原位显示但置灰、标“即将提供”；主题先做暖纸 / 青夜 / 跟随系统。原版中带角色名的主题和人设（hanako、butter、ming 等）换成我们自己的名字和图，不用 Hanako 品牌。
+
+步骤：
+
+1. 基础（进行中）：字体已完成。剩余：用我们自己的变量名定义三套主题变量；自画线条图标（约 40 个，细描边、圆头）；程序生成纸纹理；占位头像。
+2. 主界面：顶栏、左栏、欢迎页、输入卡、消息样式、右侧书桌面板。把现有功能放到原版对应位置：用量进设置 → 供应商，记忆由欢迎页“记忆”入口进入，多标签编辑器对应右侧预览 / 编辑区。
+3. 引导 6 步，对应现有首次设置。
+4. 设置弹层：左侧 17 类加搜索，已有功能的页面先做，其余置灰。
+
+每一步：与原版同尺寸（1280×800）并排截图给用户看；`check:similarity`；`test:desktop`（界面文字变了就同步改测试，不降低覆盖）；单独提交。
+
+原版实测数值（事实值，变量名由我们自己起）：
+
+- 暖纸：背景 `#F8F4ED`，卡片 `#FCFAF5`，侧栏 `#F4F0EA`；正文 `#3B3D3F`，次要 `#6B6F73`，弱化 `#8E9196`，助手正文墨色 `#2B3A4E`；强调 / 链接 `#537D96`（悬停 `#456A80`，浅底 8% 透明度）；绿 `#7BAE7F`，珊瑚 `#EC8F8D`，危险 `#8B3A3A`；边框 `rgba(122,96,88,0.18)`；笺卡 `#FAF5E9`；用户气泡 `rgba(0,0,0,0.043)`。
+- 青夜：背景 `#3B4A54`，卡片 `#445560`，侧栏 `#34424B`；正文 `#E1EAF0`，次要 `#B7C5CE`，弱化 `#A3B5C0`，助手正文 `#DCE6EC`；强调 `#C99AAF`，链接 `#B9E2FF`；绿 `#8CC790`，危险 `#C77070`；边框 `rgba(170,121,141,0.16)`。
+- 字体：界面 Inter 15px、行高 1.7；助手正文 / 表格 / 引用 EB Garamond + Noto Serif SC 15px、行高 1.75；代码 JetBrains Mono（代码块 12.3px，行内 0.85em）；编辑器 PT Serif。字号 0.62 / 0.7 / 0.78 / 0.82 / 0.9 / 1rem；圆角 3 / 5 / 8 / 12 / 16px；间距 2–40px；动效 0.1 / 0.15 / 0.25s。
+- 布局：顶栏 44px（左：侧栏开关；中：“聊天 / 频道”分段；右：书桌开关和窗口按钮）；左栏 240px；对话列 720px，输入卡 740px（圆角 16，内边距 16 / 16 / 8）；右侧书桌 260px；设置是主窗口里的大弹层。
+- 消息：用户气泡靠右（圆角 8 / 8 / 6 / 8，内边距 8×16）；助手 32px 圆头像、名称 12.5px 弱化色、“› 思考完成”斜体可展开；代码块浅底、细边框、圆角 8，右上角换行 / 复制；表头浅底；引用斜体加左边线；消息下方是时间和操作按钮。
+- 侧栏：“对话”标题 13px、600、字距 0.08em、弱化色；社交平台卡片（半透明白底、圆角 5、细边框）；助手活动 / 任务计划 / Skills；搜索框；“置顶 / 今天”分组；会话项 224×47（选中为浅强调底、标题强调色）。
+- 引导窗口约 545×774：语言（5 种）/ 名字与记忆 / AI 供应商（约 20 家加自定义：名称、API 地址、API 类型、Key、测试连接）/ 对话模型（已添加列表、添加模型、小工具 / 大工具模型）/ 工作台（默认桌面 OH-WorkSpace 或选文件夹）/ 准备就绪（5 张功能卡）。
+- 设置 17 类：助手、我、界面、通用、浏览器、工作台、技能、连接器、社交平台、供应商、多媒体、分享、访问与设备、插件、实验、安全、关于。界面页有 12 套主题卡、衬线 / 非衬线、正文字号 -2…+2、聊天宽度 640 / 720 / 800 / 不限制。
+
+原版参考运行（仅本机，不提交；做完复刻再删除）：
+
+- 临时副本 `F:\cagent-reference-run\app`：从 `F:\CAgent` 只读复制（排除 .git、.cache、.codex、.github、dist*、tests、docs、vendor、legal，再补 `dist-sandbox`，其中 `hana-win-sandbox.exe` 是启动后端必需的）。临时数据 `F:\cagent-reference-run\cagent-ref-home`（引导已走完，1 个假模型会话），浏览器数据 `%APPDATA%\Cagent-ref-home`，临时工作台 `F:\cagent-reference-run\workspace`。
+- 启动：后台运行 `node .artifacts/reference/driver.mjs`（本机假模型服务加 Playwright 非打包启动，控制端口 127.0.0.1:9341）；命令用 `.artifacts/reference/send.ps1` 或直接 POST JSON：windows / offscreen / resize / shot / aria / text / click / fill / press / eval / main / close。探针脚本在 `.artifacts/reference/js/`。已采集的截图 `ref-*.png` 和数值 `ref-vars-*.json`、`ref-probe-*.json` 在同一目录。
+- 禁止：运行打包版（`dist/win-unpacked` 或已安装的 HanaAgent 会自动更新，可能覆盖旧应用）；用 `scripts/launch.js`（会把数据目录改成 `~/.hanako-dev`）；在 `F:\CAgent` 内运行任何东西。工作台那一步先用 main 命令替换 `dialog.showOpenDialog`，否则会在真实桌面建 `OH-WorkSpace`；新窗口出现后立即 offscreen。
+
 ## 运行
 
 - Node 24.x；`pnpm run verify`、`pnpm run test:desktop`、`pnpm run check:similarity`。
 - 源码已用 Prettier 统一格式（`.prettierrc.json`：单引号、行宽 100）；提交前运行 `pnpm run format`，`verify` 第一步是 `format:check`。生成的 JSON、Markdown、YAML 和 `.codex/` 不参与格式化。
 - 首次依赖准备：`pnpm install --frozen-lockfile`、`pnpm run setup:desktop`。
+- 重新获取字体：`NODE_USE_ENV_PROXY=1 node scripts/fetch-fonts.mjs`（本机经 `127.0.0.1:7900` 代理上网，Node 需要这个变量才走 `HTTPS_PROXY`）。
 - pnpm 可用路径：`C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd`。
 - 新数据默认 `.cagent`；临时开发使用显式 `CAGENT_HOME`。本轮测试全部用独立临时目录，已清理；没有安装新预览或覆盖旧应用。
 - 修改进度后运行 `node scripts/update-status.mjs`，不要只手改生成 JSON；验证事实在 `docs/VALIDATION.md`。
