@@ -145,3 +145,13 @@
 - `src/ui/fonts/fonts.css` 由脚本生成并经 Prettier 排版；Vite 构建输出 115 个 woff2。`build.assetsInlineLimit` 设为 0，因为页面 CSP 只允许同源字体，不能内嵌成 `data:` 地址。
 - 实际加载：临时数据目录启动本应用，在 CSP 下逐个加载 Inter 400 / 600、EB Garamond 常规 / 斜体、PT Serif、Noto Serif SC 400 / 700、JetBrains Mono，全部为 loaded，控制台没有 CSP 或字体错误。
 - 相似度检查发现脚本中的标准 Chrome User-Agent 与原工作区一个文件的同类字符串有 16 个单位相同。这是公共约定，登记为第一条已审核例外（最大 23 个单位，即整串）。
+
+## 界面复刻第 1 步：基础 · 2026-09-27
+
+- 用独立命名的 appearance.css 变量接入暖纸 / 青夜；跟随系统订阅颜色模式变化，手选主题不受系统切换影响，偏好重载后保留。Inter 15px / 1.7、阅读 EB Garamond + Noto Serif SC、代码 JetBrains Mono、编辑器 PT Serif 均来自已登记的官方字体。
+- 自行绘制 45 个 SVG 线条图标和圆底首字头像；scripts/draw-paper.mjs 用固定种子生成 680 个细点、42 条短纤维的纹理，无输入图片。没有取用原版图片或字体。
+- pnpm run format、pnpm run verify 全过：53 项自动化，0 失败 / 0 跳过；独立性违规 0，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0（仍仅 1 条既有 UA 公共约定例外）。
+- pnpm run test:desktop 三组均过：原有 22 项链路检查全部保留，新增 7 项外观检查（主题 / 动态系统切换 / 手动覆盖及重载 / 五字体 CSP 加载 / 无交互遮挡的纹理 / 头像 / 截图尺寸），页面异常与控制台错误为 0。
+- 已查看 .artifacts/ui-replica/foundation-compare.png（左原版 / 右独立版，各 1280×800）和 foundation-warm.png。这一步只验基础，不把旧布局记作已完成复刻。
+- 参考仅从交接指定临时副本启动。Windows 离屏窗口原生边框导致视口偏移，采用运行时 Emulation.setDeviceMetricsOverride 固定 1280×800、deviceScaleFactor=1；原版与本版输出 PNG 均核对为 1280×800。截图合成首次因尺寸不符主动失败（Expected two 1280 x 800 screenshots.），校准后通过；没有拉伸图片充数。
+- Start-Process 后台命令曾被自动审批拦截，改为终端直接运行已审核的 driver.mjs 成功；未安装或启动打包原版，测试使用显式 CAGENT_HOME。

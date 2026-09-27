@@ -300,6 +300,18 @@ mark(
   '新增字体类别、显示时区、编辑器字号 / 行高、模型超时 / 工具轮数和默认关闭的自动压缩；五语言、宽度 / 边距和其余实验项未实现，偏好控件尚未作完整桌面专项。',
 );
 
+mark(
+  'CA-PREF-001',
+  'partial',
+  [
+    'src/ui/appearance.css',
+    'src/ui/Marks.tsx',
+    'scripts/draw-paper.mjs',
+    'tests/desktop-appearance.mjs',
+  ],
+  '暖纸 / 青夜 / 跟随系统、五个官方字体、自绘图标、纸纹理和首字头像已有 Windows 桌面证据；其余主题、宽度 / 边距及完整设置复刻仍待完成。',
+);
+
 const records = features.map((f) => ({
   id: f.id,
   title: f.title,

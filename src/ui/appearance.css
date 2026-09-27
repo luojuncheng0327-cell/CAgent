@@ -1,0 +1,107 @@
+/* Visual measurements from the reference, expressed with our own tokens. */
+:root {
+  --face-interface: 'Inter', 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  --face-reading: 'EB Garamond', 'Noto Serif SC', serif;
+  --face-editor: 'PT Serif', 'Noto Serif SC', serif;
+  --face-code: 'JetBrains Mono', Consolas, monospace;
+  --text-base-size: 15px;
+  --size-tiny: 0.62rem;
+  --size-caption: 0.7rem;
+  --size-control: 0.78rem;
+  --size-label: 0.82rem;
+  --size-detail: 0.9rem;
+  --curve-mark: 3px;
+  --curve-control: 5px;
+  --curve-card: 8px;
+  --curve-panel: 12px;
+  --curve-compose: 16px;
+  --space-hair: 2px;
+  --space-narrow: 4px;
+  --space-control: 8px;
+  --space-row: 12px;
+  --space-card: 16px;
+  --space-section: 24px;
+  --space-wide: 32px;
+  --space-air: 40px;
+  --motion-quick: 0.1s;
+  --motion-control: 0.15s;
+  --motion-panel: 0.25s;
+  --canvas-tone: #f8f4ed;
+  --sheet-tone: #fcfaf5;
+  --ledge-tone: #f4f0ea;
+  --text-strong: #3b3d3f;
+  --text-soft: #6b6f73;
+  --text-faint: #8e9196;
+  --text-reply: #2b3a4e;
+  --tint-main: #537d96;
+  --tint-hover: #456a80;
+  --tint-link: #537d96;
+  --tint-wash: rgb(83 125 150 / 8%);
+  --tone-positive: #7bae7f;
+  --tone-coral: #ec8f8d;
+  --tone-danger: #8b3a3a;
+  --hairline: rgb(122 96 88 / 18%);
+  --note-tone: #faf5e9;
+  --bubble-tone: rgb(0 0 0 / 4.3%);
+  --popup-shadow: 0 12px 40px rgb(59 61 63 / 12%);
+  --grain-strength: 0.24;
+  font: 15px / 1.7 var(--face-interface);
+  font-synthesis: none;
+  color: var(--text-strong);
+  background: var(--canvas-tone);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --canvas-tone: #3b4a54;
+  --sheet-tone: #445560;
+  --ledge-tone: #34424b;
+  --text-strong: #e1eaf0;
+  --text-soft: #b7c5ce;
+  --text-faint: #a3b5c0;
+  --text-reply: #dce6ec;
+  --tint-main: #c99aaf;
+  --tint-hover: #d5abc0;
+  --tint-link: #b9e2ff;
+  --tint-wash: rgb(201 154 175 / 8%);
+  --tone-positive: #8cc790;
+  --tone-coral: #ec8f8d;
+  --tone-danger: #c77070;
+  --hairline: rgb(170 121 141 / 16%);
+  --note-tone: #495963;
+  --bubble-tone: rgb(0 0 0 / 4.3%);
+  --popup-shadow: 0 12px 40px rgb(0 0 0 / 20%);
+  --grain-strength: 0.12;
+  color-scheme: dark;
+}
+
+.app-shell::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: url('./assets/paper-fibers.svg') repeat;
+  opacity: var(--grain-strength);
+}
+
+.initial-portrait {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: var(--portrait-size, 32px);
+  height: var(--portrait-size, 32px);
+  border-radius: 50%;
+  background: var(--portrait-fill);
+  color: #fcfaf5;
+  font: 500 calc(var(--portrait-size, 32px) * 0.44) / 1 var(--face-reading);
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-quick: 0s;
+    --motion-control: 0s;
+    --motion-panel: 0s;
+  }
+}

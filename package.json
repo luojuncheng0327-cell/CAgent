@@ -24,7 +24,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
-    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-p1-p2.mjs"
+    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs"
   },
   "dependencies": {
     "markdown-it": "14.1.1",

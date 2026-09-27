@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
 import './fonts/fonts.css';
+import './appearance.css';
 import './style.css';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: boolean }> {

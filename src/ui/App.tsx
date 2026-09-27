@@ -10,7 +10,7 @@ import type {
   Message,
   MessagePage,
 } from '../shared/contracts.ts';
-import { Icon, Modal, Field, Markdown, download } from './components.tsx';
+import { Icon, Portrait, Modal, Field, Markdown, download } from './components.tsx';
 import { Settings, Setup } from './Settings.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { UsagePage } from './UsagePage.tsx';
@@ -267,12 +267,20 @@ export function App() {
   }, []);
   useEffect(() => {
     if (!data) return;
-    const dark =
-      data.preferences.theme === 'dark' ||
-      (data.preferences.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    document.documentElement.style.setProperty('--reading-size', data.preferences.fontSize + 'px');
-    document.documentElement.dataset.font = data.preferences.fontFamily ?? 'serif';
+    const root = document.documentElement;
+    const systemPalette = matchMedia('(prefers-color-scheme: dark)');
+    const updatePalette = () => {
+      const night =
+        data.preferences.theme === 'dark' ||
+        (data.preferences.theme === 'system' && systemPalette.matches);
+      root.dataset.theme = night ? 'dark' : 'light';
+      root.dataset.themeMode = data.preferences.theme;
+    };
+    updatePalette();
+    root.style.setProperty('--text-base-size', data.preferences.fontSize + 'px');
+    root.dataset.font = data.preferences.fontFamily ?? 'serif';
+    systemPalette.addEventListener('change', updatePalette);
+    return () => systemPalette.removeEventListener('change', updatePalette);
   }, [data?.preferences]);
   useEffect(() => {
     if (!sessionId || !detail || detail.session.id !== sessionId) return;
@@ -599,7 +607,7 @@ export function App() {
         </div>
         <div className="sidebar-bottom">
           <button className="profile-button" onClick={() => setSettings(true)}>
-            <span className="avatar-small">呈</span>
+            <Portrait name="呈平安" size={27} />
             <span>
               <b>我的工作空间</b>
               <small>本机 · 呈平安</small>
@@ -799,7 +807,7 @@ export function App() {
                 )}
                 {!detail || detail.messages.length === 0 ? (
                   <div className="welcome">
-                    <div className="welcome-symbol">C</div>
+                    <Portrait name={agent?.name ?? 'CAgent'} size={96} />
                     <p className="eyebrow">属于你的工作空间</p>
                     <h1>今天，想一起做些什么？</h1>
                     <p>从一个问题、一份文档，或一个新的想法开始。</p>
@@ -859,7 +867,7 @@ export function App() {
                 {(active || live.text) && (
                   <article className="message assistant live">
                     <div className="message-heading">
-                      <span className="avatar-small">C</span>
+                      <Portrait name={agent?.name ?? 'CAgent'} />
                       <b>{agent?.name ?? 'CAgent'}</b>
                       <span className="muted">
                         {detail?.approvals.length ? '等待确认' : '正在处理'}
@@ -1209,7 +1217,7 @@ function MessageView({
   return (
     <article className={'message ' + m.role}>
       <div className="message-heading">
-        <span className="avatar-small">{m.role === 'user' ? '我' : 'C'}</span>
+        <Portrait name={m.role === 'user' ? '我' : agentName} />
         <b>{m.role === 'user' ? '你' : agentName}</b>
         <time>
           {new Date(m.at).toLocaleTimeString('zh-CN', {

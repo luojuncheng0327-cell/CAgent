@@ -1,34 +1,3 @@
-/* Independently authored interface. Warm paper, quiet rails, readable conversation. */
-:root {
-  font-family: Inter, 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
-  color: #39382f;
-  background: #f8f5ee;
-  font-synthesis: none;
-  --paper: #f8f5ee;
-  --rail: #efece4;
-  --card: #fffdf8;
-  --ink: #39382f;
-  --muted: #817f73;
-  --line: #e2dfd4;
-  --accent: #587883;
-  --accent-soft: #e3ebeb;
-  --reading-size: 15px;
-  --shadow: 0 16px 60px #302d2420;
-  color-scheme: light;
-}
-:root[data-theme='dark'] {
-  --paper: #252a2b;
-  --rail: #202526;
-  --card: #2d3334;
-  --ink: #e7e4db;
-  --muted: #aaa99f;
-  --line: #414849;
-  --accent: #a2c0c6;
-  --accent-soft: #344c50;
-  color: var(--ink);
-  background: var(--paper);
-  color-scheme: dark;
-}
 * {
   box-sizing: border-box;
 }
@@ -47,10 +16,10 @@ button {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 7px;
-  background: var(--card);
-  color: var(--ink);
+  background: var(--sheet-tone);
+  color: var(--text-strong);
   padding: 8px 12px;
   line-height: 1.35;
   transition:
@@ -58,8 +27,8 @@ button {
     border-color 0.12s;
 }
 button:hover {
-  background: var(--rail);
-  border-color: var(--muted);
+  background: var(--ledge-tone);
+  border-color: var(--text-soft);
 }
 button:disabled {
   opacity: 0.45;
@@ -70,17 +39,17 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--tint-main);
   outline-offset: 3px;
 }
 input,
 select,
 textarea {
   width: 100%;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--sheet-tone);
+  border: 1px solid var(--hairline);
   border-radius: 6px;
-  color: var(--ink);
+  color: var(--text-strong);
   padding: 10px 12px;
   line-height: 1.5;
 }
@@ -94,7 +63,7 @@ textarea {
 input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: var(--accent);
+  accent-color: var(--tint-main);
   padding: 0;
 }
 h1,
@@ -116,18 +85,18 @@ h3 {
   font-weight: 600;
 }
 small {
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 12px;
   line-height: 1.6;
 }
 pre,
 code {
-  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--face-code);
 }
 pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  background: var(--rail);
+  background: var(--ledge-tone);
   padding: 12px;
   border-radius: 6px;
   font-size: 12px;
@@ -135,27 +104,27 @@ pre {
   overflow: auto;
 }
 a {
-  color: var(--accent);
+  color: var(--tint-main);
   text-underline-offset: 3px;
 }
 fieldset {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 7px;
   margin: 16px 0;
   padding: 12px;
 }
 legend {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--card);
+  background: var(--tint-main);
+  border-color: var(--tint-main);
+  color: var(--sheet-tone);
 }
 .primary:hover {
   filter: brightness(0.93);
-  background: var(--accent);
+  background: var(--tint-main);
 }
 .full {
   width: 100%;
@@ -168,7 +137,7 @@ legend {
   border: 0;
   background: transparent;
   padding: 5px;
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 12px;
 }
 .icon-button {
@@ -179,12 +148,12 @@ legend {
   flex-shrink: 0;
 }
 .muted {
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 13px;
   line-height: 1.7;
 }
 .danger {
-  color: #b45644;
+  color: var(--tone-danger);
 }
 .grow {
   flex: 1;
@@ -192,7 +161,7 @@ legend {
 .eyebrow {
   font-size: 11px;
   letter-spacing: 0.13em;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .brand-mark {
   width: 51px;
@@ -201,12 +170,12 @@ legend {
   border-radius: 14px;
   display: grid;
   place-items: center;
-  color: var(--accent);
+  color: var(--tint-main);
   font:
     32px Georgia,
     serif;
-  background: var(--card);
-  box-shadow: inset 0 0 0 4px var(--paper);
+  background: var(--sheet-tone);
+  box-shadow: inset 0 0 0 4px var(--canvas-tone);
 }
 .brand-mark.small {
   width: 29px;
@@ -221,8 +190,8 @@ legend {
   min-width: 27px;
   display: inline-grid;
   place-items: center;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--tint-wash);
+  color: var(--tint-main);
   border-radius: 8px;
   font-size: 12px;
 }
@@ -230,13 +199,13 @@ legend {
   height: 100dvh;
   display: flex;
   overflow: hidden;
-  background: var(--paper);
+  background: var(--canvas-tone);
 }
 .sidebar {
   width: 230px;
   min-width: 230px;
-  background: var(--rail);
-  border-right: 1px solid var(--line);
+  background: var(--ledge-tone);
+  border-right: 1px solid var(--hairline);
   display: flex;
   flex-direction: column;
   padding: 0 15px;
@@ -257,13 +226,13 @@ legend {
 }
 .new-chat {
   justify-content: flex-start;
-  background: var(--card);
+  background: var(--sheet-tone);
   height: 41px;
   flex-shrink: 0;
 }
 .new-chat > span {
   margin-left: auto;
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 10px;
 }
 .main-nav {
@@ -279,16 +248,16 @@ legend {
   font-size: 13px;
 }
 .main-nav button.selected {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--tint-wash);
+  color: var(--tint-main);
 }
 .search-box {
   display: flex;
   align-items: center;
   padding: 0 8px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 6px;
-  color: var(--muted);
+  color: var(--text-soft);
   gap: 5px;
 }
 .search-box input {
@@ -303,7 +272,7 @@ legend {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 11px;
   letter-spacing: 0.03em;
   margin: 19px 3px 7px;
@@ -330,17 +299,17 @@ legend {
   text-overflow: ellipsis;
 }
 .session-item.selected {
-  background: var(--card);
-  border-color: var(--line);
+  background: var(--sheet-tone);
+  border-color: var(--hairline);
 }
 .empty-list {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-soft);
   text-align: center;
   margin-top: 24px;
 }
 .sidebar-bottom {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hairline);
   padding: 13px 0;
   flex-shrink: 0;
 }
@@ -377,7 +346,7 @@ legend {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--hairline);
   padding: 0 24px;
   -webkit-app-region: drag;
 }
@@ -387,10 +356,10 @@ legend {
   gap: 10px;
   font-size: 12px;
   min-width: 0;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .breadcrumb span:last-child {
-  color: var(--ink);
+  color: var(--text-strong);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -434,11 +403,11 @@ legend {
   right: 0;
   width: 160px;
   display: grid;
-  background: var(--card);
-  border: 1px solid var(--line);
+  background: var(--sheet-tone);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   padding: 6px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--popup-shadow);
 }
 .session-menu button {
   justify-content: flex-start;
@@ -482,13 +451,13 @@ legend {
   font:
     40px Georgia,
     serif;
-  color: var(--accent);
+  color: var(--tint-main);
   border-radius: 50%;
-  background: var(--accent-soft);
+  background: var(--tint-wash);
   margin-bottom: 25px;
 }
 .welcome h1 {
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', SimSun, Georgia, serif;
+  font-family: var(--face-reading);
   font-weight: 500;
   font-size: 31px;
   margin: 5px 0 15px;
@@ -496,7 +465,7 @@ legend {
 }
 .welcome > p:not(.eyebrow) {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--text-soft);
   margin-bottom: 31px;
 }
 .suggestions {
@@ -528,11 +497,11 @@ legend {
 .message-heading time,
 .message-heading > .muted {
   font-size: 10px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .message.user {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: 1px solid var(--hairline);
+  background: var(--sheet-tone);
   padding: 17px 20px 10px;
   border-radius: 12px;
 }
@@ -540,9 +509,9 @@ legend {
   padding: 10px 4px;
 }
 .prose {
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', SimSun, Georgia, serif;
-  font-size: var(--reading-size);
-  line-height: 1.9;
+  font-family: var(--face-reading);
+  font-size: var(--text-base-size);
+  line-height: 1.75;
   overflow-wrap: anywhere;
 }
 .prose p {
@@ -557,7 +526,7 @@ legend {
 }
 .prose code {
   font-size: 0.87em;
-  background: var(--rail);
+  background: var(--ledge-tone);
   padding: 2px 4px;
   border-radius: 3px;
 }
@@ -578,14 +547,14 @@ legend {
 }
 .prose td,
 .prose th {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   padding: 7px 12px;
 }
 .prose blockquote {
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--tint-main);
   padding-left: 16px;
   margin: 14px 0;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .message-actions {
   display: flex;
@@ -602,13 +571,13 @@ legend {
   background: transparent;
   border: 0;
   padding: 4px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .thinking {
-  border-left: 2px solid var(--line);
+  border-left: 2px solid var(--hairline);
   padding: 8px 14px;
   margin-bottom: 16px;
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 12px;
 }
 .thinking summary {
@@ -622,18 +591,18 @@ legend {
 .thinking-dots {
   font-size: 7px;
   letter-spacing: 4px;
-  color: var(--accent);
+  color: var(--tint-main);
   animation: breath 1.6s infinite;
 }
 .tool-result,
 .tool-call {
   font-size: 11px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   padding: 9px 13px;
   border-radius: 7px;
-  background: var(--card);
+  background: var(--sheet-tone);
   margin: 9px 0 16px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .tool-result summary,
 .tool-call summary {
@@ -653,9 +622,9 @@ legend {
   max-width: 850px;
 }
 .composer {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 13px;
-  background: var(--card);
+  background: var(--sheet-tone);
   box-shadow: 0 3px 14px #453e2705;
   padding: 14px 15px 10px;
 }
@@ -696,25 +665,25 @@ legend {
   background: transparent;
   border-color: transparent;
   padding: 3px 4px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .send-button {
   border-radius: 50%;
   width: 34px;
   height: 34px;
   padding: 0;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--card);
+  background: var(--tint-main);
+  border-color: var(--tint-main);
+  color: var(--sheet-tone);
   flex-shrink: 0;
 }
 .send-button:hover {
-  background: var(--accent);
+  background: var(--tint-main);
 }
 .send-button.stop {
-  background: var(--rail);
-  color: var(--ink);
-  border-color: var(--line);
+  background: var(--ledge-tone);
+  color: var(--text-strong);
+  border-color: var(--hairline);
 }
 .composer-caption {
   display: flex;
@@ -722,13 +691,13 @@ legend {
   align-items: center;
   margin-top: 8px;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--text-soft);
   gap: 8px;
 }
 .composer-caption button {
   border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 10px;
   padding: 3px 0;
   max-width: 50%;
@@ -736,7 +705,7 @@ legend {
 }
 .approval-card {
   border: 1px solid #b6a17b;
-  background: var(--card);
+  background: var(--sheet-tone);
   border-radius: 11px;
   padding: 20px;
   margin-bottom: 22px;
@@ -771,26 +740,26 @@ legend {
   height: 5px;
   width: 5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--tint-main);
   margin-left: auto;
   animation: breath 1.4s infinite;
 }
 .workspace-panel {
   width: 290px;
   min-width: 240px;
-  border-left: 1px solid var(--line);
+  border-left: 1px solid var(--hairline);
   padding: 23px 17px;
   overflow: auto;
-  background: color-mix(in srgb, var(--rail) 40%, var(--paper));
+  background: color-mix(in srgb, var(--ledge-tone) 40%, var(--canvas-tone));
 }
 .workspace-panel h3 {
   margin: 0;
 }
 .workspace-path {
   font-size: 10px;
-  color: var(--muted);
+  color: var(--text-soft);
   word-break: break-all;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--hairline);
   padding-bottom: 17px;
   line-height: 1.7;
 }
@@ -826,7 +795,7 @@ legend {
 .panel-empty {
   padding: 35px 5px;
   text-align: center;
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 12px;
   line-height: 1.7;
 }
@@ -838,15 +807,15 @@ legend {
   font-size: 12px;
 }
 .modal {
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink);
+  border: 1px solid var(--hairline);
+  background: var(--canvas-tone);
+  color: var(--text-strong);
   border-radius: 13px;
   padding: 0;
   width: min(560px, calc(100vw - 40px));
   max-height: 90dvh;
   overflow: auto;
-  box-shadow: var(--shadow);
+  box-shadow: var(--popup-shadow);
 }
 .modal.wide {
   width: min(1010px, calc(100vw - 60px));
@@ -860,10 +829,10 @@ legend {
   align-items: center;
   justify-content: space-between;
   padding: 18px 25px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--hairline);
   position: sticky;
   top: 0;
-  background: var(--paper);
+  background: var(--canvas-tone);
   z-index: 4;
 }
 .modal-header h2 {
@@ -878,8 +847,8 @@ legend {
 .settings-layout > nav {
   width: 165px;
   min-width: 165px;
-  background: var(--rail);
-  border-right: 1px solid var(--line);
+  background: var(--ledge-tone);
+  border-right: 1px solid var(--hairline);
   padding: 20px 12px;
   display: flex;
   flex-direction: column;
@@ -893,8 +862,8 @@ legend {
   font-size: 12px;
 }
 .settings-layout > nav button.selected {
-  background: var(--card);
-  color: var(--accent);
+  background: var(--sheet-tone);
+  color: var(--tint-main);
 }
 .settings-body {
   flex: 1;
@@ -915,7 +884,7 @@ legend {
 .section-heading p {
   margin: 0;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--text-soft);
   line-height: 1.6;
 }
 .section-heading button {
@@ -923,9 +892,9 @@ legend {
   flex-shrink: 0;
 }
 .settings-card {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
-  background: var(--card);
+  background: var(--sheet-tone);
   margin: 14px 0;
   overflow: hidden;
 }
@@ -938,7 +907,7 @@ legend {
   font-size: 13px;
 }
 .setting-row:not(:last-child) {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--hairline);
 }
 .setting-row b {
   font-weight: 550;
@@ -956,13 +925,13 @@ legend {
   padding: 0 18px 14px;
   font-size: 11px;
   word-break: break-all;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .model-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hairline);
   padding: 12px 18px;
 }
 .model-row > div {
@@ -1044,18 +1013,18 @@ legend {
   font:
     31px Georgia,
     serif;
-  color: var(--accent);
+  color: var(--tint-main);
   margin-bottom: 10px;
 }
 .about p {
   font-size: 13px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .version {
   font:
     11px Consolas,
     monospace;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .about .settings-card {
   margin-top: 40px;
@@ -1065,8 +1034,8 @@ legend {
   position: relative;
   cursor: pointer;
   padding: 9px 12px;
-  background: var(--rail);
-  border: 1px solid var(--line);
+  background: var(--ledge-tone);
+  border: 1px solid var(--hairline);
   border-radius: 6px;
   font-size: 12px;
 }
@@ -1078,7 +1047,7 @@ legend {
 }
 .import-plan {
   padding: 17px;
-  border: 1px solid var(--accent);
+  border: 1px solid var(--tint-main);
   border-radius: 9px;
   font-size: 12px;
 }
@@ -1097,9 +1066,9 @@ legend {
   width: 155px;
 }
 .memory-composer {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 10px;
-  background: var(--card);
+  background: var(--sheet-tone);
   padding: 18px;
   margin: 27px 0 14px;
 }
@@ -1118,13 +1087,13 @@ legend {
 .memory-card {
   position: relative;
   padding: 20px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 9px;
-  background: var(--card);
+  background: var(--sheet-tone);
   margin: 12px 0;
 }
 .memory-card > svg {
-  color: var(--accent);
+  color: var(--tint-main);
   margin-bottom: 9px;
 }
 .memory-card > .text-button {
@@ -1135,9 +1104,7 @@ legend {
   padding: 20px;
 }
 .file-editor textarea {
-  font:
-    13px/1.7 Consolas,
-    monospace;
+  font: 13px/1.7 var(--face-editor);
   min-height: 52vh;
   resize: vertical;
 }
@@ -1146,7 +1113,7 @@ legend {
   display: grid;
   place-items: center;
   padding: 35px;
-  background: var(--paper);
+  background: var(--canvas-tone);
 }
 .setup-card {
   width: min(480px, 100%);
@@ -1163,7 +1130,7 @@ legend {
 .setup-card > p {
   font-size: 13px;
   line-height: 1.8;
-  color: var(--muted);
+  color: var(--text-soft);
   margin-bottom: 30px;
 }
 .setup-card form {
@@ -1189,7 +1156,7 @@ legend {
   flex-direction: column;
   gap: 15px;
   font-size: 13px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .fatal {
   padding: 80px;
@@ -1202,9 +1169,9 @@ legend {
   transform: translate(-50%, 15px);
   max-width: min(640px, 90vw);
   padding: 12px 16px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--hairline);
+  background: var(--sheet-tone);
+  box-shadow: var(--popup-shadow);
   border-radius: 9px;
   font-size: 12px;
   line-height: 1.6;
@@ -1224,7 +1191,7 @@ legend {
   border: 0;
   padding: 2px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 @keyframes breath {
   50% {
@@ -1306,8 +1273,8 @@ legend {
     top: 54px;
     bottom: 0;
     z-index: 4;
-    box-shadow: var(--shadow);
-    background: var(--paper);
+    box-shadow: var(--popup-shadow);
+    background: var(--canvas-tone);
     width: 280px;
   }
   .transcript {
@@ -1340,7 +1307,7 @@ legend {
   .settings-layout > nav {
     width: 100%;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--hairline);
     flex-direction: row;
     overflow: auto;
     padding: 8px;
@@ -1420,7 +1387,7 @@ legend {
   align-items: center;
   gap: 8px;
   padding: 3px 6px 3px 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 7px;
   font-size: 11px;
   max-width: 100%;
@@ -1438,7 +1405,7 @@ legend {
   margin-top: 12px;
 }
 .attachment-card {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   padding: 10px;
   max-width: 260px;
@@ -1454,7 +1421,7 @@ legend {
   object-fit: contain;
 }
 .attachment-card small {
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .inline-error {
   font-size: 12px;
@@ -1468,11 +1435,11 @@ legend {
   font-size: 12px;
 }
 .compaction-card {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   padding: 12px 15px;
   margin-bottom: 20px;
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 12px;
 }
 .compaction-card summary {
@@ -1502,7 +1469,7 @@ legend {
 }
 .usage-filters label {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .usage-filters select {
   width: 150px;
@@ -1518,9 +1485,9 @@ legend {
 }
 .usage-totals article {
   padding: 18px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 9px;
-  background: var(--card);
+  background: var(--sheet-tone);
   display: flex;
   flex-direction: column;
   gap: 9px;
@@ -1530,7 +1497,7 @@ legend {
   font-weight: 500;
 }
 .usage-totals small {
-  color: var(--muted);
+  color: var(--text-soft);
   font-size: 11px;
 }
 .usage-table {
@@ -1545,17 +1512,17 @@ legend {
 }
 .usage-table td,
 .usage-table th {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--hairline);
   padding: 12px;
   text-align: left;
 }
 .usage-table small {
   display: block;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .watch-state {
   font-size: 10px;
-  color: var(--muted);
+  color: var(--text-soft);
 }
 .file-operations {
   display: flex;
@@ -1579,7 +1546,7 @@ legend {
 .file-tabs > div {
   display: flex;
   flex-shrink: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-radius: 6px;
 }
 .file-tabs button {
@@ -1591,11 +1558,11 @@ legend {
   padding: 8px;
 }
 .file-tabs button[aria-selected='true'] {
-  background: var(--rail);
-  color: var(--accent);
+  background: var(--ledge-tone);
+  color: var(--tint-main);
 }
 .file-history {
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   padding: 14px;
   border-radius: 8px;
   max-height: 220px;
@@ -1620,14 +1587,14 @@ legend {
   font-size: 11px;
 }
 .file-tabs button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--tint-main);
   outline-offset: -2px;
 }
 html[data-font='sans'] .prose {
-  font-family: 'Microsoft YaHei', Arial, sans-serif;
+  font-family: var(--face-interface);
 }
 html[data-font='mono'] .prose {
-  font-family: Consolas, 'Microsoft YaHei', monospace;
+  font-family: var(--face-code);
 }
 @media (max-width: 760px) {
   .usage-page {
@@ -1642,7 +1609,7 @@ html[data-font='mono'] .prose {
 }
 .branch-origin {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--text-soft);
   padding: 10px 0;
   margin-bottom: 14px;
 }

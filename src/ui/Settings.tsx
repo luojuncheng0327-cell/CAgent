@@ -812,7 +812,7 @@ function Appearance({
           >
             <option value="system">跟随系统</option>
             <option value="light">暖纸</option>
-            <option value="dark">夜色</option>
+            <option value="dark">青夜</option>
           </select>
         </div>
         <div className="setting-row">

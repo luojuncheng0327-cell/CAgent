@@ -1,6 +1,6 @@
 # CAgent 独立重写交接
 
-最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，新增词元级相似度检查（已并入 verify）；界面 1:1 复刻进行中：原版参考已采集，界面字体已打包，下一步是设计变量 / 图标 / 纹理。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
+最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，新增词元级相似度检查（已并入 verify）；界面 1:1 复刻进行中：第 1 步基础已完成并通过桌面验收，下一步为第 2 步主界面。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
 
 ## 用户边界（已授权，无需重问）
 
@@ -49,7 +49,7 @@
 
 步骤：
 
-1. 基础（进行中）：字体已完成。剩余：用我们自己的变量名定义三套主题变量；自画线条图标（约 40 个，细描边、圆头）；程序生成纸纹理；占位头像。
+1. 基础（已完成）：官方字体接入、暖纸 / 青夜 / 跟随系统变量、45 个自绘线条图标、固定种子纸纹理、圆底首字头像。三组桌面检查和 verify 全过；并排证据 .artifacts/ui-replica/foundation-compare.png。
 2. 主界面：顶栏、左栏、欢迎页、输入卡、消息样式、右侧书桌面板。把现有功能放到原版对应位置：用量进设置 → 供应商，记忆由欢迎页“记忆”入口进入，多标签编辑器对应右侧预览 / 编辑区。
 3. 引导 6 步，对应现有首次设置。
 4. 设置弹层：左侧 17 类加搜索，已有功能的页面先做，其余置灰。
@@ -82,3 +82,8 @@
 - pnpm 可用路径：`C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd`。
 - 新数据默认 `.cagent`；临时开发使用显式 `CAGENT_HOME`。本轮测试全部用独立临时目录，已清理；没有安装新预览或覆盖旧应用。
 - 修改进度后运行 `node scripts/update-status.mjs`，不要只手改生成 JSON；验证事实在 `docs/VALIDATION.md`。
+
+### 本轮基础验收补充
+
+- 新增 tests/desktop-appearance.mjs，已并入 test:desktop；确认系统主题实时更新、手动主题覆盖、偏好重载、5 字体 loaded、纸纹理无交互遮挡和 1280×800 截图。
+- Windows 离屏窗口原生边框会使参考视口差几个像素：当前 driver 已添加 --force-device-scale-factor=1，参考进程运行时用 webContents.debugger 的 Emulation.setDeviceMetricsOverride 将视口固定 1280×800 / deviceScaleFactor=1。不要拉伸截图冒充同尺寸。
