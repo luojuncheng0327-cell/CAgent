@@ -1,6 +1,6 @@
 # CAgent 独立重写交接
 
-最新状态：2026-09-27，P1/P2 延续批次已完成本机验收。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
+最新状态：2026-09-27，P1/P2 延续批次已完成本机验收，并新增词元级相似度检查。主工作目录为 `F:\CAgent-independent`，现有分支 `codex/independent-rewrite`；不是旧 `F:\CAgent`。
 
 ## 用户边界（已授权，无需重问）
 
@@ -17,10 +17,11 @@
 4. 历史 position 游标分页、损坏行隔离、完整导出 / 分支读取。编辑 / 重试创建新分支，重试复用工具结果并在该轮禁止写工具，不重复原用户消息。
 5. 手动 / 实验自动压缩保留最后两轮和完整历史，失败 / 取消 / 过期摘要不提交；自动压缩默认关闭。用量筛选、分页、已知 / 未知合计与失败计量 UI。
 6. 多标签 UTF-8 编辑、实际 watcher、外部冲突、新建文件 / 目录、文本复制 / 移动、历史恢复及恢复前留档。助手删除后显式接管、逐工具禁用、公开规则字段，字体 / 时区 / 编辑器排版和预算设置。
+7. `pnpm run check:similarity`：代码结构（名字 / 字面值抽象）、文案和 CSS 声明与原工作区逐段比对，另算文件对累计覆盖。阳性对照中改名 + 每 3–12 行插句的 6 个原文件全部判为不通过；本仓库 0 项越线（最长 65 词元，文件累计最高 24.4%，文案最长 10 单位，CSS 0）。报告在 `.artifacts/`，含原工作区片段，不提交。
 
 ## 验证和边界
 
-- `pnpm run verify`：类型、46 项本机测试、UI / Electron build、独立性检查通过。
+- `pnpm run verify`：格式、类型、52 项本机测试、UI / Electron build、独立性检查通过。相似度检查单独运行（约 13 秒），能发现复制、改名和轻度改写，大幅重构查不出，不是法律鉴定。
 - `pnpm run test:desktop`：原桌面链路和新的 `tests/desktop-p1-p2.mjs` 均通过；页面异常 0。新脚本实际操作附件、历史、分支、压缩、用量、多标签、冲突、恢复、watcher 和重启草稿。
 - 已实际查看 `.artifacts/usage-p1-p2.png`、`workspace-p1-p2.png`、`attachments-p1-p2.png`。隐藏窗口 capturePage 会抓前一帧：先 invalidate，再等两帧，之后截图。
 - 原目录 2,901 个 tracked 文件指纹一致，28 个独立应用源文件检查无违规。指纹 / import 检查不是法律鉴定。
@@ -34,6 +35,7 @@
 
 ## 下一步优先级
 
+0. 待用户决定：相似度限值（单段 80 词元、文件累计 40%、文字 16 单位、CSS 8 条）是否确认，以及是否并入 `verify`。之后在界面 1:1 复刻和下列 P1 功能之间由用户选择。
 1. P1：历史搜索片段 / 定位 / 分页、项目分组和手动排序、多目录授权、恢复中断工具的完整矩阵；长前缀分批压缩、严格缓存计量和网络重试预算。
 2. P1/P2：完整图片解码 / 像素限制、PDF/Office 提取、资源票据 / 清理 / 工具产物登记；旧格式导入仍先做只读预检，核对数量 / hash，不读取真实密钥、不改 `.hanako`。
 3. P2：目录移动 / 回收 / 二进制复制、文件差异与保留期、编辑草稿持久化、完整偏好和五语言、助手头像 / 用户资料 / 排序 / 主助手入口。
@@ -42,7 +44,7 @@
 
 ## 运行
 
-- Node 24.x；`pnpm run verify`、`pnpm run test:desktop`。
+- Node 24.x；`pnpm run verify`、`pnpm run test:desktop`、`pnpm run check:similarity`。
 - 源码已用 Prettier 统一格式（`.prettierrc.json`：单引号、行宽 100）；提交前运行 `pnpm run format`，`verify` 第一步是 `format:check`。生成的 JSON、Markdown、YAML 和 `.codex/` 不参与格式化。
 - 首次依赖准备：`pnpm install --frozen-lockfile`、`pnpm run setup:desktop`。
 - pnpm 可用路径：`C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd`。

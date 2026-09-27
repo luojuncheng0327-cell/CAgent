@@ -35,8 +35,14 @@ mark(
 mark(
   'CA-SHIP-001',
   'verified_local',
-  ['scripts/check-independent.mjs', '.artifacts/independence-check.json'],
-  '导入边界、直接依赖和整文件指纹检查不等于法律鉴定。',
+  [
+    'scripts/check-independent.mjs',
+    '.artifacts/independence-check.json',
+    'scripts/check-similarity.ts',
+    'tests/similarity.test.ts',
+    '.artifacts/similarity-report.json',
+  ],
+  '导入边界、直接依赖、整文件指纹和词元级相似度检查都不等于法律鉴定；相似度只能发现复制、改名和轻度改写，大幅重构查不出；相似度限值尚未接入 verify。',
 );
 mark(
   'CA-BOOT-001 CA-BOOT-002 CA-BOOT-003 CA-BOOT-005 CA-BOOT-009',

@@ -20,6 +20,7 @@
     "setup:desktop": "node node_modules/electron/install.js",
     "cli": "node src/cli.ts",
     "check:independent": "node scripts/check-independent.mjs",
+    "check:similarity": "node scripts/check-similarity.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent",
