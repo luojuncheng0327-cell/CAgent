@@ -54,4 +54,6 @@ pnpm run verify
 pnpm run test:desktop
 ```
 
+代码格式由 Prettier 统一：改完代码先运行 `pnpm run format`；`verify` 第一步是格式检查，排版不一致会直接失败。
+
 测试使用独立临时数据和本机模型夹具，不读取旧用户配置，不调用收费模型。`check:independent` 校验 import、依赖和原工作区 tracked 文件指纹，不是法律鉴定。完整产品发布门禁独立于这些开发检查；它会在清单仍有未完成项时保持阻止。

@@ -2,7 +2,7 @@
 
 本项目由空目录独立创建。核心执行循环、存储、模型传输、权限和 UI 由本次编写，不导入原 CAgent 改造版、其他 Agent 应用、Pi Agent SDK、OpenCode 或 Codex 应用实现。原源码的入口索引仅位于规格 / 开发检查资料中。
 
-允许的基础依赖：Node.js 标准库（含 SQLite）、React / React DOM（界面）、Electron（桌面宿主）、markdown-it（文本语法渲染）、Zod（输入校验）。构建 / 测试使用 TypeScript、Vite、esbuild、Playwright 及类型定义。第三方许可证保留在依赖中，发布时必须生成随包声明。
+允许的基础依赖：Node.js 标准库（含 SQLite）、React / React DOM（界面）、Electron（桌面宿主）、markdown-it（文本语法渲染）、Zod（输入校验）。构建 / 测试 / 格式化使用 TypeScript、Vite、esbuild、Playwright、Prettier 及类型定义。第三方许可证保留在依赖中，发布时必须生成随包声明。
 
 `private: true` 与 `UNLICENSED` 表示当前独立项目不进行 npm 发布，公开许可尚未选择；这不是移除第三方许可证。
 

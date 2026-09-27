@@ -1,0 +1,5 @@
+# JSON / Markdown / YAML 由脚本生成或由 pnpm 维护，格式以生成方为准
+*.json
+*.md
+*.yaml
+.codex/

@@ -34,7 +34,7 @@
 
 可视证据：`.artifacts/chat-desktop.png` 和 `.artifacts/settings-desktop.png`，已实际查看，无主要遮挡和裁切。截图中的模型服务是本机测试夹具，不是用户真实账号。
 
-## 首个切片的未完成范围（历史快照，最新状态见末节）
+## 首个切片的未完成范围（历史快照，最新状态见「P1/P2 延续实现」一节）
 
 完整 210 项规格尚未实现。逐项状态见 `spec/implementation-status.json` / `docs/IMPLEMENTATION-STATUS.md`：14 项有本机验证切片，53 项部分实现，141 项尚未开始；另外 1 项为旧占位功能，1 项为外部服务决策。数字不表示完整产品验收通过率。
 
@@ -75,3 +75,14 @@
 协议字段仅参考官方说明：[OpenAI Images and vision](https://developers.openai.com/api/docs/guides/images-vision)、[Anthropic Vision](https://platform.claude.com/docs/en/build-with-claude/vision)、[Gemini Image understanding](https://ai.google.dev/gemini-api/docs/image-understanding)。这些是协议资料，不是外部账号已验证的证据。
 
 最新状态由 `scripts/update-status.mjs` 生成：**22 个本机验证切片、56 个部分实现、130 个未开始、1 个 planned、1 个 external_decision**。`verified_local` 只覆盖各行证据和 remaining 所述切片。自动化 / 持续任务、多助手、后台记忆、Skills / MCP、插件、媒体、渠道、多端、旧格式只读预检和安装 / 签名更新仍需继续实现。未发布、未覆盖安装、未修改旧工作区。
+
+## 源码格式统一 · 2026-09-27
+
+新增开发依赖 Prettier 3.9.9（`.prettierrc.json`：单引号、行宽 100），格式化 `scripts/`、`spec/catalog.mjs`、`src/`、`tests/` 和 `vite.config.ts` 共 43 个文件；生成的 JSON、Markdown、YAML 和 `.codex/` 不参与。只改排版，功能和规格状态与上一节相同。
+
+不改行为的证据：
+
+- 语法树：41 个文件格式化前后的 Prettier 语法树（含注释、类型）完全一致。其余 2 处是 `Attachments.tsx`、`Workspace.tsx` 中的 ` · ` 分隔文字，换行后会被拆成两个文本节点，因此改写为 `{' · '}` 以保持编译结果不变。
+- 构建产物（格式化前后各构建一次；格式化前的重建与最初记录的哈希一致）：前端 JS 逐字节相同；`preload.cjs` 仅空白不同；`main.cjs` 除空白外只有 `Accept`、`Connection` 两个请求头键去掉多余引号，再压缩后完全相同；CSS 1,319 段中只有一段 `color-mix()` 的逗号后多了空格；`index.html` 只有换行缩进和 `<meta ... />` 写法不同。
+- `pnpm run verify`（首步新增格式检查）：类型检查、46 项自动化（0 失败、0 跳过）、构建、独立性检查（违规 0）通过。
+- `pnpm run test:desktop`：两组桌面链路共 22 项检查通过，页面异常 0。

@@ -43,6 +43,7 @@
 ## 运行
 
 - Node 24.x；`pnpm run verify`、`pnpm run test:desktop`。
+- 源码已用 Prettier 统一格式（`.prettierrc.json`：单引号、行宽 100）；提交前运行 `pnpm run format`，`verify` 第一步是 `format:check`。生成的 JSON、Markdown、YAML 和 `.codex/` 不参与格式化。
 - 首次依赖准备：`pnpm install --frozen-lockfile`、`pnpm run setup:desktop`。
 - pnpm 可用路径：`C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd`。
 - 新数据默认 `.cagent`；临时开发使用显式 `CAGENT_HOME`。本轮测试全部用独立临时目录，已清理；没有安装新预览或覆盖旧应用。
