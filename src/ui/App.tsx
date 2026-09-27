@@ -15,6 +15,24 @@ import { Settings, Setup } from './Settings.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
 import { Workspace, hasUnsavedFiles, discardFileDrafts } from './Workspace.tsx';
+import { ChoiceMenu } from './ChoiceMenu.tsx';
+
+const reasoningNames: Record<string, string> = {
+  off: '关闭',
+  low: '较低',
+  medium: '中等',
+  high: '深度',
+  xhigh: '更高',
+  max: '最高',
+};
+const reasoningHints: Record<string, string> = {
+  off: '使用模型默认',
+  low: '简要思考',
+  medium: '均衡处理',
+  high: '更多思考',
+  xhigh: '深入检查',
+  max: '最高档位',
+};
 
 export function App() {
   const [data, setData] = useState<Bootstrap | null>(null),
@@ -842,23 +860,32 @@ export function App() {
                         <div className="composer-toolbar">
                           <div className="composer-options">
                             <Soon label="命令菜单" icon="sparkle" compact />
-                            <label
-                              className="icon-choice"
-                              title={'执行权限：' + current.permission}
-                            >
-                              <Icon name="shield" size={15} />{' '}
-                              <select
-                                aria-label="执行权限"
-                                value={current.permission}
-                                onChange={(e) =>
-                                  void patch({ permission: e.target.value }).catch(report)
-                                }
-                              >
-                                <option value="read">只读</option>
-                                <option value="ask">操作前询问</option>
-                                <option value="operate">允许工作区写入</option>
-                              </select>
-                            </label>
+                            <ChoiceMenu
+                              key={current.id + '-permission'}
+                              label="执行权限"
+                              value={current.permission}
+                              icon="shield"
+                              compact
+                              align="start"
+                              items={[
+                                {
+                                  id: 'automatic',
+                                  label: '自动审核',
+                                  icon: 'shield',
+                                  disabled: true,
+                                },
+                                { id: 'full', label: '完整权限', icon: 'activity', disabled: true },
+                                { id: 'ask', label: '操作前询问', icon: 'shield' },
+                                { id: 'read', label: '只读模式', icon: 'panel' },
+                                {
+                                  id: 'operate',
+                                  label: '允许工作区写入',
+                                  icon: 'folder',
+                                  hint: '命令仍需确认',
+                                },
+                              ]}
+                              onChange={(permission) => void patch({ permission }).catch(report)}
+                            />
                             <details className="session-menu">
                               <summary aria-label="会话操作" title="上下文与会话操作">
                                 <Icon name="more" size={17} />
@@ -944,45 +971,45 @@ export function App() {
                               </div>
                             </details>
                             <span className="grow" />
-                            <label className="icon-choice" title={'推理档位：' + current.reasoning}>
-                              <Icon name="bulb" size={15} />{' '}
-                              <select
-                                aria-label="推理档位"
-                                disabled={!!active}
-                                value={current.reasoning}
-                                onChange={(e) =>
-                                  void patch({ reasoning: e.target.value }).catch(report)
-                                }
-                              >
-                                {['off', ...(model?.reasoning ?? [])].map((l) => (
-                                  <option key={l} value={l}>
-                                    {l === 'off' ? '默认推理' : l}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <label className="model-choice">
-                              <Icon name="model" size={14} />{' '}
-                              <select
-                                aria-label="聊天模型"
-                                disabled={!!active}
-                                value={current.modelId ?? ''}
-                                onChange={(e) => {
-                                  const m = data.models.find((m) => m.id === e.target.value);
-                                  void patch({
-                                    modelId: m?.id ?? null,
-                                    reasoning: m?.defaultReasoning ?? 'off',
-                                  }).catch(report);
-                                }}
-                              >
-                                <option value="">选择模型</option>
-                                {data.models.map((m) => (
-                                  <option key={m.id} value={m.id}>
-                                    {m.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
+                            <ChoiceMenu
+                              key={current.id + '-reasoning'}
+                              label="推理档位"
+                              value={current.reasoning}
+                              icon="bulb"
+                              compact
+                              disabled={!!active || sending}
+                              items={[...new Set(['off', ...(model?.reasoning ?? [])])].map(
+                                (level) => ({
+                                  id: level,
+                                  label: reasoningNames[level] ?? level,
+                                  hint: reasoningHints[level],
+                                }),
+                              )}
+                              onChange={(reasoning) => void patch({ reasoning }).catch(report)}
+                            />
+                            <ChoiceMenu
+                              key={current.id + '-model'}
+                              label="聊天模型"
+                              value={current.modelId ?? ''}
+                              icon="model"
+                              disabled={!!active || sending}
+                              items={data.providers.flatMap((provider) =>
+                                data.models
+                                  .filter((m) => m.providerId === provider.id)
+                                  .map((m) => ({
+                                    id: m.id,
+                                    label: m.name,
+                                    group: provider.name,
+                                  })),
+                              )}
+                              onChange={(id) => {
+                                const next = data.models.find((m) => m.id === id);
+                                void patch({
+                                  modelId: next?.id ?? null,
+                                  reasoning: next?.defaultReasoning ?? 'off',
+                                }).catch(report);
+                              }}
+                            />
                           </div>
                           {active ? (
                             <button

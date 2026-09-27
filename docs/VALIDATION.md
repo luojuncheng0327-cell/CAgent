@@ -176,3 +176,18 @@
 4. 一轮重复启动被 PowerShell 的日志占用拦截：The process cannot access the file ... because it is being used by another process. 这次桌面测试没有启动，退出码不能当作通过证据；停止重叠运行后，用独立日志重新串行执行全部检查。最终日志为 .artifacts/main-verify-final.log 和 .artifacts/main-desktop-delivery.log。
 
 验证边界：代码复制检查仅和冻结的一个原工作区比较；没有真实账号、收费模型、安装包、跨平台或全部窗口宽度验收。新增复制代码检查使用剪贴板替身核对负载，未改用户系统剪贴板。状态计数仍为 22 verified_local / 56 partial / 130 not_started / 1 planned / 1 external_decision；发布仍禁止。
+
+## 主界面继续：模型、推理与权限菜单 · 2026-09-27
+
+- 接管时核对：分支 `codex/independent-rewrite`，工作区干净，无 remote，最新 `d3174b2`，前一提交 `3757cc8`。已阅读交接、README、本记录的最后两节和公共约定例外，逐张查看原有五张并排图。
+- 原版只运行 `F:\cagent-reference-run\app` 临时副本和既有 driver；显式 CAGENT_HOME / HANA_HOME 指向参考临时 home，工作台为独立目录。实际点击模型 / 推理 / 权限菜单，读取显示尺寸和选项，未复制原组件、函数或 CSS。
+- 新增独立 `ChoiceMenu.tsx` / `choices.css`：供应商分组、当前选择、向上展开、屏幕边界限制、滚动、键盘选择与关闭、外部点击关闭。原生选择框已移除。模型 / 推理在生成中锁定；权限撤销入口仍可操作。
+- 权限含原位的“自动审核”“完整权限”，均禁用并注明“即将提供”。现有只读、操作前询问、允许工作区写入三种权限含义未变；最后一种明确提示命令仍需确认，未假装已提供完整权限。
+- 新增 `tests/desktop-menus.mjs` 并加入 test:desktop 第五组。测试在两个独立临时根中运行 home 与工作台，使用本机假模型；断言模型切换及推理重置、去重的关闭档、三种权限保存、禁用入口、方向键 / Home / End / Enter、Escape 回焦、Tab、点外部关闭、弹层互斥、重载持久化、生成时锁定与 940px 边界。截图每张核对 1280×800。
+- 原版与独立版各 1280×800，未拉伸合成为 2560×842：`menus-model-compare.png`、`menus-permission-compare.png`、`menus-reasoning-compare.png`（均在 `.artifacts/ui-replica/`）。已实际查看。模型数量 / 欢迎文案 / 首字头像为夹具或已批准差异；权限菜单为容纳“即将提供”和既有工作区写权限而更宽。未声称所有主界面交互 1:1。
+
+过程中的失败与处理：新增桌面用例首次在重载后的模型断言失败。定位为测试误用 Home 假定模型顺序，并用异步谓词调用 waitForFunction 导致未实际等待 HTTP 结果；已按界面中的实际顺序选择，并改为明确 await 的有界轮询，保留重载断言。四组既有桌面链路通过，修复后的菜单专项通过，页面异常 0。完整最终串行回归结果见后续补记。
+
+文件区预检也已执行：在参考临时工作台创建 `interaction-sample.md`，双击打开，直接输入 X 后核对落盘，再用撤销还原；参考实际采用自动保存。预览按钮首次被浮层拦截导致点击超时，改用聚焦后 Enter 成功切换并截图，没有修改参考实现。用户已明确批准新增通用 ProseMirror 项目依赖，并选择独立版继续手动保存 + Ctrl+S；此菜单批次尚未接入该依赖或富文本编辑。
+
+最终串行验收：`pnpm run format`、`pnpm run verify`、`pnpm run test:desktop` 全部退出 0。53 项单元 / 服务测试，0 失败 / 0 跳过；桌面五组全部通过，页面异常 0。独立性检查原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元、文件累计最高 24.4%、CSS 最长 5 条，只保留既有标准 UA 公共约定例外。最终日志为 `.artifacts/menus-verify-final.log` 和 `.artifacts/menus-desktop-final.log`。状态由 `node scripts/update-status.mjs` 更新，计数不变，发布门禁仍关闭。

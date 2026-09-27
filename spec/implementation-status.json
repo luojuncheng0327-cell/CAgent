@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-27T10:42:20.432Z",
-  "milestone": "界面基础与主界面已形成可对照版本，六步引导和完整设置复刻待继续；完整重写仍进行中",
+  "updatedAt": "2026-09-27T11:05:56.675Z",
+  "milestone": "主界面模型 / 推理 / 权限弹出菜单已补齐，继续文件编辑交互；六步引导和完整设置尚未开始复刻",
   "counts": {
     "partial": 56,
     "not_started": 130,
@@ -203,11 +203,11 @@
       "scope": "required",
       "status": "partial",
       "evidence": [
-        "src/server/discovery.ts",
-        "src/server/runtime.ts",
-        "src/ui/Settings.tsx"
+        "src/ui/ChoiceMenu.tsx",
+        "src/ui/App.tsx",
+        "tests/desktop-menus.mjs"
       ],
-      "remaining": "已有供应商模型发现、手动模型和会话 / 助手模型；订阅发现、辅助模型职责、全量兼容能力未齐。"
+      "remaining": "会话模型分组菜单、推理档位联动、真实保存 / 重载与生成时锁定已有桌面证据；辅助模型职责和完整跨会话矩阵未齐。"
     },
     {
       "id": "CA-MODEL-008",
@@ -1989,11 +1989,11 @@
       "scope": "required",
       "status": "partial",
       "evidence": [
-        "src/ui/style.css",
-        "src/ui/App.tsx",
-        "tests/desktop-smoke.mjs"
+        "src/ui/ChoiceMenu.tsx",
+        "src/ui/components.tsx",
+        "tests/desktop-menus.mjs"
       ],
-      "remaining": "浅色 / 夜色 / 系统主题、字号、标签和原生 dialog 已实现；字体选择、完整键盘 / 屏幕阅读器审计未齐。"
+      "remaining": "主界面三个选择菜单支持方向键、Home / End、Enter、Escape 焦点回归、Tab 和外部点击关闭；全应用键盘和屏幕阅读器审计仍未完成。"
     },
     {
       "id": "CA-DATA-001",

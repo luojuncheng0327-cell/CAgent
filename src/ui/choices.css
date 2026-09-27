@@ -1,0 +1,106 @@
+.choice-trigger {
+  height: 24px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--tint-main) 16%, transparent);
+  border-radius: 5px;
+  color: var(--tint-main);
+  font-size: 11.2px;
+  gap: 4px;
+  padding: 0 6px;
+  min-width: 0;
+}
+.choice-icon {
+  width: 24px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+.choice-model > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+.choice-trigger[aria-expanded='true'] {
+  background: var(--tint-wash);
+}
+.choice-popup {
+  position: fixed;
+  z-index: 40;
+  width: 180px;
+  max-width: calc(100vw - 16px);
+  max-height: min(320px, calc(100vh - 16px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--sheet-tone);
+  box-shadow:
+    0 4px 16px #3b3d3f17,
+    0 1px 3px #0000000a;
+  padding: 0;
+  font-size: 12.48px;
+}
+.choice-permissions {
+  width: 208px;
+  padding-block: 3px;
+}
+.choice-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 12px 4px;
+  line-height: 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+.choice-row {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: inherit;
+  padding: 6.4px 10.4px;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  line-height: 15px;
+  gap: 8px;
+}
+.choice-row.grouped {
+  padding-left: 31.2px;
+}
+.choice-row > span {
+  overflow-wrap: anywhere;
+}
+.choice-row small {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-left: auto;
+  white-space: nowrap;
+  line-height: inherit;
+}
+.choice-row[aria-selected='true'] {
+  font-weight: 600;
+  color: var(--tint-main);
+}
+.choice-row:focus-visible {
+  outline: 1px solid var(--tint-main);
+  outline-offset: -2px;
+  background: var(--tint-wash);
+}
+.choice-row:disabled {
+  background: none;
+}
+.choice-empty {
+  margin: 0;
+  padding: 12px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+@media (max-width: 980px) {
+  .choice-model > span {
+    max-width: 90px;
+  }
+}

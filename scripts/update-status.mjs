@@ -326,6 +326,19 @@ mark(
   '独立 Markdown 排版、代码换行与复制、表格和引用样式已有桌面证据；公式、图示、代码高亮与全部语言渲染矩阵仍待实现。',
 );
 
+mark(
+  'CA-MODEL-007',
+  'partial',
+  ['src/ui/ChoiceMenu.tsx', 'src/ui/App.tsx', 'tests/desktop-menus.mjs'],
+  '会话模型分组菜单、推理档位联动、真实保存 / 重载与生成时锁定已有桌面证据；辅助模型职责和完整跨会话矩阵未齐。',
+);
+mark(
+  'CA-PREF-009',
+  'partial',
+  ['src/ui/ChoiceMenu.tsx', 'src/ui/components.tsx', 'tests/desktop-menus.mjs'],
+  '主界面三个选择菜单支持方向键、Home / End、Enter、Escape 焦点回归、Tab 和外部点击关闭；全应用键盘和屏幕阅读器审计仍未完成。',
+);
+
 const records = features.map((f) => ({
   id: f.id,
   title: f.title,
@@ -350,7 +363,8 @@ for (const r of records) counts[r.status] = (counts[r.status] ?? 0) + 1;
 const result = {
   schema: 1,
   updatedAt: new Date().toISOString(),
-  milestone: '界面基础与主界面已形成可对照版本，六步引导和完整设置复刻待继续；完整重写仍进行中',
+  milestone:
+    '主界面模型 / 推理 / 权限弹出菜单已补齐，继续文件编辑交互；六步引导和完整设置尚未开始复刻',
   counts,
   fullProductComplete: false,
   releaseAllowed: false,

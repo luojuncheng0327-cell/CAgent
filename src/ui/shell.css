@@ -432,8 +432,7 @@ textarea::placeholder {
   outline: 2px solid var(--tint-main);
   outline-offset: 2px;
 }
-.composer-options .compact,
-.icon-choice {
+.composer-options .compact {
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -446,40 +445,6 @@ textarea::placeholder {
   color: var(--tint-main);
   position: relative;
   flex-shrink: 0;
-}
-.icon-choice:has(select:focus-visible) {
-  outline: 2px solid var(--tint-main);
-  outline-offset: 2px;
-}
-.icon-choice select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-.model-choice {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  color: var(--tint-main);
-  border: 1px solid color-mix(in srgb, var(--tint-main) 16%, transparent);
-  border-radius: 5px;
-  padding: 0 6px;
-  min-width: 0;
-}
-.model-choice select {
-  font-size: 11.2px;
-  padding: 0;
-  height: 24px;
-  appearance: none;
-  width: auto;
-  max-width: 150px;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  color: var(--text-soft);
 }
 .send-button {
   height: 28px;
@@ -1094,9 +1059,6 @@ textarea::placeholder {
   white-space: nowrap;
 }
 @media (max-width: 980px) {
-  .model-choice select {
-    max-width: 90px;
-  }
   .composer-wrap {
     padding-inline: 12px;
   }

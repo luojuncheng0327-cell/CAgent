@@ -98,3 +98,12 @@
 - 最终验证：pnpm run format、pnpm run verify 全过（53 项测试，0 失败 / 0 跳过；构建、独立性和相似度通过）；pnpm run test:desktop 四组全过，页面异常 0。独立性检查 155 个文件，原目录 2,901 个 tracked 文件指纹一致；相似度越线 0，最长 78 词元，文件累计最高 24.4%，CSS 最长 5 条；仍只有标准 UA 这 1 条已审核例外。。原版参考进程已关闭；临时副本留待继续使用。本轮参考工作台的 ui-replica-example.md 已删除。
 
 - 本轮未执行跨平台、真实账号 / 计费模型、安装或发布验收；最终四组桌面验证没有跳过用例。中途失败输出与修复原因已写入 VALIDATION。
+
+### 主界面继续交接：选择菜单
+
+- 接管基线已核对为 d3174b2 / 3757cc8、干净分支、无 remote；本次只在 `F:\CAgent-independent` 执行命令。
+- 模型 / 推理 / 权限现在由独立 ChoiceMenu 承载，支持键盘、焦点返回、外部关闭和边界放置；新增 test:desktop 第五组 desktop-menus。原权限行为保持，自动审核与完整权限按原位禁用并标“即将提供”。
+- 并排证据在 `.artifacts/ui-replica/menus-{model,permission,reasoning}-compare.png`，两侧均 1280×800；菜单数量 / 权限宽度及占位资产差异在 VALIDATION 中说明。
+- 用户新增决定：允许加入通用 ProseMirror 基础库作为项目依赖；文件直接编辑继续采用手动保存，并加 Ctrl+S。原版实测为自动保存，这是主动保留的差异。
+- 继续顺序不变：文件预览与编辑、直接富文本编辑仍在第 2 步；不得跳到第 3 步引导或第 4 步设置。
+- 菜单批次最终 format / verify / test:desktop 串行全过，53 项单元 / 服务测试 + 五组桌面，0 失败 / 跳过，相似度越线 0。日志 menus-verify-final.log / menus-desktop-final.log；状态脚本已运行，计数不变。
