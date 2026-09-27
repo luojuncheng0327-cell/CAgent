@@ -40,19 +40,19 @@ function ensureTrailingSlash(value) {
   return trimmed ? `${trimmed}/` : "";
 }
 
-function createGiteeFeedConfig(digestBaseUrl = "") {
+function createRepositoryFeedConfig(digestBaseUrl = "") {
   return {
     feedURL: {
-      provider: "generic",
-      url: releaseSource.feedUrl,
-      useMultipleRangeRequest: false,
-    },
-    source: {
-      provider: "gitee",
+      provider: "github",
       owner: releaseSource.owner,
       repo: releaseSource.repo,
     },
-    digestBaseUrl: digestBaseUrl || releaseSource.feedUrl,
+    source: {
+      provider: "github",
+      owner: releaseSource.owner,
+      repo: releaseSource.repo,
+    },
+    digestBaseUrl: digestBaseUrl || `${releaseSource.repositoryUrl}/releases/download`,
     channel: "default",
     channelError: null,
   };
@@ -179,15 +179,15 @@ function resolveUpdateFeedConfig(env = process.env) {
     return createInviteChannelFeedConfig(record.feedUrl, digestBaseUrl);
   }
 
-  // 公开 stable/beta 固定使用此用户的 Gitee 仓库。旧环境里即使还留着其它 source 值，
+  // 公开 stable/beta 固定使用此用户的 GitHub 仓库。旧环境里即使还留着其它 source 值，
   // 也不再触发第二个公共更新源；只有上面的显式 feed URL 和邀请通道可以改源。
-  const defaultConfig = createGiteeFeedConfig(digestBaseUrl);
+  const defaultConfig = createRepositoryFeedConfig(digestBaseUrl);
   return { ...defaultConfig, channelError: channelError || null };
 }
 
 function feedSourceLabel(config) {
   const source = config?.source || {};
-  if (source.provider === "gitee") return `gitee:${source.owner}/${source.repo}`;
+  if (source.provider === "github") return `github:${source.owner}/${source.repo}`;
   if (source.feedUrl) return `${source.provider}:${source.feedUrl}`;
   return source.provider || "unknown";
 }

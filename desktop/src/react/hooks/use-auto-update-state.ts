@@ -42,7 +42,7 @@ function devWebPreviewState(): AutoUpdateState | null {
     },
     digestUrl: null,
     digestError: null,
-    updateSource: { provider: 'gitee', owner: 'luo-juncheng666', repo: 'cagent' },
+    updateSource: { provider: 'github', owner: 'luojuncheng0327-cell', repo: 'CAgent' },
   };
 }
 

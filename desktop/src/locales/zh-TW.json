@@ -1377,7 +1377,7 @@
       "updateProgress": "{percent}%",
       "updateError": "檢查更新失敗",
       "updateSourceNotReady": "更新來源尚未就緒",
-      "updateSourceNotReadyHint": "暫未找到 Gitee 更新資訊，無法確認是否有新版本。請稍後重試。",
+      "updateSourceNotReadyHint": "暫未找到 GitHub 更新資訊，無法確認是否有新版本。請稍後重試。",
       "updateErrorDetails": "查看詳細資訊",
       "updateLatest": "已是最新版本",
       "updateLatestCheckedAt": "已是最新（上次檢查 {time}）",

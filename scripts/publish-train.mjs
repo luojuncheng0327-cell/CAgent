@@ -92,9 +92,8 @@ const manifestModule = require("../shared/artifact-core/manifest.cjs");
 const activation = require("../shared/artifact-core/activation.cjs");
 const { loadPinnedKeyset } = require("../shared/artifact-core/keyset.cjs");
 
-// Matches desktop/src/shared/artifact-ota.cjs's GITHUB_CHANNEL_BASE owner/repo
-// and scripts/mirror-release-to-atomgit.mjs's DEFAULT_GITHUB_REPOSITORY.
-const DEFAULT_REPO = "liliMozi/openhanako";
+const releaseSource = require("../shared/release-source.cjs");
+const DEFAULT_REPO = `${releaseSource.owner}/${releaseSource.repo}`;
 
 const TRAIN_RELEASE_NOTES =
   "Hot-update train release. Holds one train's signed archives and manifest "
@@ -120,7 +119,7 @@ const CHANNELS_RELEASE_NOTES =
 // preload API, a new server-launch protocol, etc.) — raising it means every
 // shell older than this version stops receiving hot updates and has to
 // update the app itself first, so don't raise it casually.
-export const SHELL_COMPAT_FLOOR = "0.386.5";
+export const SHELL_COMPAT_FLOOR = "0.450.1";
 
 // ── argument parsing ────────────────────────────────────────────────────
 

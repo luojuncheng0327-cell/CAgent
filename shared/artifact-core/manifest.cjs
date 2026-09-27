@@ -36,24 +36,6 @@ function validateArtifactEntry(entry, label) {
   if (typeof entry.path !== "string" || entry.path.length === 0) {
     fail(`${label}.path must be a non-empty string`);
   }
-  if (entry.parts !== undefined) {
-    if (!Array.isArray(entry.parts) || entry.parts.length < 1 || entry.parts.length > 128) {
-      fail(`${label}.parts must contain 1-128 download parts`);
-    }
-    let totalSize = 0;
-    for (const [index, part] of entry.parts.entries()) {
-      if (!isPlainObject(part) || typeof part.path !== "string" || !part.path) {
-        fail(`${label}.parts[${index}].path must be a non-empty string`);
-      }
-      if (!Number.isSafeInteger(part.size) || part.size <= 0) fail(`${label}.parts[${index}].size invalid`);
-      if (typeof part.sha256 !== "string" || !/^[0-9a-f]{64}$/i.test(part.sha256)) {
-        fail(`${label}.parts[${index}].sha256 invalid`);
-      }
-      if (part.parts !== undefined) fail(`${label}.parts cannot be nested`);
-      totalSize += part.size;
-    }
-    if (!Number.isSafeInteger(totalSize) || totalSize !== entry.size) fail(`${label}.parts total size mismatch`);
-  }
 }
 
 /**

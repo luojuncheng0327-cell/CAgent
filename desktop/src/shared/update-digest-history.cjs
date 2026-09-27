@@ -1,7 +1,7 @@
 /**
  * Settings > About update history.
  *
- * This fork's Gitee feed is the release source of truth. The installed v2 anthology is
+ * This fork's GitHub feed is the release source of truth. The installed v2 anthology is
  * only an explicit offline fallback because older app packages cannot contain
  * releases published after they were built.
  */
@@ -48,7 +48,7 @@ async function loadOnlineEntries({ fetchImpl, normalize, timeoutMs }) {
     timeoutMs,
   });
   if (history?.schema !== 2 || !Array.isArray(history.entries)) {
-    throw new Error("Gitee update history is not a valid v2 history");
+    throw new Error("GitHub update history is not a valid v2 history");
   }
   const entries = [];
   for (const payload of history.entries) {

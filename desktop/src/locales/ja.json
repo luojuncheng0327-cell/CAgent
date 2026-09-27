@@ -1377,7 +1377,7 @@
       "updateProgress": "{percent}%",
       "updateError": "アップデートの確認に失敗しました",
       "updateSourceNotReady": "更新元の準備ができていません",
-      "updateSourceNotReadyHint": "Gitee に更新情報が見つからないため、新しいバージョンを確認できません。しばらくしてから再試行してください。",
+      "updateSourceNotReadyHint": "GitHub に更新情報が見つからないため、新しいバージョンを確認できません。しばらくしてから再試行してください。",
       "updateErrorDetails": "詳細を表示",
       "updateLatest": "最新バージョンです",
       "updateLatestCheckedAt": "最新です（最終確認: {time}）",

@@ -21,7 +21,7 @@ function response(body: unknown, status = 200) {
 }
 
 describe('update digest history loader', () => {
-  it('loads the newest five published entries from this fork on Gitee', async () => {
+  it('loads the newest five published entries from this fork on GitHub', async () => {
     const entries = ['0.500.5', '0.500.4', '0.500.2', '0.500.1', '0.500.0', '0.499.9'].map(digest);
     const fetchImpl = vi.fn(async () => response({ schema: 2, entries }));
     const normalize = vi.fn((value: ReturnType<typeof digest>, expectedVersion: string) => (
@@ -48,7 +48,7 @@ describe('update digest history loader', () => {
     ]);
     expect(normalize).toHaveBeenCalledTimes(5);
     expect(fetchImpl).toHaveBeenCalledExactlyOnceWith(
-      'https://gitee.com/luo-juncheng666/cagent/raw/master/updates/release-digest.v2.json',
+      'https://github.com/luojuncheng0327-cell/CAgent/releases/latest/download/release-digest.v2.json',
       expect.any(Object),
     );
   });

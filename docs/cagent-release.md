@@ -6,11 +6,11 @@
 
 - 初始化与设置页共用完整的五种 API 协议选项，名称、地址和协议选择框保持同高、同一基线。
 - 修复本地供应商修改协议和地址后，被旧 `models.json` 迁移数据覆盖的问题。Claude Opus 5.5 的 Responses 接入可通过模型元数据声明 `thinkingLevels: [low, medium, high, max]` 和 `thinkingLevelMap.xhigh: max`；实际请求使用 `reasoning.effort: max`。
-- 关于页版权显示 `© 2026 @呈平安`，项目链接指向本 Gitee 仓库；上游许可证署名保留。缺失更新清单时显示“更新源尚未就绪”，错误详情可展开阅读。
-- Gitee 每个发行版附件最大 100MB。内容更新支持签名清单内的分片声明，逐片校验 SHA-256 和长度，合并后再次校验完整归档，再交给原有激活流程。旧版本不支持分片，因此本次清单的最低应用本体版本为 0.450.1；首次升级使用完整安装程序，后续内容更新可直接在线进行。
+- 关于页版权显示 `© 2026 @呈平安`，项目链接指向本 GitHub 仓库；上游许可证署名保留。缺失更新清单时显示“更新源尚未就绪”，错误详情可展开阅读。
+- 安装程序、内容归档、版本说明和签名更新清单统一在个人 GitHub Releases 发布。首次升级使用完整安装程序，切换到本仓库更新源；内容更新最低应用本体版本为 0.450.1。
 - 固定本分支的公开签名密钥；私钥仍保留在工作区外。
 
-验证：新增分片完整性、损坏分片、损坏整包以及供应商刷新/重启持久性回归。Windows 无创建符号链接权限，归档符号链接测试在夹具准备阶段失败；未关闭相关安全断言。三套 TypeScript 配置通过。
+验证：新增供应商刷新/重启持久性回归，覆盖 GitHub 更新源、签名清单和离线更新历史。Windows 无创建符号链接权限，归档符号链接测试在夹具准备阶段失败；未关闭相关安全断言。
 
 ## 2026-09-27 补充修复
 
@@ -27,17 +27,18 @@
 
 ## 更新来源
 
-公开仓库：<https://gitee.com/luo-juncheng666/cagent>
+公开仓库：<https://github.com/luojuncheng0327-cell/CAgent>
 
 | 用途 | 地址 |
 |---|---|
-| 安装包更新清单 | `https://gitee.com/luo-juncheng666/cagent/raw/master/updates/latest.yml` |
-| 预览版安装包清单 | 同目录 `beta.yml` |
-| 稳定内容更新 | 同目录 `channels/stable.json` 及 `stable.json.sig` |
-| 预览内容更新 | 同目录 `channels/beta.json` 及 `beta.json.sig` |
-| 版本说明 | 同目录 `v<版本>/release-digest.v1.json` |
+| 安装包更新清单 | 当前 GitHub 稳定发行版的 `latest.yml` |
+| 预览版安装包清单 | GitHub 预览发行版的 `beta.yml` |
+| 稳定内容更新 | `releases/download/channels/stable.json` 及 `stable.json.sig` |
+| 预览内容更新 | `releases/download/channels/beta.json` 及 `beta.json.sig` |
+| 版本说明 | `releases/download/v<版本>/release-digest.v1.json` |
+| 更新历史 | 最新稳定发行版的 `release-digest.v2.json` |
 
-默认来源统一定义于 `shared/release-source.cjs`。Electron 使用 generic provider 读取 Gitee 上的清单，失败不会切回原作者仓库。旧版邀请通道文件没有本仓库的 `repository` 标记时不会自动生效，原文件保留。原作者的邀请服务不再默认启用。
+默认来源统一定义于 `shared/release-source.cjs`。Electron 使用 GitHub provider 读取本人的发行版，失败不会切回原作者仓库。旧版邀请通道文件没有本仓库的 `repository` 标记时不会自动生效，原文件保留。原作者的邀请服务和 AtomGit 镜像任务不在本分支自动运行。
 
 `HANA_UPDATE_FEED_URL` 仍是显式运维覆盖。没有设置它时使用上表。上游项目介绍、贡献者和参考资料中的 GitHub 链接仍是署名/文档链接，不是更新来源。
 
@@ -45,15 +46,15 @@
 
 Node 24.19.0、锁文件依赖、Electron 42.3.0。源码验证不调用收费模型。
 
-安装包内的内容归档必须使用 Ed25519 签名，并将匹配的公开 keyset 编入 main bundle；保留签名校验，不采用绕过校验的开发开关。私钥留在工作区外，不上传 Gitee。
+安装包内的内容归档必须使用 Ed25519 签名，并将匹配的公开 keyset 编入 main bundle；保留签名校验，不采用绕过校验的开发开关。私钥留在工作区外，不上传仓库。
 
 本机缺少 MSVC，未修改的 Windows 沙盒助手及 MinGit 从上游 v0.450.0 的官方 HanaCore 归档提取；对应源码与该 tag 一致。官方归档 SHA-256：`8f4f4616ce3748cefdbedcf6874728c1a42310cc56c516b1062e29619724438f`。MinGit 2.55.0 的 Git、Shell、提交和本地克隆 smoke 已通过。
 
 后续发布必须更新版本号并上传相应安装包与校验清单；仅推送源码不会让已经安装的客户端获得新程序。
 
-## 本次交付结果
+## 0.450.0 历史交付结果
 
-按用户最终要求，Gitee 只上传源码，没有创建安装包发行版，也没有上传安装程序或分片。上表更新地址已编入安装包，但本次没有发布在线更新清单和安装包，因此当前不能从 Gitee 在线升级。
+0.450.0 当时按要求仅向 Gitee 上传源码，没有创建安装包发行版，也没有上传安装程序或分片。旧安装包内使用的 Gitee 更新地址没有对应在线清单；0.450.1 起改用上表的 GitHub 来源。
 
 本地 Windows x64 安装程序：`dist/HanaAgent-0.450.0-Windows-x64.exe`，478,153,735 字节（约 456 MiB）。SHA-256：
 

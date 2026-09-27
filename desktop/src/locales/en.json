@@ -1447,7 +1447,7 @@
       "updateProgress": "{percent}%",
       "updateError": "Update check failed",
       "updateSourceNotReady": "Update source is not ready",
-      "updateSourceNotReadyHint": "Update information is not available on Gitee, so new versions cannot be checked yet. Please try again later.",
+      "updateSourceNotReadyHint": "Update information is not available on GitHub, so new versions cannot be checked yet. Please try again later.",
       "updateErrorDetails": "View details",
       "updateLatest": "You're up to date",
       "updateLatestCheckedAt": "Up to date (last checked {time})",

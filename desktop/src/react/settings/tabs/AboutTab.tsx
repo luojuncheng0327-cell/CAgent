@@ -220,7 +220,7 @@ function TrainUpdateArea({
   }
 
   if (lastError) {
-    const sourceNotReady = /Gitee channel manifest request failed:.*HTTP 404\b/i.test(lastError);
+    const sourceNotReady = /channel manifest request failed:.*HTTP 404\b/i.test(lastError);
     return (
       <div className={updateStyles.root}>
         <div className={updateStyles.column}>
@@ -584,7 +584,7 @@ export function AboutTab() {
           control={<span>© 2026 @呈平安</span>}
         />
         <SettingsRow
-          label="Gitee"
+          label={releaseSource.name}
           control={
             <a
               className={styles['about-link']}

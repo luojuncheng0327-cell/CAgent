@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   mirror:
-    if: github.event_name == 'workflow_dispatch' || github.event.sender.login != 'github-actions[bot]'
+    if: github.repository == 'liliMozi/openhanako' && (github.event_name == 'workflow_dispatch' || github.event.sender.login != 'github-actions[bot]')
     runs-on: ubuntu-latest
     permissions:
       contents: read

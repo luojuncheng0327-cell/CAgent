@@ -9,8 +9,8 @@
       "generatedAt": "2026-09-26T22:57:43.994Z",
       "noUserFacingChanges": false,
       "summary": {
-        "zh": "完善 Claude Responses 配置、首次初始化与关于页面，接通带签名校验的 Gitee 内容更新。",
-        "en": "Improves Claude Responses configuration, initial setup and About, with signed content updates from Gitee."
+        "zh": "完善 Claude Responses 配置、首次初始化与关于页面，接通带签名校验的 GitHub 自动更新。",
+        "en": "Improves Claude Responses configuration, initial setup and About, with signed automatic updates from GitHub."
       },
       "counts": {
         "feature": 0,
@@ -19,10 +19,10 @@
         "migration": 0
       },
       "source": {
-        "owner": "luo-juncheng666",
-        "repo": "cagent",
+        "owner": "luojuncheng0327-cell",
+        "repo": "CAgent",
         "commitRange": "v0.450.0..v0.450.1",
-        "releaseUrl": "https://gitee.com/luo-juncheng666/cagent/releases/tag/v0.450.1",
+        "releaseUrl": "https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.450.1",
         "releaseNotes": ""
       },
       "items": [
@@ -69,23 +69,23 @@
           ]
         },
         {
-          "id": "gitee-updates",
+          "id": "github-updates",
           "kind": "fix",
           "importance": "high",
           "title": {
-            "zh": "接通 Gitee 内容更新",
-            "en": "Gitee content updates"
+            "zh": "接通 GitHub 自动更新",
+            "en": "GitHub automatic updates"
           },
           "summary": {
-            "zh": "支持分片下载和逐片、整包校验，更新信息缺失时提供明确提示及完整详情。",
-            "en": "Content updates support split downloads with per-part and archive verification; unavailable feeds show a clear status and full details."
+            "zh": "完整安装包和内容更新从个人 GitHub 仓库发布，保留签名及整包校验，并明确展示检查失败详情。",
+            "en": "Full installers and signed content updates are published from this GitHub repository, with archive verification and clear failure details."
           },
           "details": [],
           "sources": [
             {
               "type": "commit",
               "ref": "v0.450.1",
-              "title": "Gitee content updates"
+              "title": "GitHub automatic updates"
             }
           ]
         },
@@ -98,8 +98,8 @@
             "en": "Updated maintainer and repository"
           },
           "summary": {
-            "zh": "关于页显示 @呈平安，并链接到本项目的 Gitee 仓库。",
-            "en": "About displays @呈平安 and links to this project on Gitee."
+            "zh": "关于页显示 @呈平安，并链接到本项目的 GitHub 仓库。",
+            "en": "About displays @呈平安 and links to this project on GitHub."
           },
           "details": [],
           "sources": [

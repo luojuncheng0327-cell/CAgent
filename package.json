@@ -218,8 +218,9 @@
     },
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/"
+        "provider": "github",
+        "owner": "luojuncheng0327-cell",
+        "repo": "CAgent"
       }
     ],
     "win": {

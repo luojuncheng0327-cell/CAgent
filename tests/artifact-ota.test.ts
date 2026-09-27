@@ -409,9 +409,9 @@ describe("artifact-ota: downloadToFile stall/deadline guards (trickle-attack mit
 });
 
 describe("artifact-ota: channelManifestUrls", () => {
-  it.each(["stable", "beta"])("returns only the Gitee %s channel pointer", (channel) => {
+  it.each(["stable", "beta"])("returns only the GitHub %s channel pointer", (channel) => {
     expect(channelManifestUrls(channel)).toEqual([
-      `https://gitee.com/luo-juncheng666/cagent/raw/master/updates/channels/${channel}.json`,
+      `https://github.com/luojuncheng0327-cell/CAgent/releases/download/channels/${channel}.json`,
     ]);
   });
 
@@ -420,15 +420,15 @@ describe("artifact-ota: channelManifestUrls", () => {
   });
 });
 
-describe("artifact-ota: fetchChannelManifest (Gitee-only)", () => {
-  it("fetches and verifies one Gitee manifest and its detached signature", async () => {
+describe("artifact-ota: fetchChannelManifest (GitHub-only)", () => {
+  it("fetches and verifies one GitHub manifest and its detached signature", async () => {
     const keys = makeKeys();
     const [originUrl] = channelManifestUrls("stable");
     const origin = buildSignedManifestBytes(keys, { train: 4, version: "0.402.0" });
     const calls: string[] = [];
     const fetchOnce = async (url: string) => {
       calls.push(url);
-      if (url === originUrl) return fakeStreamResponse(200, { etag: 'W/"gitee-etag"' }, [origin.manifestBytes]);
+      if (url === originUrl) return fakeStreamResponse(200, { etag: 'W/"github-etag"' }, [origin.manifestBytes]);
       if (url === `${originUrl}.sig`) return fakeStreamResponse(200, {}, [origin.sigBytes]);
       throw new Error(`unexpected url ${url}`);
     };
@@ -438,11 +438,11 @@ describe("artifact-ota: fetchChannelManifest (Gitee-only)", () => {
     expect(result.manifest.train).toBe(4);
     expect(result.sourceKind).toBe("origin");
     expect(result.originUnreachable).toBe(false);
-    expect(result.sourceEtagUpdate).toEqual({ origin: 'W/"gitee-etag"' });
+    expect(result.sourceEtagUpdate).toEqual({ origin: 'W/"github-etag"' });
     expect(calls).toEqual([originUrl, `${originUrl}.sig`]);
   });
 
-  it("performs no hidden retry when the Gitee request fails", async () => {
+  it("performs no hidden retry when the GitHub request fails", async () => {
     const keys = makeKeys();
     let calls = 0;
     const fetchOnce = async () => {
@@ -452,11 +452,11 @@ describe("artifact-ota: fetchChannelManifest (Gitee-only)", () => {
 
     await expect(
       fetchChannelManifest({ channel: "stable", keyset: keys.keyset, fetchOnce, log: () => {} }),
-    ).rejects.toThrow(/Gitee.*network down/i);
+    ).rejects.toThrow(/GitHub.*network down/i);
     expect(calls).toBe(1);
   });
 
-  it("uses the Gitee ETag and treats 304 as not modified", async () => {
+  it("uses the GitHub ETag and treats 304 as not modified", async () => {
     const keys = makeKeys();
     const seenHeaders: Array<Record<string, string>> = [];
     const fetchOnce = async (_url: string, options: { headers: Record<string, string> }) => {
@@ -1047,7 +1047,7 @@ describe("artifact-ota: checkOnce (ETag / not-modified semantics, mutation-check
       recordedAt: "2026-01-01T00:00:00.000Z",
     };
     await writeOtaChannelState(homeDir, SEED_CHANNEL, {
-      manifestEtags: { origin: '"gitee-etag"', mirror: '"legacy-backup-etag"' },
+      manifestEtags: { origin: '"github-etag"', mirror: '"legacy-backup-etag"' },
       lastManifestUrl: urls[0],
       lastError: "previous failure",
       available: seededAvailable,
@@ -1076,8 +1076,8 @@ describe("artifact-ota: checkOnce (ETag / not-modified semantics, mutation-check
     // check must survive a 304 byte-for-byte.
     expect(state.available).toEqual(seededAvailable);
     expect(state.lastError).toBe("previous failure");
-    expect(state.manifestEtags).toEqual({ origin: '"gitee-etag"' });
-    expect(seenHeaders).toEqual([{ "If-None-Match": '"gitee-etag"' }]);
+    expect(state.manifestEtags).toEqual({ origin: '"github-etag"' });
+    expect(seenHeaders).toEqual([{ "If-None-Match": '"github-etag"' }]);
   });
 
   it("keeps lastError from a failed check through a later 304 (a quiet poll doesn't mean the earlier failure resolved)", async () => {

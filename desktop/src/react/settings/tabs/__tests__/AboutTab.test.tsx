@@ -255,9 +255,9 @@ describe('AboutTab', () => {
     expect(screen.queryByText('settings.about.updateCheckBtn')).toBeNull();
   });
 
-  it('distinguishes an unavailable Gitee update feed from a successful update check', () => {
+  it('distinguishes an unavailable GitHub update feed from a successful update check', () => {
     installHana();
-    const lastError = 'artifact-ota: Gitee channel manifest request failed: artifact-ota: HTTP 404 for https://gitee.com/luo-juncheng666/cagent/raw/master/updates/channels/stable.json';
+    const lastError = 'artifact-ota: GitHub channel manifest request failed: artifact-ota: HTTP 404 for https://github.com/luojuncheng0327-cell/CAgent/releases/download/channels/stable.json';
     trainOverride = { ...DEFAULT_TRAIN_OVERRIDE, lastError, lastCheckedAt: '2026-09-27T00:00:00.000Z' };
 
     render(<AboutTab />);
@@ -275,9 +275,9 @@ describe('AboutTab', () => {
   });
 
   it.each([
-    'artifact-ota: Gitee channel manifest request failed: artifact-ota: HTTP 503 for https://gitee.com/updates/channels/stable.json',
-    'artifact-ota: Gitee channel manifest failed signature or schema verification',
-    'artifact-ota: HTTP 404 for https://gitee.com/releases/renderer.zip',
+    'artifact-ota: GitHub channel manifest request failed: artifact-ota: HTTP 503 for https://github.com/example/updates/channels/stable.json',
+    'artifact-ota: GitHub channel manifest failed signature or schema verification',
+    'artifact-ota: HTTP 404 for https://github.com/example/releases/renderer.zip',
   ])('keeps other update failures visible: %s', (lastError) => {
     installHana();
     trainOverride = { ...DEFAULT_TRAIN_OVERRIDE, lastError };
@@ -290,7 +290,7 @@ describe('AboutTab', () => {
     expect(screen.queryByText('settings.about.updateLatestCheckedAt')).toBeNull();
   });
 
-  it('links to this fork on Gitee and displays its copyright', () => {
+  it('links to this fork on GitHub and displays its copyright', () => {
     const openExternal = vi.fn();
     installHana({ openExternal });
 
@@ -298,10 +298,10 @@ describe('AboutTab', () => {
 
     expect(screen.getByText('© 2026 @呈平安')).toBeTruthy();
     expect(screen.getByText('Apache License 2.0')).toBeTruthy();
-    const repository = screen.getByRole('link', { name: /gitee.com\/luo-juncheng666\/cagent/ });
-    expect(repository.getAttribute('href')).toBe('https://gitee.com/luo-juncheng666/cagent');
+    const repository = screen.getByRole('link', { name: /github.com\/luojuncheng0327-cell\/CAgent/ });
+    expect(repository.getAttribute('href')).toBe('https://github.com/luojuncheng0327-cell/CAgent');
     fireEvent.click(repository);
-    expect(openExternal).toHaveBeenCalledWith('https://gitee.com/luo-juncheng666/cagent');
+    expect(openExternal).toHaveBeenCalledWith('https://github.com/luojuncheng0327-cell/CAgent');
     expect(screen.queryByText('github.com/liliMozi')).toBeNull();
   });
 

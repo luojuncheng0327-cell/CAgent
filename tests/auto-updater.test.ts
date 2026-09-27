@@ -55,7 +55,7 @@ describe("auto-updater", () => {
     fs.writeFileSync(
       path.join(home, "update-channel.json"),
       typeof contents === "string" ? contents : JSON.stringify({
-        repository: "https://gitee.com/luo-juncheng666/cagent",
+        repository: "https://github.com/luojuncheng0327-cell/CAgent",
         ...(contents as Record<string, unknown>),
       }),
       "utf-8",
@@ -131,42 +131,42 @@ describe("auto-updater", () => {
   it("should configure autoUpdater correctly", () => {
     initWithMockWindow();
     expect(mockAutoUpdater.setFeedURL).toHaveBeenCalledWith({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
     expect(mockAutoUpdater.autoDownload).toBe(false);
     expect(mockAutoUpdater.autoInstallOnAppQuit).toBe(false);
   });
 
-  it("resolves the user Gitee repository as the only public update feed", () => {
+  it("resolves the user GitHub repository as the only public update feed", () => {
     const config = mod.resolveUpdateFeedConfig({});
     expect(config.feedURL).toEqual({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
     expect(config).not.toHaveProperty("fallbackConfigs");
   });
 
-  it.each(["gitcode", "atomgit"])("ignores legacy public source selector %s and keeps Gitee", (source) => {
+  it.each(["gitcode", "atomgit"])("ignores legacy public source selector %s and keeps GitHub", (source) => {
     const config = mod.resolveUpdateFeedConfig({ HANA_UPDATE_SOURCE: source });
     expect(config.feedURL).toEqual({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
     expect(mod.buildReleaseDigestUrl("0.425.4", config)).toBe(
-      "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/v0.425.4/release-digest.v1.json",
+      "https://github.com/luojuncheng0327-cell/CAgent/releases/download/v0.425.4/release-digest.v1.json",
     );
   });
 
   it("does not restore upstream GitHub from an old source selector", () => {
     const config = mod.resolveUpdateFeedConfig({ HANA_UPDATE_SOURCE: "github" });
     expect(config.feedURL).toEqual({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
     expect(config).not.toHaveProperty("fallbackConfigs");
   });
@@ -182,14 +182,12 @@ describe("auto-updater", () => {
     );
   });
 
-  it("does not inherit an active upstream invitation channel into the Gitee fork", async () => {
+  it("does not inherit an active upstream invitation channel into the GitHub fork", async () => {
     const home = createTempHome();
     const legacy = JSON.stringify({ version: 1, active: true, feedUrl: "https://updates.example.com/upstream" });
     fs.writeFileSync(path.join(home, "update-channel.json"), legacy);
     initWithMockWindow({ hanakoHome: home });
-    expect(mod.resolveUpdateFeedConfig({}).feedURL.url).toBe(
-      "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-    );
+    expect(mod.resolveUpdateFeedConfig({}).feedURL.repo).toBe("CAgent");
     await expect(ipcHandlers["invite:status"]()).resolves.toMatchObject({ configured: false, active: false });
     expect(fs.readFileSync(path.join(home, "update-channel.json"), "utf8")).toBe(legacy);
   });
@@ -250,14 +248,14 @@ describe("auto-updater", () => {
       error: "connect ETIMEDOUT github.com",
     }));
     expect(mockAutoUpdater.setFeedURL).toHaveBeenLastCalledWith({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
     expect(mod.getState().updateSource).toEqual({
-      provider: "gitee",
-      owner: "luo-juncheng666",
-      repo: "cagent",
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
   });
 
@@ -280,16 +278,16 @@ describe("auto-updater", () => {
     mod.setUpdateChannel("beta");
     expect(mockAutoUpdater.allowPrerelease).toBe(true);
     expect(mockAutoUpdater.setFeedURL).toHaveBeenLastCalledWith({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
     mod.setUpdateChannel("stable");
     expect(mockAutoUpdater.allowPrerelease).toBe(false);
     expect(mockAutoUpdater.setFeedURL).toHaveBeenLastCalledWith({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
   });
 
@@ -518,9 +516,9 @@ describe("auto-updater", () => {
 
     const config = mod.resolveUpdateFeedConfig({});
     expect(config.feedURL).toEqual({
-      provider: "generic",
-      url: "https://gitee.com/luo-juncheng666/cagent/raw/master/updates/",
-      useMultipleRangeRequest: false,
+      provider: "github",
+      owner: "luojuncheng0327-cell",
+      repo: "CAgent",
     });
     expect(config.channel).toBe("default");
     expect(config.channelError).toBeNull();
