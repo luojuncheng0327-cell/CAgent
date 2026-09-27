@@ -42,7 +42,7 @@ mark(
     'tests/similarity.test.ts',
     '.artifacts/similarity-report.json',
   ],
-  '导入边界、直接依赖、整文件指纹和词元级相似度检查都不等于法律鉴定；相似度只能发现复制、改名和轻度改写，大幅重构查不出；相似度限值尚未接入 verify。',
+  '导入边界、直接依赖、整文件指纹和词元级相似度检查都不等于法律鉴定；相似度只能发现复制、改名和轻度改写，大幅重构查不出。',
 );
 mark(
   'CA-BOOT-001 CA-BOOT-002 CA-BOOT-003 CA-BOOT-005 CA-BOOT-009',

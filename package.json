@@ -23,7 +23,7 @@
     "check:similarity": "node scripts/check-similarity.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent",
+    "verify": "pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
     "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-p1-p2.mjs"
   },
   "dependencies": {
