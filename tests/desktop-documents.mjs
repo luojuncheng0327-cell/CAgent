@@ -98,10 +98,25 @@ try {
     await page.getByRole('region', { name: '文件预览与编辑', exact: true }).waitFor();
   }
   async function mode(name) {
+    await page.locator('.file-editor').hover();
+    if (name !== '预览') {
+      await showFileMenu();
+      await button(name).click();
+      return;
+    }
+    if ((await button('预览').getAttribute('aria-pressed')) === 'true') return;
     await button(name).click();
   }
-  async function capture(name) {
-    await page.mouse.move(1010, 790);
+  async function showFileMenu() {
+    await page.locator('.file-editor').hover();
+    if ((await button('文件操作').getAttribute('aria-expanded')) !== 'true')
+      await button('文件操作').click();
+  }
+  async function capture(name, hoverTools = false) {
+    await page.mouse.move(260, 90);
+    await page.locator('.search-box input').focus();
+    await page.evaluate(() => document.activeElement.blur());
+    if (hoverTools) await page.locator('.file-editor').hover();
     await page.locator('.transcript').evaluate((element) => {
       element.scrollTop = 0;
     });
@@ -131,9 +146,40 @@ try {
   await open('interaction-sample.md');
   await editor().waitFor();
   assert.equal(await editor().getAttribute('contenteditable'), 'true');
+  const fileTab = page.getByRole('tab', { name: 'interaction-sample.md', exact: true });
+  assert.equal(await fileTab.getAttribute('title'), 'interaction-sample.md');
+  assert.equal(
+    await fileTab.locator('.file-tab-name').evaluate((name) => name.scrollWidth > name.clientWidth),
+    true,
+  );
+  await page.getByText(`选中 0 字 · 共 ${sample.length} 字`, { exact: true }).waitFor();
+  await page.mouse.move(260, 90);
+  await page.locator('.search-box input').focus();
+  await page.waitForFunction(
+    () => getComputedStyle(document.querySelector('.file-toolbar')).opacity === '0',
+  );
+  await button('复制文件内容').focus();
+  await page.waitForFunction(
+    () => getComputedStyle(document.querySelector('.file-toolbar')).opacity === '1',
+  );
+  await button('文件操作').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await button('文档').evaluate((node) => node === document.activeElement), true);
+  await page.keyboard.press('Escape');
+  assert.equal(await button('文件操作').evaluate((node) => node === document.activeElement), true);
+  await showFileMenu();
+  await editor().click();
+  assert.equal(await page.locator('.file-operations').count(), 0);
+  await page.locator('.search-box input').focus();
   await capture('documents-rich-warm');
   await mode('预览');
+  assert.equal(await button('预览').getAttribute('aria-pressed'), 'true');
+  await button('预览').click();
+  await editor().waitFor();
+  await mode('预览');
+  await page.locator('.search-box input').focus();
   await capture('documents-preview-warm');
+  await capture('documents-preview-toolbar-warm', true);
   console.log('Document check: initial editor and preview captured');
   await mode('源码');
   assert.equal(await raw().inputValue(), sample);
@@ -142,6 +188,13 @@ try {
   await editor().click();
   await page.keyboard.press('Control+End');
   await page.keyboard.insertText(' 追加中文🙂');
+  await mode('源码');
+  const draftLength = (await raw().inputValue()).length;
+  await mode('文档');
+  assert.match(
+    await page.locator('.document-count').innerText(),
+    new RegExp(`共 ${draftLength} 字`),
+  );
   await mode('预览');
   await page
     .getByRole('region', { name: '文件预览', exact: true })
@@ -153,6 +206,9 @@ try {
   await page.keyboard.press('Control+z');
   await mode('源码');
   assert.equal(await raw().inputValue(), sample, 'Undo returns exact source even across modes');
+  await mode('预览');
+  await button('预览').click();
+  assert.equal(await raw().isVisible(), true, 'Preview returns to the last source editing mode');
   await mode('文档');
   await editor().click();
   await page.keyboard.press('Control+Shift+z');
@@ -232,10 +288,12 @@ try {
   await open('table.md');
   console.log('Document check: external conflict, restore and read-only passed');
   assert.equal(await raw().inputValue(), tableSource);
+  await showFileMenu();
   assert.equal(
     await page.getByRole('button', { name: '文档 · 即将提供', exact: true }).isDisabled(),
     true,
   );
+  await page.keyboard.press('Escape');
   await mode('预览');
   assert.equal(
     await page.getByRole('region', { name: '文件预览', exact: true }).getByRole('table').count(),
@@ -243,7 +301,9 @@ try {
   );
   assert.equal(await fs.readFile(path.join(workspace, 'table.md'), 'utf8'), tableSource);
   await open('plain.txt');
+  await showFileMenu();
   assert.equal(await button('文档').count(), 0);
+  await page.keyboard.press('Escape');
   await mode('预览');
   assert.match(
     await page.getByRole('region', { name: '文件预览', exact: true }).innerText(),
@@ -299,6 +359,7 @@ try {
   await page.getByLabel('主题', { exact: true }).selectOption('dark');
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
   await button('关闭对话框').click();
+  await page.locator('.search-box input').focus();
   await capture('documents-rich-night');
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].setContentSize(940, 700),
@@ -330,6 +391,11 @@ try {
         'dirty tab close confirmation',
         '940px overflow',
         '1280x800 warm/night captures',
+        'hover and keyboard focus reveal toolbar',
+        'file menu focus, escape and outside dismissal',
+        'preview toggle restores document and source modes',
+        'source character count updates with draft',
+        'long file tab truncates and retains the full name',
       ],
       pageErrors: errors,
       externalRequests,

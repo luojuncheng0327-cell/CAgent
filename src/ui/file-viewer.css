@@ -4,14 +4,21 @@
   padding-right: 8px;
 }
 .desk-editor .file-tabs > div {
-  max-width: 190px;
+  max-width: 150px;
   flex-shrink: 0;
 }
 .desk-editor .file-tabs [role='tab'] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 155px;
+  max-width: 124px;
+  min-width: 0;
+}
+.file-tab-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .desk-editor .file-editor {
   padding: 0;
@@ -32,9 +39,24 @@
   justify-content: flex-end;
   align-items: center;
   gap: 3px;
-  padding: 6px 10px;
-  min-height: 36px;
+  padding: 3px 5px;
+  min-height: 28px;
+  margin: 4px 10px;
+  width: fit-content;
+  align-self: flex-end;
   flex-shrink: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--sheet-tone);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-control);
+}
+.file-editor:hover > .file-toolbar,
+.file-editor:focus-within > .file-toolbar,
+.file-editor:has(.file-operations) > .file-toolbar {
+  opacity: 1;
+  pointer-events: auto;
 }
 .file-toolbar button {
   padding: 3px 5px;
@@ -46,6 +68,10 @@
 }
 .file-toolbar .future-control {
   padding: 3px;
+}
+.file-toolbar [aria-pressed='true'] {
+  background: var(--tint-wash);
+  color: var(--tint-main);
 }
 .file-view-modes {
   display: flex;
@@ -111,16 +137,30 @@
   margin: 8px 12px;
 }
 .file-editor .file-operations {
-  margin: 8px 12px;
-  padding: 6px;
+  position: absolute;
+  top: 38px;
+  right: 10px;
+  z-index: 4;
+  margin: 0;
+  padding: 8px;
+  width: 225px;
+  max-width: calc(100% - 20px);
   border: 1px solid var(--hairline);
   border-radius: 5px;
+  background: var(--sheet-tone);
+  box-shadow: var(--popup-shadow);
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 .file-editor .file-operations button {
   font-size: 11px;
+}
+.file-operations .file-view-modes {
+  width: 100%;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--hairline);
 }
 .desk-editor .file-editor > .form-actions {
   position: sticky;

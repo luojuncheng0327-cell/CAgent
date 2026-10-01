@@ -64,11 +64,13 @@ function initialState(source: DocumentSource): EditorState {
 
 export function DocumentEditor({
   source,
+  text,
   memory,
   readonly,
   onChange,
 }: {
   source: DocumentSource;
+  text: string;
   memory?: DocumentMemory;
   readonly: boolean;
   onChange: (text: string, memory: DocumentMemory) => void;
@@ -177,7 +179,7 @@ export function DocumentEditor({
       </div>
       <div className="document-canvas" ref={mount} />
       <div className="document-count" aria-live="off">
-        选中 {selectionLength} 字 · 共 {state?.doc.textContent.length ?? 0} 字
+        选中 {selectionLength} 字 · 共 {text.length} 字
       </div>
     </div>
   );

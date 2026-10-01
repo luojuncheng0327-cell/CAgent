@@ -236,7 +236,12 @@ try {
     .click();
   await page.getByRole('region', { name: '文件预览与编辑', exact: true }).waitFor();
   assert.equal(await page.locator('dialog[open]').count(), 0);
-  await page.getByRole('button', { name: '源码', exact: true }).click();
+  async function sourceMode() {
+    await page.locator('.file-editor').hover();
+    await page.getByRole('button', { name: '文件操作', exact: true }).click();
+    await page.getByRole('button', { name: '源码', exact: true }).click();
+  }
+  await sourceMode();
   assert.match(await page.getByLabel('文件内容', { exact: true }).inputValue(), /工作草稿/);
   await capture('main-editor-night');
   await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
@@ -253,7 +258,7 @@ try {
     .getByRole('region', { name: '文件预览', exact: true })
     .getByText('预览中的未保存内容。', { exact: true })
     .waitFor();
-  await page.getByRole('button', { name: '源码', exact: true }).click();
+  await sourceMode();
   assert.equal(
     await page.getByLabel('文件内容', { exact: true }).inputValue(),
     originalFile + '\n预览中的未保存内容。',
@@ -261,7 +266,7 @@ try {
   await page.getByLabel('文件内容', { exact: true }).fill(originalFile);
   await page.getByRole('button', { name: '预览', exact: true }).click();
   await capture('main-preview-warm');
-  await page.getByRole('button', { name: '源码', exact: true }).click();
+  await sourceMode();
   await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].setContentSize(940, 700),
@@ -279,6 +284,7 @@ try {
         'reasoning disclosure',
         'code wrap and copy payload',
         'inline file editor',
+        'assistant and session portraits keep user initials',
         '940px no page overflow',
         '1280x800 warm and night captures',
       ],

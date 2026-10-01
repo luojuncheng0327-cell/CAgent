@@ -21,6 +21,7 @@ interface FileTab {
   scroll: number;
   changed: boolean;
   mode: 'document' | 'source' | 'preview';
+  editMode?: 'document' | 'source';
   document?: DocumentMemory;
   generation: number;
 }
@@ -70,6 +71,8 @@ export function Workspace({
     [history, setHistory] = useState<Version[] | null>(null),
     [fileMenu, setFileMenu] = useState(false);
   const editor = useRef<HTMLTextAreaElement>(null),
+    fileActions = useRef<HTMLButtonElement>(null),
+    operations = useRef<HTMLDivElement>(null),
     searchInput = useRef<HTMLInputElement>(null),
     tabRef = useRef(tabs),
     listRequest = useRef(0),
@@ -143,8 +146,36 @@ export function Workspace({
     setHistory(null);
     setFileMenu(false);
   }, [active, show, file?.mode]);
+  useEffect(() => {
+    if (!fileMenu) return;
+    operations.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus();
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!operations.current?.contains(target) && !fileActions.current?.contains(target))
+        setFileMenu(false);
+    };
+    window.document.addEventListener('pointerdown', outside);
+    return () => window.document.removeEventListener('pointerdown', outside);
+  }, [fileMenu]);
   function updateTab(target: string, values: Partial<FileTab>) {
     setTabs((old) => old.map((t) => (t.path === target ? { ...t, ...values } : t)));
+  }
+  function chooseFileMode(mode: 'document' | 'source') {
+    if (!file) return;
+    updateTab(file.path, { mode, editMode: mode });
+    setFileMenu(false);
+    fileActions.current?.focus();
+  }
+  function togglePreview() {
+    if (!file) return;
+    if (file.mode !== 'preview') {
+      updateTab(file.path, { mode: 'preview', editMode: file.mode });
+      return;
+    }
+    const previous = file.editMode ?? (document?.source ? 'document' : 'source');
+    updateTab(file.path, {
+      mode: previous === 'document' && !document?.source ? 'source' : previous,
+    });
   }
   async function openFile(target: string, refresh = false) {
     const old = tabRef.current.find((t) => t.path === target);
@@ -248,6 +279,7 @@ export function Workspace({
         if (event.key === 'Escape' && fileMenu) {
           event.preventDefault();
           setFileMenu(false);
+          fileActions.current?.focus();
         }
       }}
     >
@@ -457,7 +489,7 @@ export function Workspace({
                     title={tab.path}
                     onClick={() => setActive(tab.path)}
                   >
-                    {tab.path}
+                    <span className="file-tab-name">{tab.path}</span>
                     {tab.text !== tab.saved ? ' *' : ''}
                   </button>
                   <button aria-label={'关闭文件 ' + tab.path} onClick={() => closeTab(tab.path)}>
@@ -482,7 +514,7 @@ export function Workspace({
               lineHeight: preferences.editorLineHeight ?? 1.5,
             }}
           >
-            <div className="file-toolbar">
+            <div className="file-toolbar" role="toolbar" aria-label="文件工具">
               <button
                 aria-label="复制文件内容"
                 title="复制当前草稿"
@@ -496,7 +528,7 @@ export function Workspace({
                 <Icon name="copy" size={13} />
                 复制
               </button>
-              <Soon label="添加封面" icon="sun" compact />
+              <Soon label="添加封面" icon="palette" compact />
               <button
                 aria-label="文件历史"
                 title="文件历史"
@@ -510,33 +542,17 @@ export function Workspace({
               >
                 <Icon name="clock" size={14} />
               </button>
-              <div className="file-view-modes" aria-label="文件显示方式">
-                {markdownFile && (
-                  <button
-                    aria-label={document?.source ? '文档' : '文档 · 即将提供'}
-                    aria-pressed={file.mode === 'document'}
-                    disabled={!document?.source}
-                    title={document?.reason ?? '直接编辑排版后的文档'}
-                    onClick={() => updateTab(file.path, { mode: 'document' })}
-                  >
-                    文档{!document?.source && <small>即将提供</small>}
-                  </button>
-                )}
-                <button
-                  aria-pressed={file.mode === 'source'}
-                  onClick={() => updateTab(file.path, { mode: 'source' })}
-                >
-                  源码
-                </button>
-                <button
-                  aria-pressed={file.mode === 'preview'}
-                  onClick={() => updateTab(file.path, { mode: 'preview' })}
-                >
-                  预览
-                </button>
-              </div>
+              <button
+                aria-label="预览"
+                aria-pressed={file.mode === 'preview'}
+                title={file.mode === 'preview' ? '返回编辑' : '预览当前草稿'}
+                onClick={togglePreview}
+              >
+                <Icon name="eye" size={15} />
+              </button>
               <Soon label="文件截图" icon="camera" compact />
               <button
+                ref={fileActions}
                 aria-label="文件操作"
                 aria-expanded={fileMenu}
                 title="文件操作"
@@ -596,6 +612,7 @@ export function Workspace({
                 <DocumentEditor
                   key={file.path + ':' + file.generation}
                   source={document.source}
+                  text={file.text}
                   memory={file.document}
                   readonly={readonly}
                   onChange={(text, document) => updateTab(file.path, { text, document })}
@@ -616,7 +633,31 @@ export function Workspace({
               </div>
             )}
             {fileMenu && (
-              <div className="file-operations">
+              <div
+                ref={operations}
+                className="file-operations"
+                role="group"
+                aria-label="文件显示与操作"
+              >
+                <div className="file-view-modes" role="group" aria-label="文件显示方式">
+                  {markdownFile && (
+                    <button
+                      aria-label={document?.source ? '文档' : '文档 · 即将提供'}
+                      aria-pressed={file.mode === 'document'}
+                      disabled={!document?.source}
+                      title={document?.reason ?? '直接编辑排版后的文档'}
+                      onClick={() => chooseFileMode('document')}
+                    >
+                      文档{!document?.source && <small>即将提供</small>}
+                    </button>
+                  )}
+                  <button
+                    aria-pressed={file.mode === 'source'}
+                    onClick={() => chooseFileMode('source')}
+                  >
+                    源码
+                  </button>
+                </div>
                 <button
                   disabled={readonly || busy || file.text !== file.saved}
                   onClick={() => {
@@ -635,7 +676,14 @@ export function Workspace({
                 >
                   复制文件
                 </button>
-                <button onClick={() => setFileMenu(false)}>收起操作</button>
+                <button
+                  onClick={() => {
+                    setFileMenu(false);
+                    fileActions.current?.focus();
+                  }}
+                >
+                  收起操作
+                </button>
               </div>
             )}
             {history && (

@@ -175,6 +175,8 @@ try {
     'true',
   );
   await page.locator('.file-list').getByRole('button', { name: 'a.md', exact: true }).click();
+  await page.locator('.file-editor').hover();
+  await page.getByRole('button', { name: '文件操作', exact: true }).click();
   await page.getByRole('button', { name: '源码', exact: true }).click();
   await page.getByLabel('文件内容', { exact: true }).fill('标签 A 的未保存草稿');
   await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();

@@ -89,6 +89,21 @@ const strokes: Record<string, React.ReactNode> = {
       <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
     </>
   ),
+  eye: (
+    <>
+      <path d="M2.5 12c2.4-4 5.4-6 9.5-6s7.1 2 9.5 6c-2.4 4-5.4 6-9.5 6S4.9 16 2.5 12Z" />
+      <circle cx="12" cy="12" r="2.7" />
+    </>
+  ),
+  palette: (
+    <>
+      <path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.7 0 2.3-.7 1.6-2.1-.8-1.6.2-3.1 1.9-3.1h2.1c2 0 3-1.4 2.9-3.8A8.5 8.5 0 0 0 12 3.5Z" />
+      <circle cx="7.5" cy="11.5" r=".6" />
+      <circle cx="9.5" cy="7.5" r=".6" />
+      <circle cx="14.5" cy="7.5" r=".6" />
+      <circle cx="17.5" cy="11" r=".6" />
+    </>
+  ),
   system: (
     <>
       <rect x="3" y="4" width="18" height="13" rx="1.5" />

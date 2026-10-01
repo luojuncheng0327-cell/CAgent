@@ -74,6 +74,13 @@
 .document-canvas li p {
   margin: 0;
 }
+.document-canvas .ProseMirror > ul {
+  margin-top: 28px;
+}
+.document-canvas ul > li::marker {
+  color: var(--text-faint);
+  font-size: 0.75em;
+}
 .document-canvas blockquote {
   margin: 16px 0;
   padding-left: 14px;
@@ -103,6 +110,7 @@
   padding: 4px 10px;
   font: 11px var(--face-interface);
   color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
 }
 .document-canvas .ProseMirror-selectednode {
   outline-color: var(--tint-main);
