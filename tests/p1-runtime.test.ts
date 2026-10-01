@@ -453,6 +453,7 @@ test('CA-MODEL-010 重试等待可取消，取消后不会出现下一次请求'
     };
     const run = await f.rt.start(f.session.id, { text: '等待重试', requestId: randomUUID() });
     await until(() => retrying);
+    assert.equal((f.rt.snapshot(f.session.id) as any).activity?.kind, 'model.retry');
     assert.equal((await f.rt.cancel(f.session.id, run.id)).status, 'cancelled');
     await new Promise((r) => setTimeout(r, 30));
     assert.equal(requests, 1);
