@@ -173,6 +173,20 @@ test('CA-SESSION-010 撤销子目录不会重新继承父目录写权限；显�
       writeWorkspaceFile(f.rt.store, s, '子目录/新.md', 'x'),
       (e: any) => e.code === 'OUTSIDE_WORKSPACE',
     );
+    const result = (await runTool(
+      'search_files',
+      { path: '.', query: '需要保留' },
+      'blocked-search',
+      {
+        store: f.rt.store,
+        session: s,
+        run: {} as Run,
+        signal: new AbortController().signal,
+        approve: async () => true,
+        emit: () => {},
+      },
+    )) as { matches: unknown[] };
+    assert.deepEqual(result.matches, []);
     await writeWorkspaceFile(f.rt.store, s, '父目录仍可写.md', 'x');
     const restored = await f.grant([
       { path: f.a, access: 'write' },
