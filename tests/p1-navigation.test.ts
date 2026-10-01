@@ -262,3 +262,29 @@ test('CA-SESSION-003 非法顺序和过期版本整体拒绝；归档不混入�
     await f.close();
   }
 });
+
+test('CA-SESSION-003 归档列表按独立手动顺序排列，不受原置顶标记干扰', async () => {
+  const f = await harness();
+  try {
+    const regular = await f.rt.createSession(f.session);
+    await f.rt.updateSession(regular.id, { archived: true, revision: regular.revision });
+    await f.rt.updateSession(f.session.id, {
+      archived: true,
+      pinned: true,
+      revision: f.session.revision,
+    });
+    f.rt.savePreferences({ ...f.rt.preferences(), sessionSort: 'manual' });
+    const saved = await f.request('/sessions/order', 'PUT', {
+      bucket: 'archived',
+      ids: [regular.id, f.session.id],
+      revision: 0,
+    });
+    assert.equal(saved.status, 200);
+    assert.deepEqual(
+      (await f.request('/sessions?archived=true')).data.map((s: Session) => s.id),
+      [regular.id, f.session.id],
+    );
+  } finally {
+    await f.close();
+  }
+});
