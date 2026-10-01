@@ -9,6 +9,9 @@ import { createRequire } from 'node:module';
 import { Runtime } from '../src/server/runtime.ts';
 
 const require = createRequire(import.meta.url);
+const packagedExe = process.env.CAGENT_RUNTIME_TEST_EXE;
+if (packagedExe)
+  assert.ok(path.resolve(packagedExe).startsWith(path.resolve('release') + path.sep));
 const home = await fs.mkdtemp(path.join(os.tmpdir(), 'cagent-runtime-desktop-'));
 let app, page;
 const errors = [],
@@ -84,7 +87,12 @@ async function until(check) {
 const launch = async () => {
   const env = { ...process.env, CAGENT_HOME: home, CAGENT_SMOKE: '1' };
   delete env.ELECTRON_RUN_AS_NODE;
-  app = await electron.launch({ executablePath: require('electron'), args: ['.'], env });
+  app = await electron.launch({
+    executablePath: packagedExe ?? require('electron'),
+    args: packagedExe ? [] : ['.'],
+    env,
+  });
+  if (packagedExe) assert.equal(await app.evaluate(({ app }) => app.isPackaged), true);
   page = await app.firstWindow();
   page.on('pageerror', (e) => errors.push(e.message));
   await page.getByLabel('消息', { exact: true }).waitFor();
@@ -247,9 +255,16 @@ try {
   await fs.mkdir('.artifacts', { recursive: true });
   await fs.writeFile(
     '.artifacts/desktop-runtime-result.json',
-    JSON.stringify({ passed: true, checks, pageErrors: errors }, null, 2),
+    JSON.stringify({ passed: true, packaged: !!packagedExe, checks, pageErrors: errors }, null, 2),
   );
-  console.log(JSON.stringify({ passed: true, checks: checks.length, pageErrors: errors }));
+  console.log(
+    JSON.stringify({
+      passed: true,
+      packaged: !!packagedExe,
+      checks: checks.length,
+      pageErrors: errors,
+    }),
+  );
 } finally {
   await app?.close();
   mock.closeAllConnections();
