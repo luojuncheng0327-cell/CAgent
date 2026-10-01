@@ -46,6 +46,11 @@ try {
     reasoning: ['high'],
     defaultReasoning: 'high',
   });
+  // Fast consecutive writes may share a timestamp; neither keyboard endpoint has a fixed name.
+  runtime.store.db
+    .prepare('UPDATE records SET updated_at=? WHERE kind=?')
+    .run(model.updatedAt, 'model');
+  assert.equal(runtime.store.list('model')[0].updatedAt, runtime.store.list('model')[1].updatedAt);
   const agent = runtime.store.list('agent')[0];
   runtime.saveAgent({ ...agent, name: '示例助手', modelId: model.id }, agent.id);
   runtime.savePreferences({ ...runtime.preferences(), setupComplete: true, theme: 'light' });
@@ -89,6 +94,11 @@ try {
     }
     assert.equal((await state())[field], expected, `Persisted ${field}`);
   }
+  async function savedModel(value) {
+    await saved('modelId', value.id);
+    await saved('reasoning', value.defaultReasoning);
+    await trigger('聊天模型').getByText(value.name, { exact: true }).waitFor();
+  }
   async function capture(name) {
     await page.mouse.move(1000, 790);
     await page.evaluate(() => document.fonts.ready);
@@ -126,18 +136,38 @@ try {
   await capture('menus-model-warm');
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
-  await saved('modelId', other.id);
-  await saved('reasoning', 'high');
+  await savedModel(other);
   assert.equal(await menu('聊天模型').count(), 0);
   assert.equal(
     await trigger('聊天模型').evaluate((element) => element === document.activeElement),
     true,
   );
   await trigger('聊天模型').click();
-  await page.keyboard.press('End');
+  await menu('聊天模型').waitFor();
+  const first = page.getByRole('option').first();
+  const firstName = await first.getAttribute('aria-label');
+  const firstValue = [model, other].find((value) => value.name === firstName);
+  assert.ok(firstValue);
+  await page.keyboard.press('Home');
+  assert.equal(await first.evaluate((element) => element === document.activeElement), true);
   await page.keyboard.press('Enter');
-  await saved('modelId', model.id);
-  await saved('reasoning', 'medium');
+  await savedModel(firstValue);
+  await trigger('聊天模型').click();
+  await menu('聊天模型').waitFor();
+  const last = page.getByRole('option').last();
+  const lastName = await last.getAttribute('aria-label');
+  const lastValue = [model, other].find((value) => value.name === lastName);
+  assert.ok(lastValue);
+  await page.keyboard.press('End');
+  assert.equal(await last.evaluate((element) => element === document.activeElement), true);
+  await page.keyboard.press('Enter');
+  await savedModel(lastValue);
+  if (lastValue.id !== model.id) {
+    await trigger('聊天模型').click();
+    await menu('聊天模型').waitFor();
+    await page.getByRole('option', { name: model.name, exact: true }).click();
+    await savedModel(model);
+  }
   await trigger('推理档位').click();
   assert.equal(await page.getByRole('option', { name: '关闭', exact: true }).count(), 1);
   await capture('menus-reasoning-warm');
@@ -218,6 +248,7 @@ try {
       passed: true,
       checks: [
         'model grouping and persistence',
+        'same-timestamp model home/end select actual endpoints',
         'reasoning reset and unique off option',
         'permission choices preserve their meaning',
         'disabled future permissions',
