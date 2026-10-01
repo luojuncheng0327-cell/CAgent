@@ -154,6 +154,43 @@ test('CA-SESSION-010 多目录不通过符号链接或同名前缀绕过授权�
   }
 });
 
+test('CA-SESSION-010 撤销子目录不会重新继承父目录写权限；显式重新授权才恢复访问', async () => {
+  const f = await directories();
+  try {
+    const child = path.join(f.a, '子目录');
+    await fs.mkdir(child);
+    await fs.writeFile(path.join(child, '内容.md'), '需要保留');
+    await f.grant([
+      { path: f.a, access: 'write' },
+      { path: child, access: 'read' },
+    ]);
+    const s = await f.grant([{ path: f.a, access: 'write' }]);
+    await assert.rejects(
+      readWorkspaceFile(f.rt.store, s, '子目录/内容.md'),
+      (e: any) => e.code === 'OUTSIDE_WORKSPACE',
+    );
+    await assert.rejects(
+      writeWorkspaceFile(f.rt.store, s, '子目录/新.md', 'x'),
+      (e: any) => e.code === 'OUTSIDE_WORKSPACE',
+    );
+    await writeWorkspaceFile(f.rt.store, s, '父目录仍可写.md', 'x');
+    const restored = await f.grant([
+      { path: f.a, access: 'write' },
+      { path: child, access: 'read' },
+    ]);
+    assert.equal(
+      (await readWorkspaceFile(f.rt.store, restored, '子目录/内容.md')).text,
+      '需要保留',
+    );
+    await assert.rejects(
+      writeWorkspaceFile(f.rt.store, restored, '子目录/新.md', 'x'),
+      (e: any) => e.code === 'DIRECTORY_READ_ONLY',
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
+
 test('CA-SESSION-010 等待批准时撤销或降为只读，批准后仍拒绝写入', async () => {
   for (const revoke of [true, false]) {
     const f = await directories();
