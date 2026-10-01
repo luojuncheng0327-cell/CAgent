@@ -199,6 +199,10 @@ test('CA-SESSION-003 手动顺序和置顶顺序独立、重启保留，新会�
       const data = (await res.json()).data;
       assert.equal(data.preferences.sessionSort, 'manual');
       assert.deepEqual(data.sessionOrder.pinned, [a.id, b.id]);
+      await reopened.updateSession(b.id, {
+        archived: true,
+        revision: reopened.store.need<Session>('session', b.id).revision,
+      });
       reopened.deleteSession(b.id);
       assert.deepEqual(reopened.sessionOrder().pinned, [a.id]);
     } finally {
