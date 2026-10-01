@@ -549,15 +549,22 @@ export async function infer(o: Inference): Promise<ModelResult> {
       const reader = response.body.getReader();
       let raw = '';
       const decoder = new TextDecoder();
+      const abort = () => {
+        void reader.cancel(signal.reason).catch(() => {});
+      };
+      signal.addEventListener('abort', abort, { once: true });
+      if (signal.aborted) abort();
       try {
         while (true) {
           const n = await reader.read();
+          signal.throwIfAborted();
           if (n.done) break;
           raw += decoder.decode(n.value, { stream: true });
           invariant(raw.length <= 4 * 1024 * 1024, 'RESPONSE_TOO_LARGE', '模型响应超出上限', 502);
         }
         raw += decoder.decode();
       } finally {
+        signal.removeEventListener('abort', abort);
         await reader.cancel().catch(() => {});
         reader.releaseLock();
       }

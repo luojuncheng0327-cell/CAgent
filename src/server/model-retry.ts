@@ -42,7 +42,7 @@ export async function fetchModelResponse(
           : Date.parse(retryAfter) - Date.now();
         if (Number.isFinite(milliseconds)) wait = Math.max(0, milliseconds);
       }
-      await response.body?.cancel();
+      await response.body?.cancel().catch(() => {});
       failure = new AppError(
         `MODEL_HTTP_${response.status}`,
         `模型服务返回 HTTP ${response.status}`,

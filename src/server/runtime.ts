@@ -779,6 +779,11 @@ export class Runtime {
         'COMPACT_INVALID',
         '压缩未返回有效摘要',
       );
+      invariant(
+        estimateContext([], baseInstructions + '\n已有摘要：\n' + result.text) < budget,
+        'COMPACT_SUMMARY_LIMIT',
+        '返回的摘要仍超过模型窗口，本次摘要未提交；请选择更大上下文模型',
+      );
       text = result.text;
       cursor = batch.cursor;
       batches++;
