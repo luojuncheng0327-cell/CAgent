@@ -1450,7 +1450,11 @@ function MessageView({
   timeZone: string;
   located?: boolean;
 }) {
-  if (m.role === 'tool')
+  if (m.role === 'tool') {
+    let unknown = false;
+    try {
+      unknown = JSON.parse(m.text)?.error?.code === 'TOOL_OUTCOME_UNKNOWN';
+    } catch {}
     return (
       <details
         className="tool-result"
@@ -1461,12 +1465,13 @@ function MessageView({
         open={located || undefined}
       >
         <summary>
-          <Icon name="check" size={14} />
-          工具结果 · {m.callId}
+          {!unknown && <Icon name="check" size={14} />}
+          {unknown ? '工具结果未知' : '工具结果'} · {m.callId}
         </summary>
         <pre>{m.text}</pre>
       </details>
     );
+  }
   return (
     <article
       className={'message ' + m.role}

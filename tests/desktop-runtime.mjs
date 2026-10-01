@@ -216,6 +216,10 @@ try {
     .waitFor();
   const restored = await api(`/sessions/${recovery.id}`);
   await page.getByText('工具结果未知 · unfinished', { exact: true }).waitFor({ timeout: 1500 });
+  assert.equal(
+    await page.getByText('工具结果未知 · unfinished', { exact: true }).locator('svg').count(),
+    0,
+  );
   checks.push('折叠工具卡明确显示结果未知，不显示完成图标');
   assert.equal(restored.runs[0].status, 'interrupted');
   assert.equal(
