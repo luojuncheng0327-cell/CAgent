@@ -53,6 +53,8 @@ pnpm run package:win
 
 产物位于 `release/CAgent-0.1.0-Windows-x64.exe`，双击解压到临时目录后运行，不执行安装。EXE、窗口、托盘以及主助手界面使用维护者提供的同一张图片。仅用于本地预览；未完成的功能和完整产品发布门禁继续保留。
 
+2026-10-01 的最新包已包含搜索定位、手动排序和多目录权限。启动新版前先从托盘退出当前预览；只关闭主窗口会收进托盘。`release/CAgent-0.1.0-Windows-x64-p1.exe` 是此次另名生成的同字节副本，标准文件名也已更新。测试证据见 [P1 验证](docs/P1-CONTINUATION-TDD.md)。
+
 ## 验证
 
 ```powershell
