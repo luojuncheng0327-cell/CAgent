@@ -1,12 +1,12 @@
 {
   "schema": 2,
   "asOf": "2026-10-01",
-  "milestone": "主助手图片已接入，文件区预览切换、工具栏、字数和标签细节已收敛；主界面仍有已记录差异，六步引导和完整设置尚未开始复刻",
+  "milestone": "六步首次引导已接入五种语言、称呼与记忆、供应商搜索、模型职责选择和工作台；支持分步恢复与原子完成，完整设置尚未开始复刻",
   "counts": {
     "verified_full": 0,
-    "verified_local": 22,
+    "verified_local": 23,
     "partial": 56,
-    "not_started": 130,
+    "not_started": 129,
     "planned": 1,
     "external_decision": 1
   },
@@ -20,14 +20,19 @@
       "title": "空目录初始化",
       "phase": 1,
       "scope": "required",
-      "status": "partial",
+      "status": "verified_local",
       "evidence": [
         "src/desktop/main.ts",
         "src/desktop/preload.ts",
-        "tests/desktop-smoke.mjs"
+        "tests/desktop-smoke.mjs",
+        "src/ui/Setup.tsx",
+        "src/ui/SetupMenu.tsx",
+        "src/server/setup.ts",
+        "tests/setup.test.ts",
+        "tests/desktop-onboarding.mjs"
       ],
-      "done": "空数据目录首次启动会显示首次设置（供应商、协议、地址、模型），五种协议都能选，完成后重启不再弹出。",
-      "todo": "还不能选界面语言；首次设置尚未复刻成原版的六步引导（界面复刻第 3 步）。"
+      "done": "空目录进入六步引导，五种语言即刻切换；填写称呼、助手名与记忆开关，搜索供应商并测试连接，添加模型与选择职责，确认独立工作台。错误保留配置，URL 错误定位字段；分步保存、重启恢复，完成标记与首个会话事务提交，重启后不再弹出。",
+      "todo": "用本机模型夹具和系统对话框替身验证，尚未连接真实账号；五语仅覆盖引导，主界面翻译、自动记忆提炼与辅助任务分工继续单独追踪。"
     },
     {
       "id": "CA-BOOT-002",
@@ -239,10 +244,12 @@
       "evidence": [
         "src/ui/ChoiceMenu.tsx",
         "src/ui/App.tsx",
-        "tests/desktop-menus.mjs"
+        "src/ui/Setup.tsx",
+        "tests/desktop-menus.mjs",
+        "tests/desktop-onboarding.mjs"
       ],
-      "done": "每个会话可以在分组菜单里选模型，推理档位跟着联动；保存、重新载入和生成中锁定都有桌面测试。",
-      "todo": "轻量任务、复杂任务、embedding、视觉这些辅助模型职责还没有；跨会话互不影响的完整情形还没验证。"
+      "done": "每个会话可以在分组菜单里选模型，推理档位跟着联动；首次引导可保存小工具 / 大工具模型职责引用，重启后恢复选择。保存、重新载入和生成中锁定都有桌面测试。",
+      "todo": "辅助模型自动任务分工、embedding 和视觉职责调用还没有；跨会话互不影响的完整情形还没验证。"
     },
     {
       "id": "CA-MODEL-008",
@@ -781,14 +788,16 @@
       "title": "头像与用户资料",
       "phase": 2,
       "scope": "required",
-      "status": "not_started",
+      "status": "partial",
       "evidence": [
         "src/ui/Marks.tsx",
+        "src/ui/Setup.tsx",
         "src/ui/assets/README.md",
-        "tests/desktop-appearance.mjs"
+        "tests/desktop-appearance.mjs",
+        "tests/desktop-onboarding.mjs"
       ],
-      "done": "主助手的欢迎页、消息、会话列表和助手设置使用维护者提供的本机图片，其他助手及用户使用首字头像。",
-      "todo": "上传和裁剪头像、用户资料（名字、简介）都还没有。"
+      "done": "首次引导可以填写用户称呼，保存与重启保持，实际聊天会携带这条用户资料；主助手的引导页、欢迎页、消息、会话列表和助手设置使用维护者提供的本机图片，其他助手及用户使用首字头像。",
+      "todo": "上传和裁剪头像、后续用户资料编辑页、简介等扩展资料还没有。"
     },
     {
       "id": "CA-AGENT-005",
@@ -826,10 +835,12 @@
       "status": "partial",
       "evidence": [
         "src/server/workspace.ts",
+        "src/server/setup.ts",
         "src/ui/Workspace.tsx",
-        "tests/boundaries.test.ts"
+        "tests/boundaries.test.ts",
+        "tests/desktop-onboarding.mjs"
       ],
-      "done": "每个会话可以选一个工作文件夹，重启后保留。",
+      "done": "首次引导可以准备默认工作台或选择现有目录，中文与 emoji 路径通过本机验证；后续新会话沿用默认工作台，也可明确解除授权。每个会话可以另选一个工作文件夹，重启后保留。",
       "todo": "最近使用的工作区列表和挂载多个根目录还没有。"
     },
     {
@@ -2287,10 +2298,12 @@
       "evidence": [
         "src/shared/contracts.ts",
         "src/ui/Settings.tsx",
-        "tests/p1-p2.test.ts"
+        "src/ui/setup-copy.ts",
+        "tests/p1-p2.test.ts",
+        "tests/desktop-onboarding.mjs"
       ],
-      "done": "可以选择显示时区。",
-      "todo": "界面语言固定为简体中文，繁中、英、日、韩还没有。"
+      "done": "可以选择显示时区；首次引导有简体、繁体、英语、日语、韩语文案，语言选择可保存与重启恢复。",
+      "todo": "主界面和设置仍固定为简体中文，其他四种语言与完整多语言视觉矩阵还没有。"
     },
     {
       "id": "CA-PREF-003",

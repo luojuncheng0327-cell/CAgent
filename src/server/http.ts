@@ -4,6 +4,7 @@ import path from 'node:path';
 import { randomBytes, timingSafeEqual, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { Runtime } from './runtime.ts';
+import { completeSetup, prepareSetupWorkspace } from './setup.ts';
 import type {
   Session,
   Run,
@@ -169,6 +170,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         json(res, {
           data: {
             preferences: rt.preferences(),
+            suggestedWorkspace: rt.suggestedWorkspace,
             agents: rt.store.list('agent'),
             providers: rt.store.list('provider'),
             models: rt.store.list('model'),
@@ -198,6 +200,14 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         json(res, { data: rt.savePreferences(await body(req)) });
         return;
       }
+      if (route === '/api/v1/setup/workspace' && method === 'POST') {
+        json(res, { data: await prepareSetupWorkspace(rt, await body(req)) });
+        return;
+      }
+      if (route === '/api/v1/setup/complete' && method === 'POST') {
+        json(res, { data: await completeSetup(rt, await body(req)) });
+        return;
+      }
       for (const [kind, save] of [
         ['providers', (b: unknown, id?: string) => rt.saveProvider(b, id)],
         ['models', (b: unknown, id?: string) => rt.saveModel(b, id)],
@@ -218,7 +228,10 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           else if (kind === 'models') {
             invariant(
               !rt.store.list<Session>('session').some((s) => s.modelId === id) &&
-                !rt.store.list<Agent>('agent').some((a) => a.modelId === id),
+                !rt.store.list<Agent>('agent').some((a) => a.modelId === id) &&
+                ![rt.preferences().smallToolModelId, rt.preferences().largeToolModelId].includes(
+                  id,
+                ),
               'MODEL_IN_USE',
               '模型仍被会话或助手使用',
               409,

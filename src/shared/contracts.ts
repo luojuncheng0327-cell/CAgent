@@ -86,6 +86,11 @@ export const preferenceInput = z.object({
   editorFontSize: z.number().int().min(12).max(24).default(16),
   editorLineHeight: z.number().min(1.2).max(2.5).default(1.5),
   setupComplete: z.boolean().default(false),
+  setupStep: z.number().int().min(0).max(5).default(0),
+  userName: z.string().trim().max(120).default(''),
+  defaultWorkspace: z.string().max(4096).nullable().default(null),
+  smallToolModelId: id.nullable().default(null),
+  largeToolModelId: id.nullable().default(null),
   primaryAgentId: id.nullable().default(null),
   revision: z.number().int().positive().optional(),
 });

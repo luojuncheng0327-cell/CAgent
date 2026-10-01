@@ -11,7 +11,7 @@
 export const asOf = '2026-10-01';
 
 export const milestone =
-  '主助手图片已接入，文件区预览切换、工具栏、字数和标签细节已收敛；主界面仍有已记录差异，六步引导和完整设置尚未开始复刻';
+  '六步首次引导已接入五种语言、称呼与记忆、供应商搜索、模型职责选择和工作台；支持分步恢复与原子完成，完整设置尚未开始复刻';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -27,8 +27,8 @@ export const replica = [
   ],
   [
     '3. 六步引导',
-    'not_started',
-    '原版首次使用分语言、名字与记忆、AI 供应商、对话模型、工作台、准备就绪六步；目前仍是简化的首次设置。',
+    'done',
+    '六页按原版截图独立实现：约 545×774 首次窗口、440px 内容列、五语引导、主助手图片、供应商搜索与五协议、模型与辅助职责选择、工作台和五张完成卡；分步保存、重启恢复与原子完成已验证。文案和图片独立，未实现的记忆提炼、自动分工、便笺与协作如实标注；主界面翻译仍待补。',
   ],
   [
     '4. 设置弹层',
@@ -84,10 +84,17 @@ const ownFormat = '只覆盖本项目的新数据格式。';
 // P1 · 启动、桌面与初始化
 item(
   'CA-BOOT-001',
-  'partial',
-  desktop,
-  '空数据目录首次启动会显示首次设置（供应商、协议、地址、模型），五种协议都能选，完成后重启不再弹出。',
-  '还不能选界面语言；首次设置尚未复刻成原版的六步引导（界面复刻第 3 步）。',
+  'verified_local',
+  [
+    ...desktop,
+    'src/ui/Setup.tsx',
+    'src/ui/SetupMenu.tsx',
+    'src/server/setup.ts',
+    'tests/setup.test.ts',
+    'tests/desktop-onboarding.mjs',
+  ],
+  '空目录进入六步引导，五种语言即刻切换；填写称呼、助手名与记忆开关，搜索供应商并测试连接，添加模型与选择职责，确认独立工作台。错误保留配置，URL 错误定位字段；分步保存、重启恢复，完成标记与首个会话事务提交，重启后不再弹出。',
+  '用本机模型夹具和系统对话框替身验证，尚未连接真实账号；五语仅覆盖引导，主界面翻译、自动记忆提炼与辅助任务分工继续单独追踪。',
 );
 item(
   'CA-BOOT-002',
@@ -164,9 +171,15 @@ item(
 item(
   'CA-MODEL-007',
   'partial',
-  ['src/ui/ChoiceMenu.tsx', 'src/ui/App.tsx', 'tests/desktop-menus.mjs'],
-  '每个会话可以在分组菜单里选模型，推理档位跟着联动；保存、重新载入和生成中锁定都有桌面测试。',
-  '轻量任务、复杂任务、embedding、视觉这些辅助模型职责还没有；跨会话互不影响的完整情形还没验证。',
+  [
+    'src/ui/ChoiceMenu.tsx',
+    'src/ui/App.tsx',
+    'src/ui/Setup.tsx',
+    'tests/desktop-menus.mjs',
+    'tests/desktop-onboarding.mjs',
+  ],
+  '每个会话可以在分组菜单里选模型，推理档位跟着联动；首次引导可保存小工具 / 大工具模型职责引用，重启后恢复选择。保存、重新载入和生成中锁定都有桌面测试。',
+  '辅助模型自动任务分工、embedding 和视觉职责调用还没有；跨会话互不影响的完整情形还没验证。',
 );
 item(
   'CA-MODEL-008',
@@ -474,10 +487,16 @@ item(
 );
 item(
   'CA-AGENT-004',
-  'not_started',
-  ['src/ui/Marks.tsx', 'src/ui/assets/README.md', 'tests/desktop-appearance.mjs'],
-  '主助手的欢迎页、消息、会话列表和助手设置使用维护者提供的本机图片，其他助手及用户使用首字头像。',
-  '上传和裁剪头像、用户资料（名字、简介）都还没有。',
+  'partial',
+  [
+    'src/ui/Marks.tsx',
+    'src/ui/Setup.tsx',
+    'src/ui/assets/README.md',
+    'tests/desktop-appearance.mjs',
+    'tests/desktop-onboarding.mjs',
+  ],
+  '首次引导可以填写用户称呼，保存与重启保持，实际聊天会携带这条用户资料；主助手的引导页、欢迎页、消息、会话列表和助手设置使用维护者提供的本机图片，其他助手及用户使用首字头像。',
+  '上传和裁剪头像、后续用户资料编辑页、简介等扩展资料还没有。',
 );
 item(
   'CA-AGENT-005',
@@ -491,8 +510,14 @@ item(
 item(
   'CA-WORK-001',
   'partial',
-  ['src/server/workspace.ts', 'src/ui/Workspace.tsx', 'tests/boundaries.test.ts'],
-  '每个会话可以选一个工作文件夹，重启后保留。',
+  [
+    'src/server/workspace.ts',
+    'src/server/setup.ts',
+    'src/ui/Workspace.tsx',
+    'tests/boundaries.test.ts',
+    'tests/desktop-onboarding.mjs',
+  ],
+  '首次引导可以准备默认工作台或选择现有目录，中文与 emoji 路径通过本机验证；后续新会话沿用默认工作台，也可明确解除授权。每个会话可以另选一个工作文件夹，重启后保留。',
   '最近使用的工作区列表和挂载多个根目录还没有。',
 );
 item(
@@ -591,9 +616,15 @@ item(
 item(
   'CA-PREF-002',
   'partial',
-  ['src/shared/contracts.ts', 'src/ui/Settings.tsx', 'tests/p1-p2.test.ts'],
-  '可以选择显示时区。',
-  '界面语言固定为简体中文，繁中、英、日、韩还没有。',
+  [
+    'src/shared/contracts.ts',
+    'src/ui/Settings.tsx',
+    'src/ui/setup-copy.ts',
+    'tests/p1-p2.test.ts',
+    'tests/desktop-onboarding.mjs',
+  ],
+  '可以选择显示时区；首次引导有简体、繁体、英语、日语、韩语文案，语言选择可保存与重启恢复。',
+  '主界面和设置仍固定为简体中文，其他四种语言与完整多语言视觉矩阵还没有。',
 );
 item(
   'CA-PREF-003',

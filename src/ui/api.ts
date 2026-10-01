@@ -13,6 +13,7 @@ import type {
   Compaction,
 } from '../shared/contracts.ts';
 export interface Bootstrap {
+  suggestedWorkspace: string;
   preferences: Preferences;
   agents: Agent[];
   providers: Provider[];
@@ -98,6 +99,7 @@ declare global {
       minimize: () => void;
       maximize: () => void;
       close: () => void;
+      finishSetup: () => void;
       onFlush: (handler: () => Promise<void>) => () => void;
     };
   }

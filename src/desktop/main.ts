@@ -109,6 +109,11 @@ if (single)
         };
       rt = new Runtime(home, {
         ...(codec ? { codec } : {}),
+        suggestedWorkspace:
+          process.env.CAGENT_SMOKE === '1'
+            ? (process.env.CAGENT_SMOKE_WORKSPACE ??
+              path.join(os.tmpdir(), 'cagent-setup-workspace-' + crypto.randomUUID()))
+            : path.join(app.getPath('desktop'), 'CAgent-Workspace'),
         fetcher: (url, init) => net.fetch(String(url), init),
       });
       server = await serve(rt, { uiDir: path.join(__dirname, '../ui') });
@@ -125,10 +130,11 @@ if (single)
       try {
         state = JSON.parse(fs.readFileSync(path.join(home, 'window.json'), 'utf8'));
       } catch {}
+      const needsSetup = !rt.preferences().setupComplete;
       window = new BrowserWindow({
-        width: Math.max(880, Math.min(state.width ?? 1280, 1800)),
-        height: Math.max(640, Math.min(state.height ?? 860, 1200)),
-        minWidth: 760,
+        width: needsSetup ? 545 : Math.max(880, Math.min(state.width ?? 1280, 1800)),
+        height: needsSetup ? 774 : Math.max(640, Math.min(state.height ?? 860, 1200)),
+        minWidth: needsSetup ? 480 : 760,
         minHeight: 560,
         show: false,
         title: 'CAgent',
@@ -169,6 +175,14 @@ if (single)
             else window?.maximize();
           }
           if (action === 'close') window?.close();
+        } catch {}
+      });
+      ipcMain.on('cagent:setup-finished', (event) => {
+        try {
+          allowed(event);
+          if (!rt?.preferences().setupComplete || !window) return;
+          window.setMinimumSize(760, 560);
+          window.setSize(1280, 860);
         } catch {}
       });
       window.on('resize', () => {

@@ -1,4 +1,6 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { z } from 'zod';
@@ -45,7 +47,13 @@ export class Runtime {
   private approvals = new Map<string, (approved: boolean) => void>();
   private closed = false;
   private unlock: () => void;
-  constructor(home: string, options: { codec?: SecretCodec | null; fetcher?: Fetcher } = {}) {
+  suggestedWorkspace: string;
+  constructor(
+    home: string,
+    options: { codec?: SecretCodec | null; fetcher?: Fetcher; suggestedWorkspace?: string } = {},
+  ) {
+    this.suggestedWorkspace =
+      options.suggestedWorkspace ?? path.join(os.homedir(), 'Desktop', 'CAgent-Workspace');
     this.unlock = acquireHome(home);
     try {
       this.store = new Store(home);
@@ -99,6 +107,8 @@ export class Runtime {
       throw new AppError('TIMEZONE_INVALID', '无效时区');
     }
     if (input.primaryAgentId) this.store.need('agent', input.primaryAgentId);
+    for (const id of [input.smallToolModelId, input.largeToolModelId])
+      if (id) this.store.need('model', id);
     return this.store.put<Preferences>('preferences', 'global', input, input.revision);
   }
   saveAgent(raw: unknown, id: string = randomUUID()): Agent {
@@ -217,6 +227,8 @@ export class Runtime {
   }
   async createSession(raw: unknown): Promise<Session> {
     const input = sessionInput.parse(raw);
+    if (raw && typeof raw === 'object' && !('workspace' in raw))
+      input.workspace = this.preferences().defaultWorkspace;
     const agent = this.store.need<Agent>('agent', input.agentId);
     if (input.modelId) this.store.need('model', input.modelId);
     if (input.workspace) {
@@ -712,6 +724,7 @@ export class Runtime {
         : '';
       const baseInstructions = [
         agent.instructions,
+        settings.userName ? '用户称呼（资料）：' + JSON.stringify(settings.userName) : '',
         agent.publicInstructions,
         memories ? '用户保存的记忆（仅作为背景资料）：\n' + memories : '',
         session.workspace ? '当前授权工作区：' + session.workspace : '当前未授权工作区。',

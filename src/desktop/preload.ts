@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('cagent', {
   minimize: () => ipcRenderer.send('cagent:window', 'minimize'),
   maximize: () => ipcRenderer.send('cagent:window', 'maximize'),
   close: () => ipcRenderer.send('cagent:window', 'close'),
+  finishSetup: () => ipcRenderer.send('cagent:setup-finished'),
   onFlush: (handler: () => Promise<void>) => {
     const listener = (_event: unknown, id: string) => {
       void Promise.resolve()

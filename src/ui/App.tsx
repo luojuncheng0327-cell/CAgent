@@ -19,7 +19,8 @@ import {
   Markdown,
   download,
 } from './components.tsx';
-import { Settings, Setup } from './Settings.tsx';
+import { Settings } from './Settings.tsx';
+import { Setup } from './Setup.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
 import { Workspace, hasUnsavedFiles, discardFileDrafts } from './Workspace.tsx';
@@ -306,6 +307,7 @@ export function App() {
   useEffect(() => {
     if (!data) return;
     const root = document.documentElement;
+    if (data.preferences.setupComplete) root.lang = 'zh-CN';
     const systemPalette = matchMedia('(prefers-color-scheme: dark)');
     const updatePalette = () => {
       const night =
@@ -562,11 +564,15 @@ export function App() {
           data={data}
           onDone={async () => {
             const next = await refresh();
-            const agent = next.agents[0];
-            const s = await api<Session>('/sessions', 'POST', {
-              agentId: agent.id,
-              modelId: agent.modelId,
-            });
+            window.cagent?.finishSetup();
+            const agent =
+              next.agents.find((a) => a.id === next.preferences.primaryAgentId) ?? next.agents[0];
+            const s =
+              next.sessions.find((s) => !s.archived) ??
+              (await api<Session>('/sessions', 'POST', {
+                agentId: agent.id,
+                modelId: agent.modelId,
+              }));
             selected.current = s.id;
             setSessionId(s.id);
             await loadSession(s.id, true);
