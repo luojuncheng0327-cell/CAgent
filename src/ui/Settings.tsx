@@ -3,7 +3,16 @@ import React, { useState } from 'react';
 import type { Bootstrap } from './api.ts';
 import { api } from './api.ts';
 import type { Agent, Model, Provider, Protocol, Preferences } from '../shared/contracts.ts';
-import { Field, Icon, Modal, ProtocolSelect, protocolLabels, download } from './components.tsx';
+import {
+  Field,
+  Icon,
+  Portrait,
+  assistantPortrait,
+  Modal,
+  ProtocolSelect,
+  protocolLabels,
+  download,
+} from './components.tsx';
 
 export function Setup({
   data,
@@ -652,7 +661,11 @@ function Agents({
       </div>
       {data.agents.map((a) => (
         <div className="settings-card setting-row" key={a.id}>
-          <div className="avatar-small">{a.name.slice(0, 1)}</div>
+          <Portrait
+            name={a.name}
+            size={36}
+            src={a.id === data.preferences.primaryAgentId ? assistantPortrait : undefined}
+          />
           <div className="grow">
             <b>{a.name}</b>
             <small>{data.models.find((m) => m.id === a.modelId)?.name ?? '未选择默认模型'}</small>

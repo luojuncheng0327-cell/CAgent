@@ -31,7 +31,7 @@ export function ProtocolSelect({
     </select>
   );
 }
-export { Icon, Portrait } from './Marks.tsx';
+export { Icon, Portrait, assistantPortrait } from './Marks.tsx';
 import { Icon } from './Marks.tsx';
 const markdown = new MarkdownIt({ html: false, linkify: true, breaks: true });
 const originalLink = markdown.renderer.rules.link_open;

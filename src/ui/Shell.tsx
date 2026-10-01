@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Bootstrap } from './api.ts';
 import type { Session } from '../shared/contracts.ts';
-import { Icon, Portrait } from './Marks.tsx';
+import { Icon, Portrait, assistantPortrait } from './Marks.tsx';
 
 export function Soon({
   label,
@@ -184,6 +184,11 @@ export function SessionRail({
                   >
                     <span className="session-title">
                       <Portrait
+                        src={
+                          session.agentId === data.preferences.primaryAgentId
+                            ? assistantPortrait
+                            : undefined
+                        }
                         name={
                           data.agents.find((a) => a.id === session.agentId)?.name ??
                           session.agentName ??

@@ -167,6 +167,16 @@ try {
   await page.getByRole('button', { name: '界面渲染示例', exact: true }).click();
   await page.getByRole('heading', { name: '小标题', exact: true }).waitFor();
   await page.locator('.session-item.selected[aria-label="界面渲染示例"]').waitFor();
+  await page.waitForFunction(() => {
+    const images = document.querySelectorAll(
+      '.message.assistant .image-portrait img, .session-item.selected .image-portrait img',
+    );
+    return (
+      images.length === 2 &&
+      [...images].every((image) => image.complete && image.naturalWidth === 722)
+    );
+  });
+  assert.equal(await page.locator('.message.user .image-portrait img').count(), 0);
   await page.locator('.transcript').evaluate((node) => {
     node.scrollTop = 0;
   });

@@ -13,6 +13,7 @@ try {
   const runtime = new Runtime(home, { codec: null });
   const agent = runtime.store.list('agent')[0];
   runtime.saveAgent({ ...agent, name: '示例助手' }, agent.id);
+  runtime.saveAgent({ name: '另一助手', instructions: '本机界面验证。' });
   runtime.savePreferences({ ...runtime.preferences(), setupComplete: true, theme: 'light' });
   await runtime.close();
   app = await electron.launch({
@@ -59,6 +60,15 @@ try {
   });
   assert.deepEqual(texture, { loaded: true, pointerEvents: 'none' });
   assert.equal(await page.locator('.welcome .initial-portrait').innerText(), '示');
+  const portrait = page.locator('.welcome .image-portrait img');
+  await portrait.waitFor();
+  await page.waitForFunction(() => {
+    const image = document.querySelector('.welcome .image-portrait img');
+    return image?.complete && image.naturalWidth === 722 && image.naturalHeight === 722;
+  });
+  const portraitUrl = await portrait.getAttribute('src');
+  assert.equal(new URL(portraitUrl).origin, new URL(page.url()).origin);
+  assert.equal(await portrait.evaluate((image) => getComputedStyle(image).objectFit), 'cover');
   await fs.mkdir('.artifacts/ui-replica', { recursive: true });
   async function capture(file) {
     await page.evaluate(() => document.fonts.ready);
@@ -81,12 +91,27 @@ try {
   }
   await capture('palette-warm');
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
+  await page.getByRole('button', { name: '我的助手', exact: true }).click();
+  const agents = page.locator('.settings-body .setting-row');
+  assert.equal(
+    await agents.filter({ hasText: '示例助手' }).locator('.image-portrait img').count(),
+    1,
+  );
+  assert.equal(
+    await agents.filter({ hasText: '另一助手' }).locator('.initial-portrait').innerText(),
+    '另',
+  );
+  assert.equal(await agents.filter({ hasText: '另一助手' }).locator('img').count(), 0);
   await page.getByRole('button', { name: '界面外观', exact: true }).click();
   const theme = page.getByLabel('主题', { exact: true });
   await theme.selectOption('dark');
   await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
   assert.equal((await palette()).canvas, '#3b4a54');
   await page.getByRole('button', { name: '关闭对话框', exact: true }).click();
+  assert.equal(
+    await portrait.evaluate((image) => image.complete && image.naturalWidth === 722),
+    true,
+  );
   await capture('palette-night');
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
   await page.getByRole('button', { name: '界面外观', exact: true }).click();
@@ -104,6 +129,10 @@ try {
   await page.reload();
   await page.getByLabel('消息', { exact: true }).waitFor();
   assert.equal((await palette()).theme, 'light');
+  await page.waitForFunction(() => {
+    const image = document.querySelector('.welcome .image-portrait img');
+    return image?.complete && image.naturalWidth === 722;
+  });
   assert.deepEqual(errors, []);
   console.log(
     JSON.stringify({
@@ -114,7 +143,8 @@ try {
         'manual override and restart',
         'five bundled fonts under CSP',
         'non-interactive procedural texture',
-        'initial avatar',
+        'user-provided portrait under CSP, both themes and restart',
+        'assistant settings keep distinct portraits',
         '1280x800 captures',
       ],
       pageErrors: errors,

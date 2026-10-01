@@ -1,5 +1,7 @@
 import React from 'react';
 
+export const assistantPortrait = new URL('./assets/assistant-portrait.png', import.meta.url).href;
+
 // Drawn here on a 24-unit grid from simple geometric primitives.
 const strokes: Record<string, React.ReactNode> = {
   camera: (
@@ -158,13 +160,13 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
   );
 }
 
-export function Portrait({ name, size = 32 }: { name: string; size?: number }) {
+export function Portrait({ name, size = 32, src }: { name: string; size?: number; src?: string }) {
   const letters = [...name.trim()];
   const seed = letters.reduce((sum, letter) => sum + letter.codePointAt(0)!, 0);
   const palette = ['#537d96', '#7d8171', '#967f91', '#9b7b67'];
   return (
     <span
-      className="initial-portrait"
+      className={'initial-portrait' + (src ? ' image-portrait' : '')}
       aria-hidden="true"
       style={
         {
@@ -174,6 +176,18 @@ export function Portrait({ name, size = 32 }: { name: string; size?: number }) {
       }
     >
       {letters[0]?.toLocaleUpperCase() ?? 'C'}
+      {src && (
+        <img
+          src={src}
+          alt=""
+          width={size}
+          height={size}
+          draggable={false}
+          onError={(event) => {
+            event.currentTarget.style.display = 'none';
+          }}
+        />
+      )}
     </span>
   );
 }

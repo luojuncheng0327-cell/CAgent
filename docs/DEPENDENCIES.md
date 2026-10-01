@@ -41,6 +41,10 @@ TypeScript 5.9.3（Apache-2.0）、Vite 8.3.1（MIT）、esbuild 0.27.4（MIT）
 
 重新获取：`NODE_USE_ENV_PROXY=1 node scripts/fetch-fonts.mjs`（需要代理时让 Node 使用 `HTTPS_PROXY`）。
 
+## 界面图片
+
+维护者于 2026-10-01 提供 `下载.png`，作为主助手头像，已原样保存为 `src/ui/assets/assistant-portrait.png`。欢迎页、聊天消息、流式回复、会话列表和助手设置使用同一张本机图片；其他助手和用户继续按自己的名字显示首字头像。来源、尺寸和 SHA-256 见 `src/ui/assets/README.md`。此图片由维护者提供，不属于本项目自绘资产。
+
 ## 文档编辑器
 
 维护者于 2026-09-27 明确批准加入通用编辑器基础库 ProseMirror，用于在排版后的 Markdown 上直接改字（光标、撤销、中文输入）。`package.json` 固定版本直接依赖 9 个模块：prosemirror-model、prosemirror-state、prosemirror-view、prosemirror-commands、prosemirror-history、prosemirror-keymap、prosemirror-markdown、prosemirror-schema-list、prosemirror-inputrules。锁文件因此新增 13 个包，另外 4 个是间接带入的 prosemirror-transform、orderedmap、rope-sequence、w3c-keyname，全部为 MIT。prosemirror-markdown 还依赖项目原有的 markdown-it 和 @types/markdown-it，这两项版本不变。

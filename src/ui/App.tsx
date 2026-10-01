@@ -10,7 +10,15 @@ import type {
   Message,
   MessagePage,
 } from '../shared/contracts.ts';
-import { Icon, Portrait, Modal, Field, Markdown, download } from './components.tsx';
+import {
+  Icon,
+  Portrait,
+  assistantPortrait,
+  Modal,
+  Field,
+  Markdown,
+  download,
+} from './components.tsx';
 import { Settings, Setup } from './Settings.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
@@ -679,7 +687,15 @@ export function App() {
                     )}
                     {!detail || detail.messages.length === 0 ? (
                       <div className="welcome">
-                        <Portrait name={agent?.name ?? 'CAgent'} size={100} />
+                        <Portrait
+                          name={agent?.name ?? 'CAgent'}
+                          size={100}
+                          src={
+                            agent?.id === data.preferences.primaryAgentId
+                              ? assistantPortrait
+                              : undefined
+                          }
+                        />
                         <h1>今天，想一起做些什么？</h1>
                         <button
                           className="welcome-workspace"
@@ -716,6 +732,11 @@ export function App() {
                           }}
                           onRetry={() => void revise(m, 'retry')}
                           agentName={agent?.name ?? 'CAgent'}
+                          agentPortrait={
+                            agent?.id === data.preferences.primaryAgentId
+                              ? assistantPortrait
+                              : undefined
+                          }
                           onCopy={() =>
                             void navigator.clipboard
                               .writeText(m.text)
@@ -738,7 +759,14 @@ export function App() {
                     {(active || live.text) && (
                       <article className="message assistant live">
                         <div className="message-heading">
-                          <Portrait name={agent?.name ?? 'CAgent'} />
+                          <Portrait
+                            name={agent?.name ?? 'CAgent'}
+                            src={
+                              agent?.id === data.preferences.primaryAgentId
+                                ? assistantPortrait
+                                : undefined
+                            }
+                          />
                           <b>{agent?.name ?? 'CAgent'}</b>
                           <span className="muted">
                             {detail?.approvals.length ? '等待确认' : '正在处理'}
@@ -1188,6 +1216,7 @@ export function App() {
 function MessageView({
   message: m,
   agentName,
+  agentPortrait,
   onCopy,
   onFork,
   onEdit,
@@ -1198,6 +1227,7 @@ function MessageView({
 }: {
   message: Message;
   agentName: string;
+  agentPortrait?: string;
   onCopy: () => void;
   onFork: () => void;
   onEdit: () => void;
@@ -1219,7 +1249,10 @@ function MessageView({
   return (
     <article className={'message ' + m.role}>
       <div className="message-heading">
-        <Portrait name={m.role === 'user' ? '我' : agentName} />
+        <Portrait
+          name={m.role === 'user' ? '我' : agentName}
+          src={m.role === 'assistant' ? agentPortrait : undefined}
+        />
         <b>{m.role === 'user' ? '你' : agentName}</b>
       </div>
       <div className="message-content">

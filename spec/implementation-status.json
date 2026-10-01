@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "asOf": "2026-09-27",
+  "asOf": "2026-10-01",
   "milestone": "主界面选择菜单和文件直接编辑已完成首轮，剩余视觉细节待收敛；六步引导和完整设置尚未开始复刻",
   "counts": {
     "verified_full": 0,
@@ -782,8 +782,12 @@
       "phase": 2,
       "scope": "required",
       "status": "not_started",
-      "evidence": [],
-      "done": "目前只有自动生成的首字头像。",
+      "evidence": [
+        "src/ui/Marks.tsx",
+        "src/ui/assets/README.md",
+        "tests/desktop-appearance.mjs"
+      ],
+      "done": "主助手的欢迎页、消息、会话列表和助手设置使用维护者提供的本机图片，其他助手及用户使用首字头像。",
       "todo": "上传和裁剪头像、用户资料（名字、简介）都还没有。"
     },
     {
