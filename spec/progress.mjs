@@ -8,10 +8,10 @@
 //   not_started     未开始：只在已有零星基础时登记，证据可以为空
 // 没有登记的必做功能一律视为未开始。编号和规格来自冻结的 spec/catalog.mjs。
 
-export const asOf = '2026-10-01';
+export const asOf = '2026-10-02';
 
 export const milestone =
-  'P1 会话搜索片段与历史定位、手动和置顶排序、多目录读写授权已完成本机验证；六步首次引导保留，完整设置尚未开始复刻';
+  'P1 工具中断恢复、长历史分批压缩、有限网络重试和并发超限排队完成本机验证；完整设置与 P2 后续功能继续按交接推进';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -77,6 +77,13 @@ const fixtures = [
 ];
 const kernel = ['tests/runtime.test.ts', 'tests/boundaries.test.ts'];
 const continuation = ['tests/p1-p2.test.ts', 'tests/desktop-p1-p2.mjs'];
+const runtimeContinuation = [
+  'src/server/runtime.ts',
+  'tests/p1-runtime.test.ts',
+  'tests/p1-runtime-bounds.test.ts',
+  'tests/desktop-runtime.mjs',
+  'docs/P1-RUNTIME-TDD.md',
+];
 const fixtureLimit = '只用本机测试夹具验证，还没有连真实的外部模型服务和账号。';
 const localOwner = '只有本机使用者一种身份；手机、局域网等远程设备的身份还没有实现。';
 const ownFormat = '只覆盖本项目的新数据格式。';
@@ -197,10 +204,15 @@ item(
 );
 item(
   'CA-MODEL-010',
-  'partial',
-  ['src/server/runtime.ts', 'src/ui/Settings.tsx'],
-  '请求超时、最大输出和最大工具轮数可以设置；手动重试会另开分支，并禁止重放写入类工具。',
-  '网络失败时的自动重试策略（次数上限和停止条件）还没有。',
+  'verified_local',
+  [
+    ...runtimeContinuation,
+    'src/server/model-retry.ts',
+    'src/server/models.ts',
+    'src/ui/Settings.tsx',
+  ],
+  '请求超时、最大输出、工具轮数和网络自动重试次数可设置。默认最多重试 2 次，可设为 0–3；仅在响应正文开始前重试瞬时网络 / HTTP 错误，遵守 Retry-After 和整体截止时间。401、证书错误、过长等待、已输出内容的断流不自动重发；停止会取消等待。逐次记录未知用量，不重放写工具或更换模型；非流式读取超时也释放连接。',
+  fixtureLimit,
 );
 item(
   'CA-MODEL-011',
@@ -270,14 +282,14 @@ item(
   'verified_local',
   [...continuation, 'src/server/runtime.ts'],
   '可以从中间某条消息分叉，只继承那之前的内容；原历史、时间和各自的资源都保留。',
-  '外部服务迟到的事件、进程硬崩溃时的工具恢复还没有验证。',
+  '外部服务迟到事件的完整矩阵尚未验证；进程工具恢复单独见 CA-DATA-003。',
 );
 item(
   'CA-SESSION-008',
   'verified_local',
-  [...continuation, 'src/server/runtime.ts'],
-  '编辑后重发会另开分支；重试不会重复发送用户消息，复用已有的工具结果并阻止重复写入。',
-  '外部服务迟到的事件、进程硬崩溃时的工具恢复还没有验证。',
+  [...continuation, ...runtimeContinuation, 'tests/fixtures/runtime-crash.ts'],
+  '编辑后重发会另开分支；重试不会重复发送用户消息，复用已有的工具结果并阻止重复写入。子进程在文件写入后、工具结果保存前硬退出，重启补齐未知结果；重试分支再次收到写工具时，实际文件仍保持第一次内容。',
+  '已验证本机硬退出切片；外部服务迟到事件、其他系统副作用和所有崩溃时刻仍未完整验证。',
 );
 item(
   'CA-SESSION-009',
@@ -303,9 +315,9 @@ item(
 item(
   'CA-SESSION-011',
   'verified_local',
-  continuation,
-  '手动压缩和默认关闭的实验性自动压缩：保留最后两轮、不删原文，失败、取消或过期的摘要不会写入。',
-  '上下文用量按字符和图片数估算；太长的开头部分会直接拒绝，分批压缩和精确分词还没有。',
+  [...continuation, ...runtimeContinuation, 'src/server/compaction.ts'],
+  '手动和默认关闭的实验自动压缩保留最后两轮与全部原文。长历史按当前窗口分批合并摘要，超长消息与工具参数分段不丢字，图片只发送一次，工具只作为待总结资料。中途失败、取消、历史或摘要变化、返回摘要过大均不提交半成品；单次最多 64 批，每次请求单独计量，页面显示当前批次。',
+  '上下文仍按字符和图片数保守估算，没有精确分词；单张图片或已有摘要超过窗口时仍需更大模型。模型摘要事实保真和真实收费服务未验收。',
 );
 item(
   'CA-SESSION-012',
@@ -331,9 +343,9 @@ item(
 item(
   'CA-SESSION-015',
   'partial',
-  ['src/server/runtime.ts', 'src/server/http.ts', 'src/ui/App.tsx', 'tests/runtime.test.ts'],
-  '最多 4 个会话可以同时运行，并且可以分别停止。',
-  '超过 4 个时直接拒绝，而不是按规格排队；空闲会话的休眠和回收还没有。',
+  [...runtimeContinuation, 'src/server/run-queue.ts', 'src/server/http.ts', 'src/ui/App.tsx'],
+  '最多 4 个会话同时运行，超限按先后顺序排队，最多等待 64 个；队列满时保留原草稿和历史。同会话锁与请求幂等，排队可独立取消且不出站，出队重新检查供应商和当前权限；完成、失败、取消和退出均释放任务位置。页面显示排队与执行状态，重启保留历史并将未完任务明确标为中断。',
+  '长时间后台休眠与恢复、真实模型高负载和跨平台资源回收尚未专项验证。',
 );
 
 // P1 · 聊天交互与内容呈现
@@ -449,9 +461,14 @@ item(
 item(
   'CA-DATA-003',
   'verified_local',
-  kernel,
-  '运行中强行结束再启动，任务会标成中断，已经保存的输出还在。',
-  ownFormat,
+  [
+    ...kernel,
+    ...runtimeContinuation,
+    'src/server/run-recovery.ts',
+    'tests/fixtures/runtime-crash.ts',
+  ],
+  '运行中硬退出再启动，已保存输出和工具结果保留，未保存结果的工具调用补齐为 TOOL_OUTCOME_UNKNOWN，待确认请求失效，任务标为中断并显示原因。恢复事务原子提交，重复启动不重复追加；已落盘但事件未记完的消息不重复，未完成的排队任务不自动重放。',
+  ownFormat + '已生效的外部操作不能自动回滚；命令、网络等副作用的所有崩溃时刻仍需专项验证。',
 );
 item(
   'CA-DATA-004',
