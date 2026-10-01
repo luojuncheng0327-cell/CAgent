@@ -868,6 +868,27 @@ function Appearance({
           />
         </div>
         <div className="setting-row">
+          <label htmlFor="network-retries">
+            网络自动重试次数<small>仅在回复开始前重试；0 表示关闭，最多 3 次。</small>
+          </label>
+          <input
+            id="network-retries"
+            type="number"
+            min={0}
+            max={3}
+            defaultValue={data.preferences.maxNetworkRetries}
+            onBlur={(e) => {
+              if (Number(e.target.value) !== data.preferences.maxNetworkRetries)
+                void attempt(() =>
+                  api('/preferences', 'PUT', {
+                    ...data.preferences,
+                    maxNetworkRetries: Number(e.target.value),
+                  }),
+                );
+            }}
+          />
+        </div>
+        <div className="setting-row">
           <label htmlFor="model-timeout">模型超时（毫秒）</label>
           <input
             id="model-timeout"

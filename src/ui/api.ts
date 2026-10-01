@@ -33,6 +33,7 @@ export interface SessionDetail {
   runs: Run[];
   approvals: Approval[];
   eventCursor: number;
+  activity: Pick<RunEvent, 'kind' | 'payload'> | null;
   live: { text: string; reasoning: string };
 }
 export class ApiError extends Error {

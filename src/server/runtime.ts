@@ -463,15 +463,21 @@ export class Runtime {
       .prepare('SELECT coalesce(max(id),0) AS cursor FROM events WHERE session_id=?')
       .get(sessionId) as { cursor: number };
     const live = { text: '', reasoning: '' };
+    let activity: Pick<RunEvent, 'kind' | 'payload'> | null = null;
     if (active) {
       const rows = this.store.db
         .prepare(
           "SELECT kind,payload FROM events WHERE run_id=? AND id>coalesce((SELECT max(id) FROM events WHERE run_id=? AND kind='message'),0) ORDER BY id",
         )
         .all(active.id, active.id) as { kind: string; payload: string }[];
-      for (const r of rows)
-        if (r.kind === 'text' || r.kind === 'reasoning')
+      for (const r of rows) {
+        if (r.kind === 'text' || r.kind === 'reasoning') {
           live[r.kind] += JSON.parse(r.payload).text ?? '';
+          activity = null;
+        } else if (r.kind === 'model.retry' || r.kind === 'compact.progress')
+          activity = { kind: r.kind, payload: JSON.parse(r.payload) };
+        else if (r.kind === 'run.running') activity = null;
+      }
     }
     const page = this.store.messagePage(sessionId);
     return {
@@ -485,6 +491,7 @@ export class Runtime {
         .list<Approval>('approval')
         .filter((a) => a.sessionId === sessionId && a.status === 'pending'),
       eventCursor: cursor,
+      activity,
       live,
     };
   }

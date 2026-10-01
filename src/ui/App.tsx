@@ -47,6 +47,13 @@ const reasoningHints: Record<string, string> = {
   max: '最高档位',
 };
 
+function activityText(activity: SessionDetail['activity']) {
+  if (activity?.kind === 'model.retry') return '网络暂时不可用，将自动重试';
+  if (activity?.kind === 'compact.progress')
+    return `正在压缩（第 ${(activity.payload as { batch: number }).batch} 批）`;
+  return '';
+}
+
 export function App() {
   const [data, setData] = useState<Bootstrap | null>(null),
     [auth, setAuth] = useState(false),
@@ -70,6 +77,7 @@ export function App() {
     [newTitle, setNewTitle] = useState('');
   const [live, setLive] = useState({ text: '', reasoning: '' }),
     [active, setActive] = useState<Run | null>(null),
+    [activity, setActivity] = useState(''),
     [connection, setConnection] = useState(''),
     [sending, setSending] = useState(false);
   const [navigating, setNavigating] = useState(false);
@@ -165,6 +173,7 @@ export function App() {
     setDetail(value);
     cursor.current.set(id, value.eventCursor);
     setLive(value.live);
+    setActivity(activityText(value.activity));
     setActive(
       value.runs.find(
         (r) => !['succeeded', 'failed', 'cancelled', 'interrupted'].includes(r.status),
@@ -354,6 +363,14 @@ export function App() {
       if (selected.current !== id || event.id <= (cursor.current.get(id) ?? 0)) return;
       cursor.current.set(id, event.id);
       const p = event.payload as any;
+      if (event.kind === 'model.retry' || event.kind === 'compact.progress')
+        setActivity(activityText(event));
+      if (event.kind === 'text' || event.kind === 'reasoning' || event.kind === 'message')
+        setActivity('');
+      if (event.kind === 'run.running') {
+        setActivity('');
+        setActive((run) => (run?.id === event.runId ? { ...run, status: 'running' } : run));
+      }
       if (event.kind === 'text') setLive((x) => ({ ...x, text: x.text + (p.text ?? '') }));
       if (event.kind === 'reasoning')
         setLive((x) => ({ ...x, reasoning: x.reasoning + (p.text ?? '') }));
@@ -378,6 +395,7 @@ export function App() {
       if (event.kind === 'compact.end') void loadSession(id).catch(report);
       if (event.kind === 'tool.end') void loadSession(id).catch(report);
       if (event.kind === 'run.end') {
+        setActivity('');
         setLive({ text: '', reasoning: '' });
         setActive(null);
         void loadSession(id).catch(report);
@@ -928,7 +946,12 @@ export function App() {
                           />
                           <b>{agent?.name ?? 'CAgent'}</b>
                           <span className="muted">
-                            {detail?.approvals.length ? '等待确认' : '正在处理'}
+                            {active?.status === 'queued'
+                              ? '排队中'
+                              : detail?.approvals.length
+                                ? '等待确认'
+                                : activity ||
+                                  (active?.purpose === 'compact' ? '正在压缩' : '正在处理')}
                           </span>
                         </div>
                         {live.reasoning && (
@@ -983,12 +1006,14 @@ export function App() {
                         </div>
                       </div>
                     ))}
-                    {detail && !active && detail.runs[0]?.status === 'failed' && (
-                      <div className="run-error">
-                        <p>{detail.runs[0].error?.message}</p>
-                        <button onClick={() => void send(true)}>重试最近请求</button>
-                      </div>
-                    )}
+                    {detail &&
+                      !active &&
+                      ['failed', 'interrupted'].includes(detail.runs[0]?.status) && (
+                        <div className="run-error">
+                          <p>{detail.runs[0].error?.message}</p>
+                          <button onClick={() => void send(true)}>重试最近请求</button>
+                        </div>
+                      )}
                     <div ref={messagesEnd} />
                   </div>
                 </div>
