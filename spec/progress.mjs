@@ -11,7 +11,7 @@
 export const asOf = '2026-10-01';
 
 export const milestone =
-  '六步首次引导已接入五种语言、称呼与记忆、供应商搜索、模型职责选择和工作台；支持分步恢复与原子完成，完整设置尚未开始复刻';
+  'P1 会话搜索片段与历史定位、手动和置顶排序、多目录读写授权已完成本机验证；六步首次引导保留，完整设置尚未开始复刻';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -234,17 +234,29 @@ item(
 );
 item(
   'CA-SESSION-003',
-  'partial',
-  ['src/server/runtime.ts', 'src/ui/App.tsx'],
-  '可以改名、置顶，列表按更新时间排序。',
-  '置顶内部的自定义顺序和手动拖动排序还没有（界面里“排序方式”显示为即将提供）。',
+  'verified_local',
+  [
+    'src/server/session-navigation.ts',
+    'src/ui/Shell.tsx',
+    'tests/p1-navigation.test.ts',
+    'tests/desktop-navigation.mjs',
+  ],
+  '可以改名、置顶；排序菜单可选最近更新或手动排序。支持拖动和 Alt+上下键，置顶、活动和归档分别保存顺序，重启保持；重复、缺失、跨组和过期版本整体拒绝，新会话及删除不产生重复。',
+  '已在本机 SQLite 和真实 Electron 窗口验证；多客户端同时操作的完整矩阵尚未验证。',
 );
 item(
   'CA-SESSION-005',
-  'partial',
-  ['src/server/http.ts', 'src/ui/App.tsx'],
-  '可以按字面搜索会话标题和全部消息，不再只搜前一万条。',
-  '命中片段、搜索分页、会话内查找和点击命中跳到对应消息都还没有。',
+  'verified_local',
+  [
+    'src/server/session-navigation.ts',
+    'src/server/store.ts',
+    'src/ui/SearchResults.tsx',
+    'src/ui/App.tsx',
+    'tests/p1-navigation.test.ts',
+    'tests/desktop-navigation.mjs',
+  ],
+  '按字面搜索全部会话标题和消息，中文、英文大小写及特殊符号均有验证；返回带高亮的命中片段和分页，历史变化使旧分页明确失效。支持会话内查找与 Ctrl+F，点击深层命中加载连续消息窗口并定位，能返回最新消息。',
+  '已验证本机自动化和真实桌面操作；十万级历史搜索性能和完整 Unicode 大小写折叠尚未验证。',
 );
 item(
   'CA-SESSION-006',
@@ -276,10 +288,17 @@ item(
 );
 item(
   'CA-SESSION-010',
-  'partial',
-  ['src/server/tools.ts', 'tests/boundaries.test.ts'],
-  '每个会话可以授权一个工作文件夹，访问时核对真实路径，执行前重新检查权限。',
-  '一个会话授权多个文件夹、按文件夹分别设读写级别还没有；撤销授权后拒绝排队中的动作还没有专项验证。',
+  'verified_local',
+  [
+    'src/server/directories.ts',
+    'src/server/tools.ts',
+    'src/ui/DirectoryPermissions.tsx',
+    'src/ui/Workspace.tsx',
+    'tests/p1-directories.test.ts',
+    'tests/desktop-directories.mjs',
+  ],
+  '每会话最多授权 16 个目录，各自选择只读或读写，能切换当前工作台并重启恢复。父子目录使用最具体权限，撤销子目录后不重新继承父权限；待批准动作、旧快照、递归搜索均重新检查授权。真实路径、私有数据、同名前缀和目录联接越界均拒绝；备份导入清空授权。',
+  '已验证 Windows 本机及桌面操作；并发替换路径的攻击、跨平台符号链接和系统沙盒仍未验证。',
 );
 item(
   'CA-SESSION-011',
@@ -370,9 +389,9 @@ item(
 item(
   'CA-CHAT-013',
   'partial',
-  continuation,
-  '向上加载更早的历史时，保持当前阅读位置不跳动。',
-  '时间线、跳到指定消息和会话内查找还没有。',
+  [...continuation, 'tests/p1-navigation.test.ts', 'tests/desktop-navigation.mjs'],
+  '向上加载更早历史时保持阅读位置；会话内查找及搜索命中能定位具体消息，深层历史使用连续窗口，查看旧窗口时不会混入最新页，可返回最新消息。',
+  '时间线和大规模持续输出时保持阅读位置的专项矩阵尚未验证。',
 );
 
 // P1 · 权限、沙盒和资源安全
@@ -517,8 +536,8 @@ item(
     'tests/boundaries.test.ts',
     'tests/desktop-onboarding.mjs',
   ],
-  '首次引导可以准备默认工作台或选择现有目录，中文与 emoji 路径通过本机验证；后续新会话沿用默认工作台，也可明确解除授权。每个会话可以另选一个工作文件夹，重启后保留。',
-  '最近使用的工作区列表和挂载多个根目录还没有。',
+  '首次引导可以准备默认工作台或选择现有目录，中文与 emoji 路径通过本机验证；后续新会话沿用默认工作台，也可明确解除授权。每个会话可以授权多个目录、选择当前工作台，权限和选择重启保留。',
+  '最近使用的工作区列表和多个根目录同时展开的文件树还没有。',
 );
 item(
   'CA-WORK-002',

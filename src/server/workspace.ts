@@ -6,6 +6,7 @@ import type { Session, Stored } from '../shared/contracts.ts';
 import { invariant, AppError } from './errors.ts';
 import { workspacePath, readWorkspaceFile, writeWorkspaceFile, hash } from './tools.ts';
 import { z } from 'zod';
+import { requireDirectory, directoryFor } from './directories.ts';
 
 interface FileVersion extends Stored {
   sessionId: string;
@@ -16,12 +17,11 @@ interface FileVersion extends Stored {
 }
 export async function fileHistory(store: Store, session: Session, input: string) {
   const target = await workspacePath(store, session, input, true),
-    relative = path.relative(session.workspace!, target);
+    grant = requireDirectory(store, session, target),
+    relative = path.relative(grant.path, target);
   return store
     .list<FileVersion>('file-version')
-    .filter(
-      (v) => v.sessionId === session.id && v.workspace === session.workspace && v.path === relative,
-    );
+    .filter((v) => v.sessionId === session.id && v.workspace === grant.path && v.path === relative);
 }
 export async function restoreFile(store: Store, session: Session, raw: unknown) {
   const b = z
@@ -64,8 +64,12 @@ export async function manageFile(store: Store, session: Session, raw: unknown) {
     );
   };
   allowed();
-  const target = await workspacePath(store, session, b.path, true);
-  invariant(target !== session.workspace, 'ROOT_OPERATION', '不能修改工作区根目录');
+  const target = await workspacePath(store, session, b.path, true, true);
+  invariant(
+    target !== requireDirectory(store, session, target, true).path,
+    'ROOT_OPERATION',
+    '不能修改工作区根目录',
+  );
   if (b.operation === 'create-file') return writeWorkspaceFile(store, session, b.path, b.text);
   if (b.operation === 'create-directory') {
     allowed();
@@ -76,7 +80,7 @@ export async function manageFile(store: Store, session: Session, raw: unknown) {
     return { path: b.path };
   }
   invariant(b.destination, 'DESTINATION_REQUIRED', '需要目标路径');
-  const destination = await workspacePath(store, session, b.destination, true);
+  const destination = await workspacePath(store, session, b.destination, true, true);
   invariant(
     destination !== session.workspace && destination !== target,
     'INVALID_DESTINATION',
@@ -104,7 +108,7 @@ export async function manageFile(store: Store, session: Session, raw: unknown) {
       409,
     );
     allowed();
-    await workspacePath(store, session, b.path);
+    await workspacePath(store, session, b.path, false, true);
     await fs.unlink(target);
   }
   return result;
@@ -131,7 +135,7 @@ export async function watchWorkspace(
     if (pending) clearTimeout(pending);
     pending = setTimeout(() => {
       const current = store.get<Session>('session', session.id);
-      if (!current || current.workspace !== root) {
+      if (!current || current.workspace !== root || !directoryFor(current, root)) {
         changed({ kind: 'reset' });
         close();
         return;
@@ -146,7 +150,7 @@ export async function watchWorkspace(
   });
   const timer = setInterval(() => {
     const current = store.get<Session>('session', session.id);
-    if (!current || current.workspace !== root) {
+    if (!current || current.workspace !== root || !directoryFor(current, root)) {
       changed({ kind: 'reset' });
       close();
     }

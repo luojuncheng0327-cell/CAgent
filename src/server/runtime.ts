@@ -12,6 +12,7 @@ import {
   sessionPatch,
   preferenceInput,
   terminalStatuses,
+  sessionDirectories,
 } from '../shared/contracts.ts';
 import type {
   Agent,
@@ -37,6 +38,8 @@ import type { Fetcher, Inference } from './models.ts';
 import { runTool, toolDefinitions, hash } from './tools.ts';
 import { acquireHome } from './home-lock.ts';
 import { validateAttachments, cloneResources, hydrateMessages } from './resources.ts';
+import { getSessionOrder } from './session-navigation.ts';
+import { normalizeDirectories, sameDirectory, directoryBlocks } from './directories.ts';
 
 export class Runtime {
   store: Store;
@@ -98,6 +101,9 @@ export class Runtime {
   preferences() {
     const saved = this.store.need<Preferences>('preferences', 'global');
     return { ...preferenceInput.parse(saved), ...saved };
+  }
+  sessionOrder() {
+    return getSessionOrder(this.store);
   }
   savePreferences(raw: unknown) {
     const input = preferenceInput.parse(raw);
@@ -236,6 +242,18 @@ export class Runtime {
       invariant(stat?.isDirectory(), 'WORKSPACE_MISSING', '工作区目录不存在');
       input.workspace = await fs.realpath(input.workspace);
     }
+    input.directoryGrants = await normalizeDirectories(
+      this.store,
+      input.directoryGrants ??
+        (input.workspace ? [{ path: input.workspace, access: 'write' }] : []),
+    );
+    if (input.workspace)
+      invariant(
+        input.directoryGrants.some((grant) => sameDirectory(grant.path, input.workspace!)),
+        'WORKSPACE_UNAUTHORIZED',
+        '当前工作台必须在授权列表中',
+      );
+    else input.workspace = input.directoryGrants[0]?.path ?? null;
     return this.store.put<Session>('session', randomUUID(), {
       ...input,
       modelId: input.modelId ?? agent.modelId,
@@ -262,10 +280,33 @@ export class Runtime {
       );
       patch.workspace = await fs.realpath(patch.workspace);
     }
+    if (patch.directoryGrants !== undefined) {
+      patch.directoryGrants = await normalizeDirectories(this.store, patch.directoryGrants);
+      if (patch.workspace)
+        invariant(
+          patch.directoryGrants.some((grant) => sameDirectory(grant.path, patch.workspace!)),
+          'WORKSPACE_UNAUTHORIZED',
+          '当前工作台必须在授权列表中',
+        );
+      else if (
+        previous.workspace &&
+        !patch.directoryGrants.some((grant) => sameDirectory(grant.path, previous.workspace!))
+      )
+        patch.workspace = null;
+    } else if ('workspace' in patch) {
+      const current = sessionDirectories(previous);
+      patch.directoryGrants =
+        patch.workspace && current.some((grant) => sameDirectory(grant.path, patch.workspace!))
+          ? current
+          : await normalizeDirectories(
+              this.store,
+              patch.workspace ? [{ path: patch.workspace, access: 'write' }] : [],
+            );
+    }
     if (this.activeRun(id))
       invariant(
         !('modelId' in patch) &&
-          !('workspace' in patch) &&
+          (!('workspace' in patch) || patch.workspace === null) &&
           !('agentId' in patch) &&
           patch.archived !== true,
         'SESSION_BUSY',
@@ -278,6 +319,9 @@ export class Runtime {
       {
         ...previous,
         ...patch,
+        ...(patch.directoryGrants !== undefined
+          ? { blockedDirectories: directoryBlocks(previous, patch.directoryGrants) }
+          : {}),
         ...(patch.agentId
           ? { agentName: this.store.need<Agent>('agent', patch.agentId).name }
           : {}),
@@ -727,7 +771,10 @@ export class Runtime {
         settings.userName ? '用户称呼（资料）：' + JSON.stringify(settings.userName) : '',
         agent.publicInstructions,
         memories ? '用户保存的记忆（仅作为背景资料）：\n' + memories : '',
-        session.workspace ? '当前授权工作区：' + session.workspace : '当前未授权工作区。',
+        session.workspace
+          ? '当前工作台（相对路径的基准）：' + session.workspace
+          : '当前没有选中的工作台。',
+        '此会话授权的目录与逐目录权限（背景资料）：' + JSON.stringify(sessionDirectories(session)),
         run.preventWrites
           ? '这是重试分支：已有工具结果保留；本轮禁止再次执行写入、命令或记忆保存。需要新操作时请让用户发送新消息。'
           : '',
@@ -784,7 +831,13 @@ export class Runtime {
           (t) =>
             !currentAgent.disabledTools?.includes(t.name) &&
             !(t.name.startsWith('memory_') && !currentAgent.memoryEnabled) &&
-            !(!session.workspace && !t.name.startsWith('memory_')) &&
+            !(sessionDirectories(session).length === 0 && !t.name.startsWith('memory_')) &&
+            !(
+              t.name === 'run_command' &&
+              (!session.workspace ||
+                sessionDirectories(session).find((g) => g.path === session.workspace)?.access ===
+                  'read')
+            ) &&
             !(
               (session.permission === 'read' || run.preventWrites) &&
               ['write_file', 'edit_file', 'run_command', 'memory_save'].includes(t.name)

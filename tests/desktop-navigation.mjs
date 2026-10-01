@@ -17,6 +17,11 @@ try {
   const a = await rt.createSession({ agentId: agent.id, title: '导航验收' });
   const b = await rt.createSession({ agentId: agent.id, title: '第二个会话' });
   const c = await rt.createSession({ agentId: agent.id, title: '第三个会话' });
+  for (const [index, session] of [a, b, c].entries()) {
+    rt.store.db
+      .prepare("UPDATE records SET updated_at=? WHERE kind='session' AND id=?")
+      .run(`2026-10-01T00:00:0${index}.000Z`, session.id);
+  }
   let target;
   rt.store.transaction(() => {
     for (let i = 0; i < 241; i++) {
@@ -47,6 +52,11 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.search-hit').length === 48);
   await page.locator('.search-hit').filter({ hasText: '第4段' }).click();
   await page.locator(`[data-message-id="${target}"][data-located="true"]`).waitFor();
+  await page.waitForFunction((id) => {
+    const box = document.querySelector(`[data-message-id="${id}"]`)?.getBoundingClientRect();
+    const pane = document.querySelector('.transcript')?.getBoundingClientRect();
+    return box && pane && box.top >= pane.top && box.top < pane.bottom;
+  }, target);
   const visible = await page.locator(`[data-message-id="${target}"]`).evaluate((element) => {
     const box = element.getBoundingClientRect(),
       pane = document.querySelector('.transcript').getBoundingClientRect();
@@ -66,6 +76,11 @@ try {
   await page.getByRole('button', { name: '关闭会话查找', exact: true }).click();
   await page.getByRole('button', { name: '排序方式', exact: true }).click();
   await page.getByRole('option', { name: '手动排序', exact: true }).click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector('[aria-label="排序方式"]')?.getAttribute('title') ===
+      '排序方式：手动排序',
+  );
   await page.getByRole('button', { name: '导航验收', exact: true }).focus();
   await page.getByRole('button', { name: '导航验收', exact: true }).press('Alt+ArrowUp');
   await page.waitForFunction(

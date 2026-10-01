@@ -9,6 +9,8 @@ import type {
   Memory,
   Message,
   MessagePage,
+  SearchHit,
+  SessionOrder,
 } from '../shared/contracts.ts';
 import {
   Icon,
@@ -25,6 +27,8 @@ import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
 import { Workspace, hasUnsavedFiles, discardFileDrafts } from './Workspace.tsx';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
+import { SearchResults } from './SearchResults.tsx';
+import { DirectoryPermissions } from './DirectoryPermissions.tsx';
 
 const reasoningNames: Record<string, string> = {
   off: '关闭',
@@ -70,6 +74,13 @@ export function App() {
     [sending, setSending] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const [awayFromEnd, setAwayFromEnd] = useState(false);
+  const [finding, setFinding] = useState(false),
+    [findText, setFindText] = useState(''),
+    [located, setLocated] = useState<string | null>(null);
+  const searchJump = useRef(0);
+  const orderQueue = useRef<Promise<void>>(Promise.resolve());
+  const findEditor = useRef<HTMLInputElement>(null);
+  const [directoryPermissions, setDirectoryPermissions] = useState(false);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]),
     [uploading, setUploading] = useState(false),
     [historyBusy, setHistoryBusy] = useState(false),
@@ -130,7 +141,14 @@ export function App() {
     const previous = currentDetail.current;
     if (!restoreDraft && previous?.session.id === id) {
       value.messages = [
-        ...new Map([...previous.messages, ...value.messages].map((m) => [m.id, m])).values(),
+        ...new Map(
+          [
+            ...previous.messages,
+            ...(previous.pagination.hasNewer
+              ? value.messages.filter((m) => previous.messages.some((old) => old.id === m.id))
+              : value.messages),
+          ].map((m) => [m.id, m]),
+        ).values(),
       ].sort((a, b) => a.position - b.position);
       value.pagination = {
         ...previous.pagination,
@@ -226,6 +244,11 @@ export function App() {
     try {
       await persistDraft();
       selected.current = id;
+      setDirectoryPermissions(false);
+      searchJump.current++;
+      setFinding(false);
+      setFindText('');
+      setLocated(null);
       setDetail(null);
       setSessionId(id);
       setLive({ text: '', reasoning: '' });
@@ -337,7 +360,12 @@ export function App() {
       if (event.kind === 'message') {
         setDetail((x) =>
           x && x.session.id === id
-            ? { ...x, messages: [...x.messages.filter((m) => m.id !== p.message.id), p.message] }
+            ? {
+                ...x,
+                messages: x.pagination.hasNewer
+                  ? x.messages
+                  : [...x.messages.filter((m) => m.id !== p.message.id), p.message],
+              }
             : x,
         );
         setLive({ text: '', reasoning: '' });
@@ -461,6 +489,8 @@ export function App() {
               ].sort((a, b) => a.position - b.position),
               pagination: {
                 ...page,
+                after: previous.pagination.after,
+                hasNewer: previous.pagination.hasNewer,
                 corruptPositions: [
                   ...new Set([...page.corruptPositions, ...previous.pagination.corruptPositions]),
                 ],
@@ -477,6 +507,73 @@ export function App() {
       setHistoryBusy(false);
     }
   }
+  async function locateMessage(hit: SearchHit) {
+    if (uploading) return;
+    if (selected.current !== hit.sessionId) await selectSession(hit.sessionId);
+    if (selected.current !== hit.sessionId) return;
+    setView('chat');
+    if (!hit.messageId) return;
+    const version = ++searchJump.current;
+    try {
+      const page = await api<MessagePage>(
+        `/sessions/${hit.sessionId}/messages?around=${encodeURIComponent(hit.messageId)}`,
+      );
+      if (selected.current !== hit.sessionId || version !== searchJump.current) return;
+      if (!page.messages.some((m) => m.id === hit.messageId))
+        throw new Error('此消息损坏，无法定位');
+      follow.current = false;
+      setAwayFromEnd(true);
+      setLocated(hit.messageId);
+      const previous = currentDetail.current;
+      if (!previous || previous.session.id !== hit.sessionId) return;
+      const next = { ...previous, messages: page.messages, pagination: page };
+      currentDetail.current = next;
+      setDetail(next);
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          const element = document.getElementById('message-' + hit.messageId);
+          element?.scrollIntoView({ block: 'center' });
+          element?.focus({ preventScroll: true });
+        }),
+      );
+    } catch (e) {
+      report(e);
+    }
+  }
+  async function latestMessages() {
+    const id = selected.current;
+    if (!id) return;
+    searchJump.current++;
+    await persistDraft();
+    follow.current = true;
+    setAwayFromEnd(false);
+    setLocated(null);
+    await loadSession(id, true);
+  }
+  async function sortSessions(mode: 'updated' | 'manual') {
+    if (!data) return;
+    try {
+      await api('/preferences', 'PUT', { ...data.preferences, sessionSort: mode });
+      await refresh();
+    } catch (e) {
+      report(e);
+    }
+  }
+  async function reorderSessions(bucket: 'pinned' | 'active' | 'archived', ids: string[]) {
+    if (!data) return;
+    orderQueue.current = orderQueue.current
+      .catch(() => {})
+      .then(async () => {
+        const latest = await api<SessionOrder>('/sessions/order');
+        await api('/sessions/order', 'PUT', { bucket, ids, revision: latest.revision });
+        await refresh();
+        await refreshList();
+      });
+    await orderQueue.current.catch(async (e) => {
+      report(e);
+      await refresh().catch(report);
+    });
+  }
   async function workspaceChoose() {
     if (window.cagent) {
       const folder = await window.cagent.chooseFolder();
@@ -488,6 +585,16 @@ export function App() {
   }
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'f' &&
+        detail &&
+        !document.querySelector('dialog[open]')
+      ) {
+        event.preventDefault();
+        setFinding(true);
+        requestAnimationFrame(() => findEditor.current?.focus());
+      }
       if (
         (event.ctrlKey || event.metaKey) &&
         event.key.toLowerCase() === 'n' &&
@@ -610,6 +717,10 @@ export function App() {
             settings={() => setSettings(true)}
             collapse={() => setRail(false)}
             choose={(id) => void selectSession(id)}
+            locate={(hit) => void locateMessage(hit)}
+            sort={(mode) => void sortSessions(mode)}
+            reorder={(bucket, ids) => void reorderSessions(bucket, ids)}
+            report={report}
           />
         )}
         <main className="main-pane">
@@ -618,6 +729,37 @@ export function App() {
           ) : (
             <div className="content-columns">
               <section className={`conversation${!detail?.messages.length ? ' resting' : ''}`}>
+                {finding && current && (
+                  <div className="conversation-search">
+                    <div className="search-box">
+                      <input
+                        ref={findEditor}
+                        aria-label="查找本会话"
+                        placeholder="查找本会话"
+                        value={findText}
+                        onChange={(event) => setFindText(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') setFinding(false);
+                        }}
+                      />
+                      <button
+                        className="icon-button"
+                        aria-label="关闭会话查找"
+                        onClick={() => setFinding(false)}
+                      >
+                        <Icon name="close" size={14} />
+                      </button>
+                    </div>
+                    {findText.trim() && (
+                      <SearchResults
+                        query={findText}
+                        sessionId={current.id}
+                        choose={(hit) => void locateMessage(hit)}
+                        report={report}
+                      />
+                    )}
+                  </div>
+                )}
                 {connection && (
                   <div className="connection-note" role="status">
                     {connection}
@@ -628,7 +770,9 @@ export function App() {
                   ref={transcript}
                   onScroll={(e) => {
                     const el = e.currentTarget;
-                    follow.current = el.scrollHeight - el.scrollTop - el.clientHeight < 130;
+                    follow.current =
+                      !currentDetail.current?.pagination.hasNewer &&
+                      el.scrollHeight - el.scrollTop - el.clientHeight < 130;
                     setAwayFromEnd(!follow.current);
                   }}
                 >
@@ -676,6 +820,14 @@ export function App() {
                         onClick={() => void moreHistory()}
                       >
                         {historyBusy ? '正在读取…' : '加载更早消息'}
+                      </button>
+                    )}
+                    {detail?.pagination.hasNewer && (
+                      <button
+                        className="history-more"
+                        onClick={() => void latestMessages().catch(report)}
+                      >
+                        返回最新消息
                       </button>
                     )}
                     {!!detail?.pagination.corruptPositions.length && (
@@ -729,6 +881,7 @@ export function App() {
                         <MessageView
                           key={m.id}
                           message={m}
+                          located={located === m.id}
                           resources={detail.resources}
                           timeZone={data.preferences.timezone}
                           disabled={!!active || sending}
@@ -846,6 +999,10 @@ export function App() {
                         className="jump-latest"
                         aria-label="回到最新消息"
                         onClick={() => {
+                          if (detail.pagination.hasNewer) {
+                            void latestMessages().catch(report);
+                            return;
+                          }
                           follow.current = true;
                           messagesEnd.current?.scrollIntoView({
                             block: 'end',
@@ -930,6 +1087,17 @@ export function App() {
                                     event.currentTarget.closest('details')?.removeAttribute('open');
                                 }}
                               >
+                                <button
+                                  onClick={() => {
+                                    setFinding(true);
+                                    requestAnimationFrame(() => findEditor.current?.focus());
+                                  }}
+                                >
+                                  会话内查找
+                                </button>
+                                <button onClick={() => setDirectoryPermissions(true)}>
+                                  管理目录授权
+                                </button>
                                 <button
                                   onClick={() => {
                                     setNewTitle(current.title);
@@ -1087,6 +1255,9 @@ export function App() {
                   session={current}
                   preferences={data.preferences}
                   choose={workspaceChoose}
+                  authorize={() => setDirectoryPermissions(true)}
+                  switchDirectory={(path) => patch({ workspace: path })}
+                  canSwitch={!active}
                   report={report}
                   resources={detail.resources}
                   modelName={model?.model ?? '未选择模型'}
@@ -1165,6 +1336,16 @@ export function App() {
           </form>
         </Modal>
       )}
+      {directoryPermissions && current && (
+        <DirectoryPermissions
+          session={current}
+          close={() => setDirectoryPermissions(false)}
+          report={report}
+          save={async (directoryGrants, first) => {
+            await patch({ directoryGrants, ...(first && !active ? { workspace: first } : {}) });
+          }}
+        />
+      )}
       {workspace && (
         <Modal title="授权工作区" onClose={() => setWorkspace(false)}>
           <form
@@ -1230,6 +1411,7 @@ function MessageView({
   resources,
   disabled,
   timeZone,
+  located = false,
 }: {
   message: Message;
   agentName: string;
@@ -1241,10 +1423,18 @@ function MessageView({
   resources: SessionDetail['resources'];
   disabled: boolean;
   timeZone: string;
+  located?: boolean;
 }) {
   if (m.role === 'tool')
     return (
-      <details className="tool-result">
+      <details
+        className="tool-result"
+        id={'message-' + m.id}
+        data-message-id={m.id}
+        data-located={located}
+        tabIndex={-1}
+        open={located || undefined}
+      >
         <summary>
           <Icon name="check" size={14} />
           工具结果 · {m.callId}
@@ -1253,7 +1443,13 @@ function MessageView({
       </details>
     );
   return (
-    <article className={'message ' + m.role}>
+    <article
+      className={'message ' + m.role}
+      id={'message-' + m.id}
+      data-message-id={m.id}
+      data-located={located}
+      tabIndex={-1}
+    >
       <div className="message-heading">
         <Portrait
           name={m.role === 'user' ? '我' : agentName}

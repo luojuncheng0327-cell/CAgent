@@ -1,5 +1,6 @@
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, Preferences, Stored, Resource } from '../shared/contracts.ts';
+import { sessionDirectories } from '../shared/contracts.ts';
 import { api } from './api.ts';
 import { Icon, Modal, Field, Markdown } from './components.tsx';
 import { Soon } from './Shell.tsx';
@@ -38,6 +39,9 @@ export function Workspace({
   session,
   preferences,
   choose,
+  authorize,
+  switchDirectory,
+  canSwitch,
   report,
   resources,
   modelName,
@@ -49,6 +53,9 @@ export function Workspace({
   session: Session;
   preferences: Preferences;
   choose: () => Promise<void>;
+  authorize: () => void;
+  switchDirectory: (path: string) => Promise<void>;
+  canSwitch: boolean;
   report: (e: unknown) => void;
 }) {
   const key = session.id + '|' + session.workspace,
@@ -217,8 +224,7 @@ export function Workspace({
     if (!next.length) setShow(false);
   }
   async function save() {
-    if (!file || session.permission === 'read' || file.text === file.saved || savePending.current)
-      return;
+    if (!file || readonly || file.text === file.saved || savePending.current) return;
     const target = file.path,
       text = file.text;
     savePending.current = true;
@@ -265,7 +271,10 @@ export function Workspace({
       setBusy(false);
     }
   }
-  const readonly = session.permission === 'read';
+  const grants = sessionDirectories(session);
+  const readonly =
+    session.permission === 'read' ||
+    grants.find((grant) => grant.path === session.workspace)?.access === 'read';
   return (
     <aside
       className={'workspace-panel' + (show && file ? ' editing' : '')}
@@ -290,6 +299,22 @@ export function Workspace({
           </h3>
           <Soon label="项目技能" icon="sparkle" />
         </div>
+        {(grants.length > 1 || (!session.workspace && grants.length > 0)) && (
+          <select
+            className="desk-directory"
+            aria-label="当前工作台"
+            value={session.workspace ?? ''}
+            disabled={!canSwitch}
+            onChange={(event) => void switchDirectory(event.target.value).catch(report)}
+          >
+            {!session.workspace && <option value="">选择已授权目录</option>}
+            {grants.map((grant) => (
+              <option key={grant.path} value={grant.path}>
+                {grant.path.split(/[\\/]/).at(-1)} · {grant.access === 'read' ? '只读' : '读写'}
+              </option>
+            ))}
+          </select>
+        )}
         <div className="desk-tabs" role="tablist" aria-label="书桌内容">
           <button
             role="tab"
@@ -336,6 +361,9 @@ export function Workspace({
           </button>
           <button aria-label="更换工作区" title="选择工作台" onClick={() => void choose()}>
             <Icon name="folder" size={14} />
+          </button>
+          <button aria-label="目录授权" title="管理目录授权" onClick={authorize}>
+            <Icon name="shield" size={14} />
           </button>
           <button
             aria-label="刷新文件"
@@ -568,7 +596,7 @@ export function Workspace({
             )}
             {readonly && (
               <p className="document-limit" role="status">
-                当前会话为只读，文件内容不能修改。
+                {session.permission === 'read' ? '当前会话' : '当前目录'}为只读，文件内容不能修改。
               </p>
             )}
             {file.changed && (

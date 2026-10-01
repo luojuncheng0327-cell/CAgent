@@ -240,6 +240,8 @@ export function importBackup(rt: Runtime, raw: unknown, confirm: string) {
       if (r.kind === 'session') {
         b.permission = 'ask';
         b.workspace = null;
+        b.directoryGrants = [];
+        b.blockedDirectories = [];
         b.forkMessageId = null;
         b.draftAttachmentIds = (b.draftAttachmentIds ?? []).map((id: string) =>
           resourceMap.get(id),

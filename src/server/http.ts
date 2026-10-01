@@ -21,6 +21,7 @@ import { discoverModels } from './discovery.ts';
 import { createResource, resourceBytes, removeResource, resourceLimit } from './resources.ts';
 import { fileHistory, restoreFile, manageFile, watchWorkspace } from './workspace.ts';
 import { usageReport } from './usage.ts';
+import { searchSessions, orderedSessions, saveSessionOrder } from './session-navigation.ts';
 
 interface ServerOptions {
   port?: number;
@@ -175,6 +176,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
             providers: rt.store.list('provider'),
             models: rt.store.list('model'),
             sessions: rt.store.list('session'),
+            sessionOrder: rt.sessionOrder(),
             runs: rt.store
               .list<Run>('run')
               .filter(
@@ -270,25 +272,33 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         json(res, { data: await rt.testModel(match[1]) });
         return;
       }
+      if (route === '/api/v1/sessions/search' && method === 'GET') {
+        json(res, { data: searchSessions(rt.store, Object.fromEntries(url.searchParams)) });
+        return;
+      }
+      if (route === '/api/v1/sessions/order' && ['GET', 'PUT'].includes(method)) {
+        json(res, {
+          data: method === 'GET' ? rt.sessionOrder() : saveSessionOrder(rt.store, await body(req)),
+        });
+        return;
+      }
       if (route === '/api/v1/sessions' && method === 'GET') {
         const q = (url.searchParams.get('q') ?? '').toLowerCase(),
           archived = url.searchParams.get('archived') === 'true';
-        const sessions = rt.store
-          .list<Session>('session')
-          .filter(
-            (s) =>
-              s.archived === archived &&
-              (!q ||
-                s.title.toLowerCase().includes(q) ||
-                !!rt.store.db
-                  .prepare(
-                    "SELECT 1 FROM messages WHERE session_id=? AND instr(lower(json_extract(body,'$.text')),?)>0 LIMIT 1",
-                  )
-                  .get(s.id, q)),
-          )
-          .sort(
-            (a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt.localeCompare(a.updatedAt),
-          );
+        const sessions = orderedSessions(
+          rt.store,
+          rt.preferences().sessionSort === 'manual',
+        ).filter(
+          (s) =>
+            s.archived === archived &&
+            (!q ||
+              s.title.toLowerCase().includes(q) ||
+              !!rt.store.db
+                .prepare(
+                  "SELECT 1 FROM messages WHERE session_id=? AND instr(lower(json_extract(body,'$.text')),?)>0 LIMIT 1",
+                )
+                .get(s.id, q)),
+        );
         json(res, { data: sessions });
         return;
       }
@@ -332,9 +342,19 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
             .object({
               before: z.coerce.number().int().positive().optional(),
               limit: z.coerce.number().int().min(1).max(200).default(80),
+              around: z.string().min(1).max(150).optional(),
             })
             .parse(Object.fromEntries(url.searchParams));
-          json(res, { data: rt.store.messagePage(id, q.before, q.limit) });
+          invariant(
+            !q.around || q.before === undefined,
+            'INVALID_PAGE',
+            '定位与向前分页不能同时使用',
+          );
+          json(res, {
+            data: q.around
+              ? rt.store.messageWindow(id, q.around, q.limit)
+              : rt.store.messagePage(id, q.before, q.limit),
+          });
           return;
         }
         if (action === 'resources' && method === 'POST') {

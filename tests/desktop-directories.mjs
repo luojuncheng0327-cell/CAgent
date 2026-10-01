@@ -51,6 +51,7 @@ try {
     await page.getByLabel('文件内容', { exact: true }).evaluate((e) => e.readOnly),
     true,
   );
+  await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
   assert.equal(
     await page.getByRole('button', { name: '新建文件', exact: true }).isDisabled(),
     true,
@@ -78,11 +79,16 @@ try {
     b,
   );
   await page.getByRole('button', { name: '关闭对话框', exact: true }).click();
-  await page.waitForFunction(() => !document.querySelector('[aria-label="文件内容"]')?.readOnly);
+  await page.getByRole('button', { name: '乙.txt', exact: true }).click();
+  await page.waitForFunction(() => {
+    const editor = document.querySelector('[aria-label="文件内容"]');
+    return editor && editor.readOnly === false;
+  });
+  await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
   await page.getByRole('button', { name: '新建文件', exact: true }).click();
-  await page.getByLabel('文件或目录路径', { exact: true }).fill('已授权.md');
+  await page.getByLabel('文件路径', { exact: true }).fill('已授权.md');
   await page.getByRole('button', { name: '确认文件操作', exact: true }).click();
-  await page.getByRole('button', { name: '已授权.md', exact: true }).waitFor();
+  await page.getByRole('tab', { name: '已授权.md', exact: true }).waitFor();
   assert.equal(await fs.readFile(path.join(b, '已授权.md'), 'utf8'), '');
   await app.close();
   app = undefined;

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { Session, Run, ToolDefinition, Memory } from '../shared/contracts.ts';
 import type { Store } from './store.ts';
 import { AppError, invariant } from './errors.ts';
+import { requireDirectory, sameDirectory, withinDirectory } from './directories.ts';
 
 const pathValue = z.string().min(1).max(4096);
 const definitions = [
@@ -89,33 +90,34 @@ export const toolDefinitions: ToolDefinition[] = definitions.map((d) => ({
 }));
 export const hash = (bytes: Uint8Array | string) =>
   createHash('sha256').update(bytes).digest('hex');
-function within(root: string, target: string) {
-  const r = path.relative(root, target);
-  return r === '' || (!r.startsWith('..' + path.sep) && r !== '..' && !path.isAbsolute(r));
-}
-
 export async function workspacePath(
   store: Store,
   session: Session,
   input: string,
   create = false,
+  write = false,
 ): Promise<string> {
-  invariant(session.workspace, 'NO_WORKSPACE', '此会话还没有授权工作区', 403);
+  const latest = store.need<Session>('session', session.id);
+  invariant(
+    path.isAbsolute(input) || latest.workspace,
+    'NO_WORKSPACE',
+    '此会话还没有选择工作台',
+    403,
+  );
   invariant(
     !input.includes('\0') && !input.startsWith('\\\\') && !input.startsWith('//'),
     'INVALID_PATH',
     '不支持此路径',
   );
-  const root = await fs.realpath(session.workspace).catch(() => {
+  const target = path.resolve(latest.workspace ?? '.', input);
+  const grant = requireDirectory(store, latest, target, write);
+  const root = await fs.realpath(grant.path).catch(() => {
     throw new AppError('WORKSPACE_MISSING', '工作区不存在', 404);
   });
-  const target = path.resolve(root, input);
-  invariant(within(root, target), 'OUTSIDE_WORKSPACE', '路径超出此会话授权的工作区', 403);
   invariant(
-    !within(store.home, target) &&
-      !target.split(/[\\/]/).some((p) => ['.hanako', '.cagent'].includes(p.toLowerCase())),
-    'PRIVATE_DATA',
-    '不能通过工作区工具访问应用私有数据',
+    sameDirectory(root, grant.path),
+    'WORKSPACE_CHANGED',
+    '授权目录已被替换，请重新授权',
     403,
   );
   // Refuse link components instead of claiming a string prefix check is an OS sandbox.
@@ -138,7 +140,8 @@ export async function workspacePath(
     if (create && e.code === 'ENOENT') return target;
     throw e;
   });
-  invariant(within(root, canonical), 'OUTSIDE_WORKSPACE', '真实路径超出授权范围', 403);
+  invariant(withinDirectory(root, canonical), 'OUTSIDE_WORKSPACE', '真实路径超出授权范围', 403);
+  requireDirectory(store, latest, target, write);
   return target;
 }
 export async function readWorkspaceFile(store: Store, session: Session, input: string) {
@@ -150,6 +153,7 @@ export async function readWorkspaceFile(store: Store, session: Session, input: s
     '仅支持不超过 2 MiB 的文本文件',
   );
   const bytes = await fs.readFile(target);
+  requireDirectory(store, session, target);
   invariant(!bytes.includes(0), 'BINARY_FILE', '这是二进制文件，请使用对应查看器');
   let text: string;
   try {
@@ -174,7 +178,7 @@ export async function writeWorkspaceFile(
     '工作区授权已变化，请重新打开文件',
     409,
   );
-  const target = await workspacePath(store, session, input, true);
+  const target = await workspacePath(store, session, input, true, true);
   const existing = await fs.stat(target).catch((e) => {
     if (e.code === 'ENOENT') return null;
     throw e;
@@ -197,7 +201,7 @@ export async function writeWorkspaceFile(
     );
   else invariant(expectedHash === undefined, 'FILE_CONFLICT', '原文件已不存在，请确认后创建', 409);
   await fs.mkdir(path.dirname(target), { recursive: true });
-  await workspacePath(store, session, input, true);
+  await workspacePath(store, session, input, true, true);
   const tmp = path.join(path.dirname(target), '.cagent-write-' + randomUUID());
   try {
     await fs.writeFile(tmp, text, { flag: 'wx', mode: 0o600 });
@@ -217,10 +221,11 @@ export async function writeWorkspaceFile(
       const snapshotDir = path.join(store.home, 'file-history');
       await fs.mkdir(snapshotDir, { recursive: true });
       await fs.writeFile(path.join(snapshotDir, snapshotId), before, { flag: 'wx', mode: 0o600 });
+      const grant = requireDirectory(store, session, target, true);
       store.put('file-version', snapshotId, {
         sessionId: session.id,
-        workspace: session.workspace,
-        path: path.relative(session.workspace!, target),
+        workspace: grant.path,
+        path: path.relative(grant.path, target),
         sha256: hash(before),
         bytes: before.length,
       });
@@ -232,7 +237,7 @@ export async function writeWorkspaceFile(
       '权限已撤销或工作区已变化',
       403,
     );
-    await workspacePath(store, latest, input, true);
+    await workspacePath(store, latest, input, true, true);
     if (before) await fs.rename(tmp, target);
     else
       await fs.link(tmp, target).catch((e) => {
@@ -278,6 +283,9 @@ export async function runTool(
   );
   if (tool.write) {
     invariant(current.permission !== 'read', 'READ_ONLY', '当前会话为只读，不能执行此工具', 403);
+    if (name === 'write_file' || name === 'edit_file')
+      await workspacePath(c.store, current, parsed.path, name === 'write_file', true);
+    if (name === 'run_command') await workspacePath(c.store, current, '.', false, true);
     if (current.permission === 'ask' || name === 'run_command' || name === 'memory_save') {
       const approved = await c.approve(callId, name, parsed);
       invariant(approved, 'TOOL_DENIED', '用户未批准此操作', 403);
@@ -318,6 +326,16 @@ export async function runTool(
     async function scan(dir: string, depth: number) {
       c.signal.throwIfAborted();
       if (depth > 8 || visited >= 1000 || matches.length >= 100) return;
+      try {
+        await workspacePath(c.store, current, dir);
+      } catch (e) {
+        if (
+          e instanceof AppError &&
+          ['PRIVATE_DATA', 'OUTSIDE_WORKSPACE', 'LINK_DENIED'].includes(e.code)
+        )
+          return;
+        throw e;
+      }
       for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
         c.signal.throwIfAborted();
         if (visited >= 1000 || matches.length >= 100) break;
@@ -330,8 +348,19 @@ export async function runTool(
         if (entry.isDirectory()) await scan(file, depth + 1);
         else {
           visited++;
+          try {
+            await workspacePath(c.store, current, file);
+          } catch (e) {
+            if (
+              e instanceof AppError &&
+              ['PRIVATE_DATA', 'OUTSIDE_WORKSPACE', 'LINK_DENIED'].includes(e.code)
+            )
+              continue;
+            throw e;
+          }
           if ((await fs.stat(file)).size > 512000) continue;
           const bytes = await fs.readFile(file);
+          requireDirectory(c.store, current, file);
           if (bytes.includes(0)) continue;
           bytes
             .toString('utf8')
@@ -370,7 +399,7 @@ export async function runTool(
     );
   }
   if (name === 'run_command') {
-    await workspacePath(c.store, current, '.');
+    await workspacePath(c.store, current, '.', false, true);
     return command(parsed.command, current.workspace!, parsed.timeoutMs, c.signal, (text) =>
       c.emit('command.output', { callId, text }),
     );

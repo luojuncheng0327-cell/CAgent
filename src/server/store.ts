@@ -213,6 +213,23 @@ export class Store {
       .get(sessionId) as { total: number };
     return { messages, before: page[0]?.position ?? null, hasMore, total, corruptPositions };
   }
+  messageWindow(sessionId: string, messageId: string, limit = 80): MessagePage {
+    invariant(
+      Number.isInteger(limit) && limit >= 1 && limit <= 200,
+      'INVALID_PAGE',
+      '分页参数无效',
+    );
+    const target = this.db
+      .prepare('SELECT position FROM messages WHERE session_id=? AND id=?')
+      .get(sessionId, messageId) as { position: number } | undefined;
+    invariant(target, 'MESSAGE_MISSING', '定位的消息不存在', 404);
+    const bounds = this.db
+      .prepare('SELECT coalesce(max(position),0) AS last FROM messages WHERE session_id=?')
+      .get(sessionId) as { last: number };
+    const end = Math.min(bounds.last, Math.max(limit, target.position + Math.floor(limit / 2)));
+    const page = this.messagePage(sessionId, end + 1, limit);
+    return { ...page, after: end, hasNewer: end < bounds.last };
+  }
   event(runId: string, sessionId: string, kind: string, payload: unknown): RunEvent {
     return this.transaction(() => {
       const { next } = this.db

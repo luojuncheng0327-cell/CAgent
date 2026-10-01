@@ -11,6 +11,7 @@ import type {
   MessagePage,
   Resource,
   Compaction,
+  SessionOrder,
 } from '../shared/contracts.ts';
 export interface Bootstrap {
   suggestedWorkspace: string;
@@ -19,6 +20,7 @@ export interface Bootstrap {
   providers: Provider[];
   models: Model[];
   sessions: Session[];
+  sessionOrder: SessionOrder;
   runs: Run[];
   capabilities: Record<string, boolean>;
 }

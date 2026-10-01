@@ -13,6 +13,11 @@ const label = z.string().trim().min(1).max(120);
 const id = z.string().min(1).max(150);
 export const permissionSchema = z.enum(['read', 'ask', 'operate']);
 export type Permission = z.infer<typeof permissionSchema>;
+export const directoryGrantSchema = z.object({
+  path: z.string().min(1).max(4096),
+  access: z.enum(['read', 'write']),
+});
+export type DirectoryGrant = z.infer<typeof directoryGrantSchema>;
 export const providerInput = z.object({
   name: label,
   protocol: protocolSchema,
@@ -58,6 +63,7 @@ export const sessionInput = z.object({
   title: label.default('新会话'),
   modelId: id.nullable().default(null),
   workspace: z.string().max(4096).nullable().default(null),
+  directoryGrants: z.array(directoryGrantSchema).max(16).optional(),
   permission: permissionSchema.default('ask'),
   reasoning: z.string().max(40).default('off'),
 });
@@ -69,6 +75,7 @@ export const sessionPatch = z.object({
   permission: permissionSchema.optional(),
   reasoning: z.string().max(40).optional(),
   workspace: z.string().max(4096).nullable().optional(),
+  directoryGrants: z.array(directoryGrantSchema).max(16).optional(),
   draft: z.string().max(200000).optional(),
   draftAttachmentIds: z.array(z.string().uuid()).max(8).optional(),
   agentId: id.optional(),
@@ -85,6 +92,7 @@ export const preferenceInput = z.object({
   fontFamily: z.enum(['serif', 'sans', 'mono']).default('serif'),
   editorFontSize: z.number().int().min(12).max(24).default(16),
   editorLineHeight: z.number().min(1.2).max(2.5).default(1.5),
+  sessionSort: z.enum(['updated', 'manual']).default('updated'),
   setupComplete: z.boolean().default(false),
   setupStep: z.number().int().min(0).max(5).default(0),
   userName: z.string().trim().max(120).default(''),
@@ -114,7 +122,11 @@ export type Session = Stored &
     forkMessageId: string | null;
     draftAttachmentIds?: string[];
     agentName?: string;
+    blockedDirectories?: string[];
   };
+export const sessionDirectories = (session: Session): DirectoryGrant[] =>
+  session.directoryGrants ??
+  (session.workspace ? [{ path: session.workspace, access: 'write' }] : []);
 export type RunStatus =
   'queued' | 'running' | 'awaiting_approval' | 'succeeded' | 'failed' | 'cancelled' | 'interrupted';
 export const terminalStatuses = new Set<RunStatus>([
@@ -208,6 +220,28 @@ export interface MessagePage {
   hasMore: boolean;
   total: number;
   corruptPositions: number[];
+  after?: number | null;
+  hasNewer?: boolean;
+}
+export interface SearchHit {
+  sessionId: string;
+  title: string;
+  messageId: string | null;
+  position: number;
+  source: 'title' | 'message';
+  snippet: string;
+  matchStart: number;
+  matchLength: number;
+}
+export interface SearchPage {
+  hits: SearchHit[];
+  cursor: string | null;
+}
+export interface SessionOrder {
+  revision: number;
+  pinned: string[];
+  active: string[];
+  archived: string[];
 }
 export interface Compaction extends Stored {
   sessionId: string;
