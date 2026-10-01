@@ -228,3 +228,84 @@ test('CA-DATA-003 消息已落盘但事件未记完时恢复不重复，排队�
     await mock.close();
   }
 });
+
+test('CA-MODEL-010 错误响应清理失败仍保留原 HTTP 诊断，不能变成可重试网络失败', async () => {
+  let attempts = 0;
+  const body = new ReadableStream({
+    cancel() {
+      throw new Error('fixture cancellation failure');
+    },
+  });
+  await assert.rejects(
+    fetchModelResponse(
+      'http://127.0.0.1/fixture',
+      {},
+      {
+        signal: new AbortController().signal,
+        maxRetries: 3,
+        fetcher: async () => {
+          attempts++;
+          return new Response(body, { status: 401 });
+        },
+      },
+    ),
+    (e: any) => e.code === 'MODEL_HTTP_401',
+  );
+  assert.equal(attempts, 1);
+});
+
+test('CA-SESSION-015 等待队列有上限，拒绝新任务时保留原草稿与历史', async () => {
+  const mock = await fixture((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' });
+      res.write('data: {"type":"response.output_text.delta","delta":"等待"}\n\n');
+    }),
+    f = await setup(mock.url);
+  try {
+    for (let i = 0; i < 68; i++) {
+      const session = await f.rt.createSession({ agentId: f.agent.id, modelId: f.model.id });
+      await f.rt.start(session.id, { text: '等待' + i, requestId: randomUUID() });
+    }
+    const session = await f.rt.updateSession(f.session.id, {
+      draft: '排队已满时保留草稿',
+      revision: f.session.revision,
+    });
+    await assert.rejects(
+      f.rt.start(session.id, { text: session.draft, requestId: randomUUID() }),
+      (e: any) => e.code === 'QUEUE_FULL',
+    );
+    assert.equal(f.rt.snapshot(session.id).session.draft, '排队已满时保留草稿');
+    assert.equal(f.rt.store.allMessages(session.id).length, 0);
+    assert.equal(f.rt.activeRun(session.id), null);
+  } finally {
+    await f.cleanup();
+    await mock.close();
+  }
+});
+
+test('CA-SESSION-011 分批数量上限不会提交截断摘要或改动历史', async () => {
+  let requests = 0;
+  const mock = await fixture((req, res) => {
+      requests++;
+      response(res, '有限摘要');
+    }),
+    f = await setup(mock.url);
+  try {
+    f.rt.saveModel({ ...f.model, contextWindow: 1024, maxOutput: 128 }, f.model.id);
+    f.rt.store.transaction(() => {
+      for (let i = 0; i < 140; i++)
+        f.rt.store.addMessage({
+          ...message('材料' + i + '甲'.repeat(1000)),
+          sessionId: f.session.id,
+        });
+    });
+    const before = JSON.stringify(f.rt.store.allMessages(f.session.id));
+    const run = await f.rt.start(f.session.id, { requestId: randomUUID() }, { purpose: 'compact' });
+    assert.equal((await f.rt.wait(run.id)).error?.code, 'COMPACT_BATCH_LIMIT');
+    assert.equal(requests, 64);
+    assert.equal(f.rt.context(f.session.id).summary, null);
+    assert.equal(JSON.stringify(f.rt.store.allMessages(f.session.id)), before);
+  } finally {
+    await f.cleanup();
+    await mock.close();
+  }
+});
