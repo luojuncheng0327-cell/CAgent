@@ -88,6 +88,7 @@ export const preferenceInput = z.object({
   fontSize: z.number().min(12).max(24).default(15),
   maxToolRounds: z.number().int().min(1).max(32).default(8),
   requestTimeoutMs: z.number().int().min(500).max(600000).default(120000),
+  maxNetworkRetries: z.number().int().min(0).max(3).default(2),
   autoCompact: z.boolean().default(false),
   fontFamily: z.enum(['serif', 'sans', 'mono']).default('serif'),
   editorFontSize: z.number().int().min(12).max(24).default(16),

@@ -9,6 +9,8 @@ import type {
 } from '../shared/contracts.ts';
 import { AppError, invariant } from './errors.ts';
 import type { InputMessage } from './resources.ts';
+import { fetchModelResponse } from './model-retry.ts';
+import type { RetryNotice } from './model-retry.ts';
 
 export type Fetcher = (input: string | URL, init?: RequestInit) => Promise<Response>;
 export interface Inference {
@@ -23,6 +25,8 @@ export interface Inference {
   timeoutMs: number;
   onDelta: (delta: ModelDelta) => void;
   fetcher?: Fetcher;
+  maxNetworkRetries?: number;
+  onRetry?: (notice: RetryNotice) => void;
 }
 const textOf = (v: unknown) => (typeof v === 'string' ? v : '');
 
@@ -327,16 +331,21 @@ export async function infer(o: Inference): Promise<ModelResult> {
     signal = AbortSignal.any([o.signal, AbortSignal.timeout(o.timeoutMs)]);
   let response: Response;
   try {
-    response = await (o.fetcher ?? fetch)(wire.url, {
-      method: 'POST',
-      headers: wire.headers,
-      body: JSON.stringify(wire.body),
-      signal,
-      redirect: 'error',
-    });
+    response = await fetchModelResponse(
+      wire.url,
+      {
+        method: 'POST',
+        headers: wire.headers,
+        body: JSON.stringify(wire.body),
+        signal,
+        redirect: 'error',
+      },
+      { fetcher: o.fetcher, signal, maxRetries: o.maxNetworkRetries ?? 2, onRetry: o.onRetry },
+    );
   } catch (e) {
     if (o.signal.aborted) throw o.signal.reason;
     if (signal.aborted) throw new AppError('MODEL_TIMEOUT', '模型请求超时', 504, true);
+    if (e instanceof AppError) throw e;
     throw new AppError('MODEL_NETWORK', '无法连接模型服务，请检查地址和网络', 502, true);
   }
   if (!response.ok) {
