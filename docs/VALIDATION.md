@@ -6,12 +6,13 @@
 
 ## 当前结论
 
-最后更新：2026-10-01，六步首次引导、供应商搜索、分步恢复和初始化事务完成。
+最后更新：2026-10-01，独立版 0.1.0 本地便携包、统一维护者图片与成品验证完成。
 
 - `pnpm run verify` 全部通过：格式；生成的状态文件是最新的；类型；66 项单元 / 服务测试，0 失败 / 0 跳过；UI 与 Electron 构建；独立性检查覆盖 `src/` 下 168 个文件，违规 0，原目录 2,901 个受版本管理文件的指纹一致；相似度检查越线 0，没有新增例外。
 - `pnpm run test:desktop` 七组共 99 项检查全部通过，页面异常 0：smoke 10、onboarding 23、p1-p2 12、appearance 8、layout 9、menus 13、documents 24。引导的五语切换、窗口和内容列尺寸、供应商搜索与测试失败恢复、模型选择、分步重启、Unicode 工作台、完成失败重试和引导后聊天均已实际操作。原有图片、消息、菜单和文件编辑检查保留。首轮整套曾在旧 smoke 的等待时序断言失败，修复记录见第 17 轮。
 - 进度：必做 208 项中本机已验证 23、部分实现 56、未开始 129；另有计划中 1 项、外部待定 1 项。逐项见 `docs/功能实现情况.md`。
 - 发布门禁关闭：`node scripts/release-gate.mjs` 按设计退出 1。
+- 本地便携包：`release/CAgent-0.1.0-Windows-x64.exe`，112,445,050 字节。包内应用及便携启动器均已实际启动；首屏图片、包内图标与维护者原图的 SHA-256 一致，健康接口返回 independent / 0.1.0。详见第 18 轮。
 - 从未验证：真实账号和收费模型、订阅 OAuth、外部消息平台、跨平台、系统沙盒、安装与更新、所有窗口宽度和完整多语言视觉矩阵。五语仅覆盖首次引导，主界面仍为简体中文；辅助模型职责会保存，自动分工尚未实现。
 
 ## 相似度检查的已审核例外
@@ -328,3 +329,21 @@
 四个基础地址按当前官方文档核对：[OpenAI API 文档](https://developers.openai.com/api/docs)、[Claude API overview](https://platform.claude.com/docs/en/api/overview)、[Gemini API](https://ai.google.dev/api/generate-content)、[DeepSeek API](https://api-docs.deepseek.com/)。只核对预置地址；未使用真实账号验证网络、模型权限和账单。
 
 第 4 步完整设置弹层尚未开始，仍由用户决定何时继续。完整产品没有完成，不允许发布。
+
+### 18. 独立版 0.1.0 本地便携包（2026-10-01）
+
+维护者要求 EXE 版本为 0.1，并明确所有应用图片使用先前提供的图片。本聊天最初按 cwd 错误构建了旧 `F:\CAgent`；维护者确认打包对象是 `F:\CAgent-independent` 后，已恢复旧项目本轮改动的两份 package 文件，独立性检查核对其 2,901 个受跟踪文件与既有基线完全一致。旧目录的同名 EXE 不是本次独立版交付。
+
+独立版改动：package 和健康接口版本统一为 `0.1.0`。原始 `assistant-portrait.png` 内容未改，构建时复制为桌面图片；EXE、窗口和托盘与欢迎页、首次引导、消息、会话列表和助手设置共用维护者的图片。新增 `package:win`，用固定版本 electron-builder 26.8.1 和本项目 Electron 44.4.5 生成 Windows x64 便携 EXE，使用独立 appId，`--publish never`。包内附字体许可证、依赖说明和图片来源；完整产品门禁和未完成台账不变。
+
+验证与产物：
+
+- `pnpm run verify` 全部退出 0，66 项单元 / 服务测试通过；独立性违规 0，相似度越线 0。`pnpm run test:desktop` 七组 99 项全过，页面异常 0。日志为 `.artifacts/logs/portable-verify-20261001.log`、`portable-desktop-20261001.log`。
+- `pnpm exec electron-builder --win portable --x64 --publish never` 退出 0。产物为 `release/CAgent-0.1.0-Windows-x64.exe`，112,445,050 字节（107.24 MiB），SHA-256 `402aba514f4c727cd796f38fc9f20e34c3cc283e55c95d813da639bb8b852da8`；旁边保存 `.sha256` 文件。
+- 实际 `release/win-unpacked/CAgent.exe` 在隔离临时数据目录启动，`app.isPackaged=true`，版本 `0.1.0`。首屏图片真实解码为 722×722；通过本机 HTTP 取得的图片和 `app.asar` 中桌面图标的 SHA-256 都为 `0e2830827b185f4006eea5a4523a2c861399230d0c4dab3030c6bf3278cebd94`，与用户原图一致。包内没有旧版角色头像文件；健康接口返回 200、runtime 为 independent。
+- 最终便携 EXE 自身也实际启动并完成临时解压，健康接口为 independent / 0.1.0 / 200，模型请求 0。验证结束只清理本轮临时进程及数据，没有安装或覆盖现有应用。
+- 已查看成品首屏 `.artifacts/ui-replica/portable-welcome-20261001.png` 和从 EXE 资源提取的图标 `portable-exe-icon-20261001.png`。成品检查日志为 `portable-picture-smoke-confirmed-20261001.log` 和 `portable-launch-smoke-20261001.log`。
+
+过程问题：pnpm 首次提示未批准的 electron-winstaller 构建脚本，因本任务不使用 Squirrel，显式设为 false 后 frozen-lockfile 安装退出 0；没有放开全部依赖脚本。首次成品检查脚本用斜杠字符串读取 Windows ASAR 条目而报缺失，改为 `path.join` 后重新执行通过；实际归档内图片原本存在。原始失败日志仍保留。
+
+限制：这是维护者要求的本地开发预览包，未做 Windows Authenticode 签名、全新机器安装、更新或真实模型联调，不代表完整产品发布验收完成。

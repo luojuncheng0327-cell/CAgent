@@ -78,19 +78,9 @@ function allowed(event: IpcMainInvokeEvent | IpcMainEvent) {
     throw new Error('IPC origin denied');
 }
 function icon() {
-  const size = 32,
-    bytes = Buffer.alloc(size * size * 4);
-  for (let y = 0; y < size; y++)
-    for (let x = 0; x < size; x++) {
-      const distance = Math.hypot(x - 15.5, y - 15.5),
-        c = distance > 8 && distance < 12 && (x < 20 || y < 10 || y > 21);
-      const i = (y * size + x) * 4;
-      bytes[i] = c ? 230 : 126;
-      bytes[i + 1] = c ? 236 : 109;
-      bytes[i + 2] = c ? 238 : 81;
-      bytes[i + 3] = distance < 15.5 ? 255 : 0;
-    }
-  return nativeImage.createFromBitmap(bytes, { width: size, height: size });
+  const image = nativeImage.createFromPath(path.join(__dirname, 'app-icon.png'));
+  if (image.isEmpty()) throw new Error('应用图片缺失，请重新构建应用');
+  return image.resize({ width: 32, height: 32, quality: 'best' });
 }
 if (single)
   void app

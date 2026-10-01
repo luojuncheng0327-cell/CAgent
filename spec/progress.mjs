@@ -704,8 +704,8 @@ item(
   'CA-SHIP-002',
   'partial',
   ['package.json', 'scripts/build-desktop.mjs', 'scripts/check-independent.mjs'],
-  '依赖锁定；格式、类型检查、自动化测试和构建由 verify 一条命令完成。',
-  '第三方许可证声明还不能随安装包生成；全新环境的安装验证还没做。',
+  '依赖锁定；格式、类型检查、自动化测试和构建由 verify 一条命令完成；提供 Windows x64 本地便携 EXE 打包命令，使用维护者图片作为应用图标，随包附带字体许可证和来源说明。',
+  '完整第三方许可证合并声明还不能自动生成；全新环境安装、签名和更新验证还没做。',
 );
 item(
   'CA-SHIP-003',

@@ -33,7 +33,7 @@
 
 ## 开发工具（不进安装包）
 
-TypeScript 5.9.3（Apache-2.0）、Vite 8.3.1（MIT）、esbuild 0.27.4（MIT）、Playwright 1.58.2（Apache-2.0）、Prettier 3.9.9（MIT）以及 `@types/*` 类型定义（MIT）。只在编译、测试和格式化时使用。
+TypeScript 5.9.3（Apache-2.0）、Vite 8.3.1（MIT）、esbuild 0.27.4（MIT）、Playwright 1.58.2（Apache-2.0）、Prettier 3.9.9（MIT）、electron-builder 26.8.1（MIT）以及 `@types/*` 类型定义（MIT）。只在编译、测试、格式化和本地打包时使用。便携包复用本项目已安装的 Electron；不调用旧应用的代码或构建工具。未使用的 Squirrel 打包依赖 `electron-winstaller` 的安装脚本保持禁用。
 
 ## 界面字体
 
@@ -43,7 +43,7 @@ TypeScript 5.9.3（Apache-2.0）、Vite 8.3.1（MIT）、esbuild 0.27.4（MIT）
 
 ## 界面图片
 
-维护者于 2026-10-01 提供 `下载.png`，作为主助手头像，已原样保存为 `src/ui/assets/assistant-portrait.png`。欢迎页、聊天消息、流式回复、会话列表和助手设置使用同一张本机图片；其他助手和用户继续按自己的名字显示首字头像。来源、尺寸和 SHA-256 见 `src/ui/assets/README.md`。此图片由维护者提供，不属于本项目自绘资产。
+维护者于 2026-10-01 提供 `下载.png`，作为主助手头像，已原样保存为 `src/ui/assets/assistant-portrait.png`。欢迎页、首次引导、聊天消息、流式回复、会话列表、助手设置及 EXE、窗口、托盘图标使用同一张本机图片；其他助手和用户继续按自己的名字显示首字头像。来源、尺寸和 SHA-256 见 `src/ui/assets/README.md`。此图片由维护者提供，不属于本项目自绘资产。
 
 ## 文档编辑器
 
@@ -54,7 +54,7 @@ TypeScript 5.9.3（Apache-2.0）、Vite 8.3.1（MIT）、esbuild 0.27.4（MIT）
 ## 发布前必须补齐
 
 - 生成随安装包分发的第三方许可证声明。目前构建不会自动收集（对应功能 CA-SHIP-002）。
-- 随包附带字体许可证原文（`src/ui/fonts/licenses/`）。
+- 正式发布前复核随包许可证完整性。本地便携包已包含字体许可证原文、依赖说明和图片来源说明（`resources/licenses/`）；尚未自动生成覆盖全部依赖的合并声明。
 - 选择本项目自己的许可证。
 - 代码签名证书和自有的更新公钥（规格中列为发布阶段的未定事项），不得使用旧项目的签名或发布身份。
 

@@ -2,7 +2,7 @@
 
 给下一个接手的 AI（Codex 或 Claude）看。每轮结束时**更新**本文件的对应章节，不再追加“本轮…交接”小节：每轮的过程和证据写进 `docs/VALIDATION.md`，功能进度只改 `spec/progress.mjs`。
 
-最后更新：2026-10-01，六步首次引导完成，五语引导、供应商搜索、分步恢复与原子完成已验证。
+最后更新：2026-10-01，独立版 0.1.0 本地便携 EXE 已生成；维护者图片用于界面、EXE、窗口和托盘，成品启动与图片校验通过。
 
 ## 0. 接手步骤
 
@@ -25,6 +25,7 @@
 - 功能：必做 208 项中本机已验证 23、部分实现 56、未开始 129，另有 1 项计划中、1 项外部待定。逐项见 `docs/功能实现情况.md`，待做清单见 `docs/待实现功能清单.md`（附 CSV）。完整产品未完成，发布门禁关闭。
 - 界面 1:1 复刻：第 1 步基础和第 3 步六步引导完成；第 2 步主界面首轮、选择菜单、Markdown 直接编辑完成，文件区的已列出细节已收敛，剩余差别见第 4 节；第 4 步设置弹层未开始。
 - 验证：`pnpm run verify` 全过（66 项测试；独立性违规 0；相似度越线 0，1 条已审核例外）；`pnpm run test:desktop` 七组 99 项全过。细节见 VALIDATION 的“当前结论”。
+- 本地便携预览包：`release/CAgent-0.1.0-Windows-x64.exe`，约 107 MiB；附 `.sha256`。实际成品与便携启动器均已启动验证，未执行安装、签名更新或真实模型验收。
 - 用户正在审阅 `docs/待实现功能清单.csv`，可能会排除或修改一部分功能（见第 6 节）。
 
 ## 2. 用户边界与决定（已定，无需重问）
@@ -40,7 +41,7 @@
 
 - 界面外观 1:1 复刻原版（布局、颜色、间距、交互），组件和 CSS 自己写。
 - 字体：从 Google Fonts 官方获取原版所用的 5 款 OFL 字体（已完成）。
-- 图片：主助手已使用用户于 2026-10-01 提供的 `下载.png`（本机资源 `src/ui/assets/assistant-portrait.png`），覆盖欢迎页、消息、会话列表和助手设置；其他助手和用户仍用首字头像。线条图标和纸纹自行生成；不用原版的角色图、人设卡、应用图标和纹理。
+- 图片：主助手已使用用户于 2026-10-01 提供的 `下载.png`（本机资源 `src/ui/assets/assistant-portrait.png`），覆盖欢迎页、首次引导、消息、会话列表、助手设置及 EXE、窗口和托盘图标；其他助手和用户仍用首字头像。线条图标和纸纹自行生成；不用原版的角色图、人设卡、应用图标和纹理。
 - 原版有而我们没做的入口按原位显示、置灰并标“即将提供”。
 - 主题先做暖纸 / 青夜 / 跟随系统。
 - 文件直接编辑采用手动保存 + Ctrl+S（原版是自动保存，这是用户选定的差异）。
@@ -49,6 +50,7 @@
 安全与发布：
 
 - 不 push、不发布、不打包旧改造版、不安装或覆盖旧应用。用户已表示不需要远程备份，不要再主动提。
+- 2026-10-01 用户明确选择打包 `F:\CAgent-independent` 并要求版本 0.1，现为 `0.1.0` 本地便携预览包。允许按 `pnpm run package:win` 重新生成本地包；完整产品发布门禁继续关闭。聊天的 cwd 即便显示 `F:\CAgent`，也不能据此改打旧版；旧目录中的同名 0.1.0 EXE 是本轮纠正前的错误产物，不是独立版交付。
 - 不修改 `F:\CAgent`，不在里面运行命令，不 reset / clean；不读取 `~\.hanako`、`%APPDATA%\Hanako` 的真实数据和密钥。
 - 开发测试一律用显式的 `CAGENT_HOME` 临时目录；工作台用另一个独立临时目录，不能放进应用数据目录。
 - 原版只能按第 4 节“原版参考运行”的方法运行临时副本；禁止运行打包版或已安装的 HanaAgent（会自动更新，可能覆盖旧应用）。
@@ -59,6 +61,7 @@
   `$rt = 'C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies'; $env:PATH = "$rt\node\bin;$rt\bin\fallback;$rt\native\git\cmd;" + $env:PATH; [Console]::OutputEncoding = [Text.Encoding]::UTF8`
 - pnpm 的完整路径：`C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd`。Node 需要联网时加 `NODE_USE_ENV_PROXY=1`（本机代理 127.0.0.1:7900）。
 - 首次准备：`pnpm install --frozen-lockfile`、`pnpm run setup:desktop`。
+- 本地便携打包：`pnpm run package:win`，复用本项目 Electron 44.4.5；输出到 `release/`，固定 `--publish never`。打包使用通用开发工具 electron-builder 26.8.1，未使用的 electron-winstaller 安装脚本保持禁用。
 - 改代码后：`pnpm run format`，然后 `pnpm run verify` 必须全过；界面或桌面代码有改动，再跑 `pnpm run test:desktop`，不降低覆盖。验证串行运行，日志写到 `.artifacts/logs/`。
 - 功能进度只改 `spec/progress.mjs`（每个功能一条当前记录，“已有 / 还缺”都写清楚，状态变化直接改那一条），然后运行 `pnpm run status` 重新生成 `spec/implementation-status.json`、`docs/功能实现情况.md`、`docs/待实现功能清单.md / .csv`。生成文件不要手改，`verify` 会检查它们是否最新。
 - 冻结规格（`spec/catalog.mjs`、`spec/preamble.md` 及生成的规格文档）不改；确实需要改先问用户，改后运行 `pnpm run spec`。
@@ -155,4 +158,5 @@
 | `30f4501` | 主助手使用用户提供的图片 |
 | `76dd5a2` | 模型菜单的 Home / End 按实际首尾项验证，覆盖相同更新时间 |
 | `930194e` | 文件区预览、工具栏和细节收敛 |
-| 本轮（2026-10-01） | 六步首次引导、供应商搜索、分步恢复与原子完成 |
+| `95928f7` | 六步首次引导、供应商搜索、分步恢复与原子完成 |
+| 本轮（2026-10-01） | 独立版 0.1.0 本地便携包、统一维护者图片与成品验证 |

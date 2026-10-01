@@ -157,7 +157,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         json(res, {
           data: {
             name: 'CAgent',
-            version: '0.1.0-dev.1',
+            version: '0.1.0',
             runtime: 'independent',
             platform: process.platform,
             keystore: rt.vault.available,
