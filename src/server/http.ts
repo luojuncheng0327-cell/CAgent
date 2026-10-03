@@ -367,7 +367,16 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         if (action === 'resources' && method === 'POST') {
           const name = decodeURIComponent(String(req.headers['x-file-name'] ?? ''));
           const data = await bytes(req, resourceLimit);
-          json(res, { data: createResource(rt.store, id, name, data) }, 201);
+          const abort = new AbortController();
+          const disconnected = () => {
+            if (!res.writableEnded) abort.abort();
+          };
+          res.once('close', disconnected);
+          try {
+            json(res, { data: await createResource(rt.store, id, name, data, abort.signal) }, 201);
+          } finally {
+            res.off('close', disconnected);
+          }
           return;
         }
         const resource = action?.match(/^resources\/([^/]+)(\/body)?$/);
@@ -630,7 +639,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
       }
       if (route === '/api/v1/backup/import' && method === 'POST') {
         const b = z.object({ backup: z.unknown(), confirm: z.string() }).parse(await body(req));
-        json(res, { data: importBackup(rt, b.backup, b.confirm) });
+        json(res, { data: await importBackup(rt, b.backup, b.confirm) });
         return;
       }
       throw new AppError('NOT_FOUND', '此接口不存在或尚未实现', 404);

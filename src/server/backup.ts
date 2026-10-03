@@ -12,7 +12,9 @@ import {
 import type { Message, Stored, Resource } from '../shared/contracts.ts';
 import type { Runtime } from './runtime.ts';
 import { invariant, stamp } from './errors.ts';
-import { identifyResource, resourceBytes, resourceLimit } from './resources.ts';
+import { identifyResource, resourceBytes, resourceLimit, cacheExtraction } from './resources.ts';
+import { parseAttachment } from './attachment-parser.ts';
+import type { ParsedAttachment } from './attachment-parser.ts';
 
 const kinds = ['agent', 'provider', 'model', 'session', 'preferences', 'memory'] as const;
 const row = z.object({
@@ -34,14 +36,14 @@ const resourceSchema = z.object({
   sessionId: z.string(),
   name: z.string(),
   mime: z.string(),
-  kind: z.enum(['text', 'image']),
+  kind: z.enum(['text', 'image', 'document']),
   bytes: z.number().int().positive().max(resourceLimit),
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
   base64: z.string().max(Math.ceil(resourceLimit / 3) * 4),
 });
 const dataSchema = z.object({
   format: z.literal('cagent-neutral'),
-  version: z.union([z.literal(1), z.literal(2)]),
+  version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   records: z.array(row).max(100000),
   messages: z.array(messageRow).max(1000000),
   resources: z.array(resourceSchema).max(10000).default([]),
@@ -64,7 +66,7 @@ export function exportBackup(rt: Runtime) {
   });
   const data = {
     ...raw,
-    version: 2,
+    version: 3,
     records: raw.records.filter((r) => kinds.includes(r.kind as never)),
     resources,
   };
@@ -192,10 +194,19 @@ export function inspectBackup(rt: Runtime, raw: unknown) {
     alreadyImported: !!rt.store.get('import', envelope.sha256),
   };
 }
-export function importBackup(rt: Runtime, raw: unknown, confirm: string) {
+export async function importBackup(rt: Runtime, raw: unknown, confirm: string) {
   const plan = inspectBackup(rt, raw);
   invariant(confirm === plan.sha256, 'CONFIRM_REQUIRED', '请确认已校验的备份指纹');
   if (plan.alreadyImported) return { imported: false, alreadyImported: true, counts: plan.counts };
+  const parsed = new Map<string, ParsedAttachment>();
+  for (const resource of plan.data.resources)
+    if (resource.kind !== 'text')
+      parsed.set(
+        resource.id,
+        await parseAttachment(resource.mime, Buffer.from(resource.base64, 'base64')),
+      );
+  if (rt.store.get('import', plan.sha256))
+    return { imported: false, alreadyImported: true, counts: plan.counts };
   invariant(
     !rt.store
       .list<any>('run')
@@ -256,11 +267,16 @@ export function importBackup(rt: Runtime, raw: unknown, confirm: string) {
     for (const r of plan.data.resources) {
       const id = resourceMap.get(r.id)!;
       const { base64, ...metadata } = r;
-      rt.store.put<Resource>('resource', id, {
+      const details = parsed.get(r.id) ?? {};
+      const saved = rt.store.put<Resource>('resource', id, {
         ...metadata,
         sessionId: mapping.get('session:' + r.sessionId)!,
         state: 'ready',
+        validated: 1,
+        ...(details.image ? { image: details.image } : {}),
+        ...(details.extraction ? { extraction: details.extraction } : {}),
       });
+      cacheExtraction(rt.store, saved, details);
       rt.store.db
         .prepare('INSERT INTO resource_blobs(id,bytes) VALUES(?,?)')
         .run(id, Buffer.from(base64, 'base64'));

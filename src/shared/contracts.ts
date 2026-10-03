@@ -209,11 +209,14 @@ export interface Resource extends Stored {
   sessionId: string;
   name: string;
   mime: string;
-  kind: 'text' | 'image';
+  kind: 'text' | 'image' | 'document';
   bytes: number;
   sha256: string;
   state: 'ready';
   sourceId?: string;
+  validated?: 1;
+  image?: { width: number; height: number; frames: number };
+  extraction?: { format: 'pdf' | 'docx'; pages?: number; characters: number; warnings: string[] };
 }
 export interface MessagePage {
   messages: Message[];

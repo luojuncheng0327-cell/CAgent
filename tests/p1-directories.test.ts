@@ -306,7 +306,7 @@ test('CA-SESSION-010/DATA-003 目录权限重启保留；备份导入不复用�
         s.directoryGrants,
       );
       const plan = inspectBackup(target, backup);
-      importBackup(target, backup, plan.sha256);
+      await importBackup(target, backup, plan.sha256);
       const restored = target.store.list<Session>('session')[0];
       assert.equal(restored.workspace, null);
       assert.deepEqual(restored.directoryGrants, []);

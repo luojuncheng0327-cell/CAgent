@@ -26,7 +26,7 @@ import { usageReport } from '../src/server/usage.ts';
 import type { Session, Resource, Message, Run, Usage, Agent } from '../src/shared/contracts.ts';
 
 const png = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWP4//8/AAX+Av5Y8msOAAAAAElFTkSuQmCC',
   'base64',
 );
 const user = (sessionId: string, text: string) => ({
@@ -50,7 +50,7 @@ test('CA-CHAT-006/WORK-011 附件按字节校验、同名独立、跨会话拒�
     });
     assert.equal(upload.status, 201);
     const r = (await upload.json()).data as Resource;
-    const same = createResource(f.rt.store, f.session.id, r.name, Buffer.from('另一个文件'));
+    const same = await createResource(f.rt.store, f.session.id, r.name, Buffer.from('另一个文件'));
     assert.notEqual(r.id, same.id);
     assert.equal(
       (
@@ -78,15 +78,15 @@ test('CA-CHAT-006/WORK-011 附件按字节校验、同名独立、跨会话拒�
       () => removeResource(f.rt.store, f.session.id, r.id),
       (e: any) => e.code === 'RESOURCE_IN_USE',
     );
-    assert.throws(
+    await assert.rejects(
       () => createResource(f.rt.store, f.session.id, 'fake.png', Buffer.from('<html>not an image')),
       (e: any) => e.code === 'RESOURCE_TYPE',
     );
-    assert.throws(
+    await assert.rejects(
       () => createResource(f.rt.store, f.session.id, '../escape.md', Buffer.from('x')),
       (e: any) => e.code === 'RESOURCE_NAME',
     );
-    assert.throws(
+    await assert.rejects(
       () => createResource(f.rt.store, f.session.id, 'binary.txt', Buffer.from([0, 1])),
       (e: any) => e.code === 'RESOURCE_TEXT_LIMIT',
     );
@@ -107,13 +107,13 @@ test('CA-MODEL-012 文本附件实际进入出站请求；文本模型拒绝图�
     }),
     f = await setup(mock.url);
   try {
-    const text = createResource(
+    const text = await createResource(
         f.rt.store,
         f.session.id,
         'note.md',
         Buffer.from('只能来自附件的证据'),
       ),
-      image = createResource(f.rt.store, f.session.id, 'photo.png', png);
+      image = await createResource(f.rt.store, f.session.id, 'photo.png', png);
     const s = await f.rt.updateSession(f.session.id, {
       draft: '保留输入',
       draftAttachmentIds: [image.id],
@@ -141,13 +141,13 @@ test('CA-MODEL-012 五种协议的真实图片块与稳定资源引用', async (
   const mock = await fixture((req, res) => response(res, 'ok')),
     f = await setup(mock.url);
   try {
-    const resource = createResource(f.rt.store, f.session.id, 'a.png', png),
+    const resource = await createResource(f.rt.store, f.session.id, 'a.png', png),
       model = { ...f.model, supportsImages: true };
     const m = f.rt.store.addMessage({
       ...user(f.session.id, '图片'),
       attachmentIds: [resource.id],
     });
-    const messages = hydrateMessages(f.rt.store, f.session.id, [m], model);
+    const messages = await hydrateMessages(f.rt.store, f.session.id, [m], model);
     for (const protocol of [
       'openai-completions',
       'openai-responses',
@@ -193,7 +193,7 @@ test('CA-DATA-004/SESSION-009 附件备份往返、草稿与重启字节不变�
     f = await setup(mock.url),
     g = await setup(mock.url);
   try {
-    const r = createResource(f.rt.store, f.session.id, '图片.png', png);
+    const r = await createResource(f.rt.store, f.session.id, '图片.png', png);
     await f.rt.updateSession(f.session.id, {
       draft: '图片草稿',
       draftAttachmentIds: [r.id],
@@ -201,9 +201,9 @@ test('CA-DATA-004/SESSION-009 附件备份往返、草稿与重启字节不变�
     });
     f.rt.store.addMessage({ ...user(f.session.id, '图片消息'), attachmentIds: [r.id] });
     const backup = exportBackup(f.rt);
-    assert.equal(backup.data.version, 2);
+    assert.equal(backup.data.version, 3);
     assert.equal(inspectBackup(g.rt, backup).counts.resources, 1);
-    importBackup(g.rt, backup, backup.sha256);
+    await importBackup(g.rt, backup, backup.sha256);
     const imported = g.rt.store
         .list<Session>('session')
         .find((s) => (s as any).importSourceId === f.session.id)!,
@@ -215,7 +215,7 @@ test('CA-DATA-004/SESSION-009 附件备份往返、草稿与重启字节不变�
     tampered.data.resources[0].base64 = Buffer.from('bad').toString('base64');
     tampered.sha256 = hash(JSON.stringify(tampered.data));
     const count = g.rt.store.list('session').length;
-    assert.throws(() => importBackup(g.rt, tampered, tampered.sha256));
+    await assert.rejects(() => importBackup(g.rt, tampered, tampered.sha256));
     assert.equal(g.rt.store.list('session').length, count);
     await g.rt.close();
     const reopened = new Runtime(g.home, { codec: g.codec });
@@ -751,7 +751,7 @@ test('CA-DATA-008 v1 数据升级保留旧内容和默认偏好，v1 中立备�
     const message = f.rt.store.addMessage(user(f.session.id, '升级前内容'));
     const raw = f.rt.store.snapshot().data;
     const legacy = { data: raw, sha256: hash(JSON.stringify(raw)) };
-    importBackup(g.rt, legacy, legacy.sha256);
+    await importBackup(g.rt, legacy, legacy.sha256);
     assert.ok(
       g.rt.store
         .list<Session>('session')
@@ -764,7 +764,12 @@ test('CA-DATA-008 v1 数据升级保留旧内容和默认偏好，v1 中立备�
       assert.equal((upgraded.store.db.prepare('PRAGMA user_version').get() as any).user_version, 2);
       assert.equal(upgraded.store.allMessages(f.session.id)[0].id, message.id);
       assert.equal(upgraded.preferences().autoCompact, false);
-      const r = createResource(upgraded.store, f.session.id, '升级后.txt', Buffer.from('资源可用'));
+      const r = await createResource(
+        upgraded.store,
+        f.session.id,
+        '升级后.txt',
+        Buffer.from('资源可用'),
+      );
       assert.equal(resourceBytes(upgraded.store, f.session.id, r.id).bytes.toString(), '资源可用');
     } finally {
       await upgraded.close();

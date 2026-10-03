@@ -209,7 +209,7 @@ test('CA-DATA-004 备份导入保留消息时间戳', async () => {
       at,
     );
     const backup = exportBackup(f.rt);
-    importBackup(g.rt, backup, backup.sha256);
+    await importBackup(g.rt, backup, backup.sha256);
     const imported = g.rt.store
       .list<Session>('session')
       .find((s) => (s as any).importSourceId === f.session.id)!;

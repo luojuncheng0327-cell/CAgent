@@ -257,7 +257,7 @@ test('CA-DATA-004/006 中立备份校验、导入和重复幂等，不迁移授�
     const backup = exportBackup(f.rt),
       plan = inspectBackup(g.rt, backup);
     assert.equal(plan.counts.messages, 2);
-    const result = importBackup(g.rt, backup, backup.sha256);
+    const result = await importBackup(g.rt, backup, backup.sha256);
     assert.equal(result.imported, true);
     const imported = g.rt.store
       .list<Session>('session')
@@ -266,7 +266,7 @@ test('CA-DATA-004/006 中立备份校验、导入和重复幂等，不迁移授�
     assert.equal(g.rt.store.messages(imported.id)[1].text, '备份内容');
     assert.equal(imported.permission, 'ask');
     assert.equal(imported.workspace, null);
-    assert.equal(importBackup(g.rt, backup, backup.sha256).alreadyImported, true);
+    assert.equal((await importBackup(g.rt, backup, backup.sha256)).alreadyImported, true);
     const tampered = structuredClone(backup);
     tampered.data.messages[0].body = '{}';
     assert.throws(

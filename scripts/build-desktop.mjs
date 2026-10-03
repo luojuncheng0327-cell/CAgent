@@ -9,6 +9,17 @@ await build({
   outExtension: { '.js': '.cjs' },
   external: ['electron', 'node:*'],
   target: 'node24',
+  banner: { js: 'const cagentModuleUrl = require("node:url").pathToFileURL(__filename).href;' },
+  define: { 'import.meta.url': 'cagentModuleUrl' },
+});
+await build({
+  entryPoints: ['src/server/attachment-worker.ts'],
+  outfile: 'dist/desktop/attachment-worker.mjs',
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  external: ['node:*', 'sharp', 'pdfjs-dist', 'mammoth'],
+  target: 'node24',
 });
 await copyFile('src/ui/assets/assistant-portrait.png', 'dist/desktop/app-icon.png');
 await build({

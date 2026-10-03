@@ -104,7 +104,7 @@ try {
   await page.getByText('分页问题 0', { exact: true }).waitFor();
   assert.equal(await page.locator('article.message').count(), 92);
   const png = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWP4//8/AAX+Av5Y8msOAAAAAElFTkSuQmCC',
     'base64',
   );
   await page.getByLabel('添加附件', { exact: true }).setInputFiles([

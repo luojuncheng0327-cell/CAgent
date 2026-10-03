@@ -11,6 +11,10 @@ const allowed = new Set([
   'react-dom',
   'markdown-it',
   'zod',
+  // Generic attachment parsers approved by the maintainer on 2026-10-03.
+  'sharp',
+  'pdfjs-dist',
+  'mammoth',
   'electron',
   'prosemirror-model',
   'prosemirror-state',
