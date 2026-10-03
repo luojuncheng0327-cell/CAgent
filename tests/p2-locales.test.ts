@@ -10,6 +10,8 @@ test('P2 五语文本完整，插值保留参数且不解析参数内的占位�
   assert.equal(translate('ja', '保存资料'), 'プロフィールを保存');
   assert.equal(translate('ko', '保存资料'), '프로필 저장');
   assert.equal(translate('zh-TW', '保存资料'), '儲存資料');
+  assert.equal(translate('en', '撤销'), 'Undo');
+  assert.equal(translate('en', '撤销授权'), 'Revoke access');
   assert.equal(translate('en', '移除附件 {0}', ['用户原文 {1}']), 'Remove attachment 用户原文 {1}');
   for (const [source, translations] of Object.entries(copy)) {
     assert.equal(translations.length, 4, source);
