@@ -96,6 +96,7 @@ export function Workspace({
     listRequest = useRef(0),
     file = tabs.find((t) => t.path === active);
   const savePending = useRef(false);
+  const draftsLoaded = useRef(false);
   function containsFile(target: string, candidate: string) {
     const normalize = (value: string) => {
       const absolute = /^(?:[a-z]:[\\/]|\/)/i.test(value) ? value : session.workspace + '/' + value;
@@ -176,7 +177,9 @@ export function Workspace({
         };
         setTabs(restored.tabs);
         setActive(restored.active);
-        setShow(!!restored.tabs.length);
+        if (!draftsLoaded.current) setShow(!!restored.tabs.length);
+        else if (!restored.tabs.length) setShow(false);
+        draftsLoaded.current = true;
         setDraftReady(true);
         setDraftStatus('恢复草稿已保存');
       })
