@@ -41,6 +41,7 @@ try {
     );
   };
   await launch();
+  await page.getByText('正在同步文件变化', { exact: true }).waitFor({ state: 'attached' });
   await page.locator('.composer textarea').fill('用户消息原文 🙂');
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
   await page.getByRole('button', { name: '界面外观', exact: true }).click();
@@ -94,6 +95,14 @@ try {
     await page.locator('#interface-locale').selectOption(locale);
     await page.waitForFunction((lang) => document.documentElement.lang === lang, lang);
     await page.getByRole('heading', { name: title, exact: true }).waitFor();
+    const syncLabels = {
+      en: 'Syncing file changes',
+      ja: 'ファイルの変更を同期中',
+      ko: '파일 변경 동기화 중',
+      'zh-TW': '正在同步檔案變更',
+      zh: '正在同步文件变化',
+    };
+    await page.getByText(syncLabels[locale], { exact: true }).waitFor({ state: 'attached' });
     const buttons = page.locator('.settings-layout > nav > button');
     assert.equal(await buttons.count(), 6);
     for (let tab = 0; tab < 6; tab++) {
