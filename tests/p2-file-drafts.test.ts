@@ -182,3 +182,42 @@ test('P2 草稿总字节和标签上限拒绝时保留上一份草稿', async ()
     await f.cleanup();
   }
 });
+
+test('P2 保存仍有权访问的标签不会删除已撤销子目录的恢复草稿', async () => {
+  const f = await fixture();
+  try {
+    const child = path.join(f.workspace, 'child');
+    await fs.mkdir(child);
+    await fs.writeFile(path.join(child, '笔记.md'), f.source);
+    let session = await f.rt.updateSession(f.session.id, {
+      directoryGrants: [
+        { path: f.workspace, access: 'write' },
+        { path: child, access: 'write' },
+      ],
+      revision: f.session.revision,
+    });
+    const draft = f.snapshot();
+    draft.tabs.push({ ...draft.tabs[0], path: 'child/笔记.md', text: '子目录恢复文字' });
+    assert.equal((await f.request('PUT', draft)).status, 200);
+    session = await f.rt.updateSession(f.session.id, {
+      directoryGrants: [{ path: f.workspace, access: 'write' }],
+      revision: session.revision,
+    });
+    const visible = await f.request();
+    assert.equal(visible.data.tabs.length, 1);
+    assert.equal(visible.data.hidden, 1);
+    assert.equal((await f.request('PUT', { ...visible.data, tabs: [], active: null })).status, 200);
+    await f.rt.updateSession(f.session.id, {
+      directoryGrants: [
+        { path: f.workspace, access: 'write' },
+        { path: child, access: 'write' },
+      ],
+      revision: session.revision,
+    });
+    const restored = await f.request();
+    assert.equal(restored.data.tabs.length, 1);
+    assert.equal(restored.data.tabs[0].text, '子目录恢复文字');
+  } finally {
+    await f.cleanup();
+  }
+});

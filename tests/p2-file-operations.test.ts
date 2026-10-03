@@ -27,7 +27,7 @@ async function fixture(trashItem?: (target: string) => Promise<void>) {
         Authorization: 'Bearer ' + app.token,
         ...(data ? { 'Content-Type': 'application/json' } : {}),
       },
-      body: raw ?? (data ? JSON.stringify(data) : undefined),
+      body: raw ? new Uint8Array(raw).buffer : data ? JSON.stringify(data) : undefined,
     });
     return { status: response.status, ...(await response.json()) };
   }
