@@ -20,6 +20,7 @@ const errors = [],
   arrivals = [];
 let retryRequests = 0,
   compactRequests = 0,
+  retryHeld,
   compactHeld;
 const respond = (res, text) => {
   res.writeHead(200, { 'Content-Type': 'text/event-stream' });
@@ -48,7 +49,7 @@ const mock = http.createServer(async (req, res) => {
     if (++retryRequests === 1) {
       res.writeHead(503, { 'Retry-After': '1' });
       res.end();
-    } else respond(res, '重试后的完整回复');
+    } else retryHeld = res;
   } else if (/^排队任务\d$/.test(text)) {
     arrivals.push(text);
     held.set(text, res);
@@ -206,7 +207,7 @@ try {
   });
   await page.route(startRoute, async (route) => {
     const response = await route.fetch();
-    await until(() => retryRequests === 1);
+    await until(() => retryRequests >= 1);
     await new Promise((resolve) => setTimeout(resolve, 100));
     await route.fulfill({ response });
   });
@@ -220,6 +221,8 @@ try {
   await page.unroute(snapshotRoute);
   await page.unroute(startRoute);
   checks.push('网络失败的重试等待可见');
+  await until(() => !!retryHeld);
+  respond(retryHeld, '重试后的完整回复');
   await page.getByText('重试后的完整回复', { exact: true }).waitFor();
   assert.equal(retryRequests, 2);
   assert.equal(await page.getByText('重试后的完整回复', { exact: true }).count(), 1);

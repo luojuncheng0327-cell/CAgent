@@ -36,6 +36,8 @@ try {
     env: { ...process.env, CAGENT_HOME: f.home, CAGENT_SMOKE: '1' },
   });
   const page = await app.firstWindow();
+  if (process.env.CAGENT_FILE_TEST_EXE)
+    assert.equal(await app.evaluate(({ app }) => app.isPackaged), true);
   page.setDefaultTimeout(15000);
   page.on('pageerror', (error) => errors.push(error.message));
   let accept = false;
@@ -86,6 +88,8 @@ try {
   await page.getByLabel('文件内容', { exact: true }).fill('dirty');
   await button('关闭文件预览').click();
   await button('管理 keep.txt').click();
+  await page.getByText('文件 · 4 字节 · 1 项', { exact: true }).waitFor();
+  await page.getByRole('alert').filter({ hasText: '请先保存或关闭此项目的编辑草稿' }).waitFor();
   assert.equal(await button('确认移动').isDisabled(), true);
   assert.equal(await button('移入系统回收站').isDisabled(), true);
   checks.push('dirty editor tabs prevent moving or recycling their file');

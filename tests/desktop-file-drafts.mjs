@@ -22,6 +22,8 @@ async function launch() {
     env: { ...process.env, CAGENT_HOME: f.home, CAGENT_SMOKE: '1' },
   });
   const page = await app.firstWindow();
+  if (process.env.CAGENT_FILE_TEST_EXE)
+    assert.equal(await app.evaluate(({ app }) => app.isPackaged), true);
   page.setDefaultTimeout(15000);
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('dialog', (dialog) => dialog.accept());
@@ -103,6 +105,16 @@ try {
   await app.close();
   app = undefined;
   page = await launch();
+  const closedView = await page.evaluate(
+    async ({ id, workspace }) => {
+      const result = await fetch(
+        `/api/v1/sessions/${id}/file-drafts?workspace=${encodeURIComponent(workspace)}`,
+      );
+      return (await result.json()).data;
+    },
+    { id: f.session.id, workspace },
+  );
+  assert.deepEqual(closedView.tabs, [], 'Discarded tabs must be absent from durable storage');
   assert.equal(await page.getByRole('tab', { name: /draft.txt/ }).count(), 0);
   checks.push('explicitly discarded tabs stay closed after restart');
   assert.deepEqual(errors, []);
