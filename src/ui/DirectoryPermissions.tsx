@@ -82,7 +82,7 @@ export function DirectoryPermissions({
               disabled={busy}
               onClick={() => void change(grants.filter((g) => g.path !== grant.path))}
             >
-              {t('撤销')}
+              {t('撤销授权')}
             </button>
           </div>
         ))}
