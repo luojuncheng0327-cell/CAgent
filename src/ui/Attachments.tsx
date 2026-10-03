@@ -3,6 +3,14 @@ import type { Resource } from '../shared/contracts.ts';
 import { ApiError } from './api.ts';
 import { Icon } from './Marks.tsx';
 
+function resourceDescription(resource: Resource) {
+  if (resource.extraction)
+    return `${resource.extraction.format.toUpperCase()}${resource.extraction.pages ? ' · ' + resource.extraction.pages + ' 页' : ''} · 已提取文字`;
+  if (resource.image)
+    return `图片 · ${resource.image.width} × ${resource.image.height}${resource.image.frames > 1 ? ' · ' + resource.image.frames + ' 帧' : ''}`;
+  return resource.kind === 'image' ? '图片' : '文本';
+}
+
 export function ResourceLinks({
   ids,
   resources,
@@ -27,7 +35,7 @@ export function ResourceLinks({
               <small>
                 {r.bytes < 1024 ? r.bytes + ' 字节' : (r.bytes / 1024).toFixed(1) + ' KiB'}
                 {' · '}
-                {r.kind === 'image' ? '图片' : '文本'}
+                {resourceDescription(r)}
               </small>
             )}
           </div>
@@ -154,6 +162,9 @@ export function AttachmentPicker({
           {ids.map((id) => (
             <span key={id}>
               {resources.find((r) => r.id === id)?.name ?? '失效附件'}
+              {resources.find((r) => r.id === id)?.extraction && (
+                <small>{resourceDescription(resources.find((r) => r.id === id)!)}</small>
+              )}
               <button
                 type="button"
                 disabled={disabled || busy}
@@ -169,6 +180,18 @@ export function AttachmentPicker({
           ))}
         </div>
       )}
+      {ids.some((id) => resources.find((r) => r.id === id)?.kind === 'document') && (
+        <p className="muted">文档仅发送提取的文字，不含图片和完整排版；扫描件请先进行 OCR。</p>
+      )}
+      {resources
+        .filter((r) => ids.includes(r.id))
+        .flatMap((r) =>
+          (r.extraction?.warnings ?? []).map((warning, index) => (
+            <p role="status" className="muted" key={r.id + ':' + index}>
+              {r.name}：{warning}
+            </p>
+          )),
+        )}
       {errors.map((error, i) => (
         <p role="alert" className="inline-error" key={i}>
           {error}
