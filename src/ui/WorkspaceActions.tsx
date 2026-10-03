@@ -6,6 +6,7 @@ import { Field, Modal } from './components.tsx';
 
 export async function uploadWorkspaceFiles(
   sessionId: string,
+  workspace: string | null,
   folder: string,
   files: File[],
   report: (value: unknown) => void,
@@ -16,7 +17,7 @@ export async function uploadWorkspaceFiles(
       if (file.size > 16 * 1024 * 1024) throw new Error('每个文件最多 16 MiB');
       const target = (folder === '.' ? '' : folder + '/') + file.name;
       const response = await fetch(
-        `/api/v1/sessions/${sessionId}/file-upload?path=${encodeURIComponent(target)}`,
+        `/api/v1/sessions/${sessionId}/file-upload?workspace=${encodeURIComponent(workspace ?? '')}&path=${encodeURIComponent(target)}`,
         {
           method: 'POST',
           credentials: 'same-origin',
@@ -61,7 +62,7 @@ export function WorkspaceActions({
   useEffect(() => {
     let current = true;
     void api<NonNullable<typeof info>>(
-      `/sessions/${session.id}/file-info?path=${encodeURIComponent(target)}`,
+      `/sessions/${session.id}/file-info?workspace=${encodeURIComponent(session.workspace ?? '')}&path=${encodeURIComponent(target)}`,
     )
       .then((value) => {
         if (current) setInfo(value);
@@ -72,7 +73,7 @@ export function WorkspaceActions({
     return () => {
       current = false;
     };
-  }, [session.id, target]);
+  }, [session.id, session.workspace, target]);
   async function change(operation: 'rename' | 'copy' | 'trash') {
     if (!info || dirty || readonly || busy) return;
     if (
@@ -85,6 +86,7 @@ export function WorkspaceActions({
     try {
       await api(`/sessions/${session.id}/file-operation`, 'POST', {
         operation,
+        workspace: session.workspace,
         path: target,
         expectedHash: info.sha256,
         confirmed: operation === 'trash',

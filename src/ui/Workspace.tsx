@@ -83,9 +83,7 @@ export function Workspace({
     [active, setActive] = useState<string | null>(() => drafts.get(key)?.active ?? null),
     [show, setShow] = useState(!!drafts.get(key)?.tabs.length),
     [watchState, setWatchState] = useState('正在连接文件变化通知…');
-  const [operation, setOperation] = useState<
-      'create-file' | 'create-directory' | 'rename' | 'copy' | null
-    >(null),
+  const [operation, setOperation] = useState<'create-file' | 'create-directory' | null>(null),
     [name, setName] = useState(''),
     [busy, setBusy] = useState(false),
     [history, setHistory] = useState<Version[] | null>(null),
@@ -326,17 +324,12 @@ export function Workspace({
     setBusy(true);
     try {
       const target = (folder === '.' ? '' : folder + '/') + name;
-      await api(
-        prefix + '/file-operation',
-        'POST',
-        operation === 'rename' || operation === 'copy'
-          ? { operation, path: file?.path, destination: name, expectedHash: file?.sha256 }
-          : { operation, path: target, text: '' },
-      );
-      if (operation === 'rename' && file) {
-        updateTab(file.path, { path: name });
-        setActive(name);
-      }
+      await api(prefix + '/file-operation', 'POST', {
+        operation,
+        workspace: session.workspace,
+        path: target,
+        text: '',
+      });
       setOperation(null);
       await load();
       if (operation === 'create-file') await openFile(target);
@@ -380,7 +373,7 @@ export function Workspace({
             className="desk-directory"
             aria-label="当前工作台"
             value={session.workspace ?? ''}
-            disabled={!canSwitch}
+            disabled={!canSwitch || busy}
             onChange={(event) => void switchDirectory(event.target.value).catch(report)}
           >
             {!session.workspace && <option value="">选择已授权目录</option>}
@@ -424,7 +417,7 @@ export function Workspace({
               const files = Array.from(event.target.files ?? []);
               event.target.value = '';
               setBusy(true);
-              void uploadWorkspaceFiles(session.id, folder, files, report)
+              void uploadWorkspaceFiles(session.id, session.workspace, folder, files, report)
                 .then(async (count) => {
                   await load();
                   if (count) report(`已上传 ${count} 个文件`);
@@ -807,20 +800,11 @@ export function Workspace({
                 <button
                   disabled={readonly || busy || file.text !== file.saved}
                   onClick={() => {
-                    setName(file.path);
-                    setOperation('rename');
+                    setManaged(file.path);
+                    setFileMenu(false);
                   }}
                 >
-                  重命名 / 移动
-                </button>
-                <button
-                  disabled={readonly || busy || file.text !== file.saved}
-                  onClick={() => {
-                    setName(file.path + '.copy');
-                    setOperation('copy');
-                  }}
-                >
-                  复制文件
+                  移动 / 复制 / 回收
                 </button>
                 <button
                   onClick={() => {
@@ -922,8 +906,6 @@ export function Workspace({
             {
               'create-file': '新建文件',
               'create-directory': '新建目录',
-              rename: '重命名 / 移动文件',
-              copy: '复制文件',
             }[operation]
           }
           onClose={() => setOperation(null)}
@@ -935,14 +917,7 @@ export function Workspace({
               void applyOperation();
             }}
           >
-            <Field
-              label="文件路径"
-              hint={
-                operation.startsWith('create')
-                  ? '相对于当前目录，已有目标不会覆盖'
-                  : '相对于工作区根目录，已有目标不会覆盖'
-              }
-            >
+            <Field label="文件路径" hint="相对于当前目录，已有目标不会覆盖">
               <input required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
             </Field>
             <div className="form-actions">

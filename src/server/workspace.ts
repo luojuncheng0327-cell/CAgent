@@ -60,8 +60,15 @@ export async function manageFile(
       text: z.string().max(1000000).default(''),
       expectedHash: z.string().optional(),
       confirmed: z.boolean().optional(),
+      workspace: z.string().nullable().optional(),
     })
     .parse(raw);
+  invariant(
+    b.workspace === undefined || b.workspace === session.workspace,
+    'WORKSPACE_CHANGED',
+    '当前工作台已切换，请重新打开文件操作',
+    409,
+  );
   if (b.operation === 'rename' || b.operation === 'copy' || b.operation === 'trash')
     return changeWorkspaceItem(store, session, { ...b, operation: b.operation }, services);
   const allowed = () => {

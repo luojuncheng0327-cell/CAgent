@@ -483,12 +483,26 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           return;
         }
         if (action === 'file-info' && method === 'GET') {
+          invariant(
+            !url.searchParams.has('workspace') ||
+              url.searchParams.get('workspace') === session.workspace,
+            'WORKSPACE_CHANGED',
+            '当前工作台已切换，请重新打开文件操作',
+            409,
+          );
           json(res, {
             data: await inspectWorkspaceItem(rt.store, session, url.searchParams.get('path') ?? ''),
           });
           return;
         }
         if (action === 'file-upload' && method === 'POST') {
+          invariant(
+            !url.searchParams.has('workspace') ||
+              url.searchParams.get('workspace') === session.workspace,
+            'WORKSPACE_CHANGED',
+            '当前工作台已切换，请重新上传',
+            409,
+          );
           json(
             res,
             {

@@ -18,6 +18,14 @@ interface NodeInfo {
   sha256: string;
   bytes: number;
 }
+function selectedWorkspace(store: Store, session: Session) {
+  invariant(
+    store.need<Session>('session', session.id).workspace === session.workspace,
+    'WORKSPACE_CHANGED',
+    '当前工作台已切换，请重新打开文件操作',
+    409,
+  );
+}
 
 function checkNow(store: Store, session: Session, target: string, write: boolean, create = false) {
   const grant = requireDirectory(store, session, target, write);
@@ -135,7 +143,9 @@ function exclusiveBytes(store: Store, session: Session, destination: string, con
 }
 
 export async function inspectWorkspaceItem(store: Store, session: Session, input: string) {
+  selectedWorkspace(store, session);
   const target = await workspacePath(store, session, input);
+  selectedWorkspace(store, session);
   const { kind, bytes, entries, sha256 } = snapshot(store, session, target);
   return { path: input, kind, bytes, entries, sha256 };
 }
@@ -146,8 +156,10 @@ export async function uploadWorkspaceFile(
   input: string,
   bytes: Buffer,
 ) {
+  selectedWorkspace(store, session);
   invariant(bytes.length <= workspaceUploadLimit, 'FILE_SIZE', '上传文件不能超过 16 MiB', 413);
   const target = await workspacePath(store, session, input, true, true);
+  selectedWorkspace(store, session);
   writableItem(store, session, target);
   exclusiveBytes(store, session, target, bytes);
   store.audit('workspace.upload', session.id, 'ok');
@@ -166,6 +178,7 @@ export async function changeWorkspaceItem(
   },
   services: FileServices = {},
 ) {
+  selectedWorkspace(store, session);
   const target = await workspacePath(store, session, input.path, false, input.operation !== 'copy');
   if (input.operation !== 'copy') writableItem(store, session, target);
   let destination: string | undefined;
@@ -184,6 +197,7 @@ export async function changeWorkspaceItem(
   }
   // No await between final permission/version/collision checks and the filesystem mutation.
   // This serializes app requests; it is not an OS sandbox against external path replacement.
+  selectedWorkspace(store, session);
   const source = snapshot(store, session, target, input.operation !== 'copy');
   invariant(
     source.sha256 === input.expectedHash,
