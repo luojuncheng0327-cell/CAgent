@@ -81,7 +81,7 @@ export async function decodeAttachment(mime: string, bytes: Buffer): Promise<Par
                   // PDF.js supplies explicit spaces and line endings. Font switches are not spaces.
                   // Some embedded CJK fonts map identical-looking glyphs to Kangxi radical codepoints.
                   const part =
-                    item.str.replace(/[\u2f00-\u2fd5]/g, (char) => char.normalize('NFKC')) +
+                    item.str.replace(/[\u2f00-\u2fd5]/g, (char: string) => char.normalize('NFKC')) +
                     (item.hasEOL ? '\n' : '');
                   size += Buffer.byteLength(part);
                   invariant(
