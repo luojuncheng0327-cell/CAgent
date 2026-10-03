@@ -14,7 +14,7 @@ const mock = await fixture((_req, res, body) => {
 const f = await setup(mock.url);
 const checks = [],
   errors = [];
-let app;
+let app, page;
 try {
   f.rt.saveProvider({ ...f.provider, clearKey: true }, f.provider.id);
   f.rt.saveModel({ ...f.model, supportsImages: true }, f.model.id);
@@ -30,7 +30,7 @@ try {
   });
   if (process.env.CAGENT_ATTACHMENT_TEST_EXE)
     assert.equal(await app.evaluate(({ app }) => app.isPackaged), true);
-  const page = await app.firstWindow();
+  page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   page.on('pageerror', (error) => errors.push(error.message));
   const button = (name) => page.getByRole('button', { name, exact: true });
@@ -209,10 +209,27 @@ try {
   );
   await fs.writeFile('.artifacts/p2-attachments.png', Buffer.from(screenshot, 'base64'));
   assert.deepEqual(errors, []);
-  const result = { passed: true, checks, pageErrors: errors };
+  const result = {
+    passed: true,
+    packaged: await app.evaluate(({ app }) => app.isPackaged),
+    checks,
+    pageErrors: errors,
+  };
   await fs.mkdir('.artifacts', { recursive: true });
   await fs.writeFile('.artifacts/desktop-attachments-result.json', JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result));
+} catch (error) {
+  console.error(
+    JSON.stringify({
+      checks,
+      alerts: await page
+        ?.getByRole('alert')
+        .allTextContents()
+        .catch(() => []),
+      pageErrors: errors,
+    }),
+  );
+  throw error;
 } finally {
   if (app) await app.close();
   await f.rt.close();
