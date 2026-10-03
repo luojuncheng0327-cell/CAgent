@@ -6,7 +6,7 @@ import { decodeAttachment } from '../src/server/attachment-worker.ts';
 import { validateWordArchive } from '../src/server/document-budget.ts';
 import { createResource, hydrateMessages, resourceBytes } from '../src/server/resources.ts';
 import { setup } from './helpers.ts';
-import { pdfFile, docxFile, zipFile } from './fixtures/attachment-files.ts';
+import { pdfFile, docxFile, zipFile, mappedPdfFile } from './fixtures/attachment-files.ts';
 import type { Resource } from '../src/shared/contracts.ts';
 
 test('P2 异步解析使用输入字节快照，不把之后被改写的 Buffer 存成有效图片', async () => {
@@ -198,4 +198,9 @@ test('P2 部分 PDF 页没有文字时，提取提示同时传给用户和模型
   } finally {
     await f.cleanup();
   }
+});
+
+test('P2 PDF 分段字体不插入多余空格，康熙部首还原汉字且保留其他字符', async () => {
+  const result = await decodeAttachment('application/pdf', mappedPdfFile());
+  assert.equal(result.text, '中文English word¹Ａ');
 });

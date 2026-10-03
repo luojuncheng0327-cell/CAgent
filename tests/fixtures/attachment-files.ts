@@ -15,6 +15,10 @@ export function pdfFile(text: string | string[] = 'PDF attachment evidence', pag
       `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
     );
   }
+  return assemblePdf(objects);
+}
+
+function assemblePdf(objects: string[]) {
   let data = '%PDF-1.7\n';
   const offsets = [0];
   for (const [n, object] of objects.entries()) {
@@ -27,6 +31,29 @@ export function pdfFile(text: string | string[] = 'PDF attachment evidence', pag
   return Buffer.from(
     `${data}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`,
   );
+}
+
+// Synthetic ToUnicode mappings reproduce split-font Chinese text without bundling any font.
+export function mappedPdfFile() {
+  const mappings = ['中', '⽂', 'English', ' ', 'word', '¹', 'Ａ'];
+  const stream = 'BT /F1 12 Tf 20 100 Td (A) Tj /F2 12 Tf (B) Tj /F1 12 Tf (CDEFG) Tj ET';
+  const cmap = `begincmap\n1 begincodespacerange\n<00> <ff>\nendcodespacerange\n${mappings.length} beginbfchar\n${mappings
+    .map(
+      (value, i) =>
+        `<${(65 + i).toString(16)}> <${Array.from(value)
+          .map((c) => c.charCodeAt(0).toString(16).padStart(4, '0'))
+          .join('')}>`,
+    )
+    .join('\n')}\nendbfchar\nendcmap`;
+  return assemblePdf([
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [5 0 R] /Count 1 >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /ToUnicode 7 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Courier /ToUnicode 7 0 R >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 180] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>',
+    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`,
+    `<< /Length ${Buffer.byteLength(cmap)} >>\nstream\n${cmap}\nendstream`,
+  ]);
 }
 
 export function zipFile(entries: [string, string | Buffer][]) {
