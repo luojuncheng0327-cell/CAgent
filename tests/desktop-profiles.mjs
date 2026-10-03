@@ -33,7 +33,7 @@ try {
   f.rt.savePreferences({ ...f.rt.preferences(), setupComplete: true, theme: 'light' });
   await f.rt.close();
   await launch();
-  await button('设置').click();
+  await button('界面设置').click();
   await button('我的资料').click();
   await page.getByLabel('称呼', { exact: true }).fill('本机小罗');
   await page.getByLabel('简介', { exact: true }).fill('请用清晰的中文说明');
@@ -112,7 +112,7 @@ try {
     'welcome and session portraits load locally and both profiles survive a real restart',
   );
 
-  await button('设置').click();
+  await button('界面设置').click();
   await button('我的资料').click();
   await page.getByLabel('称呼', { exact: true }).fill('未保存的名字');
   await page.route('**/profiles/user', (route) =>
