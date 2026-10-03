@@ -8,10 +8,10 @@
 //   not_started     未开始：只在已有零星基础时登记，证据可以为空
 // 没有登记的必做功能一律视为未开始。编号和规格来自冻结的 spec/catalog.mjs。
 
-export const asOf = '2026-10-02';
+export const asOf = '2026-10-03';
 
 export const milestone =
-  'P1 工具中断恢复、长历史分批压缩、有限网络重试和并发超限排队完成本机验证；完整设置与 P2 后续功能继续按交接推进';
+  'P2 文件草稿持久化、目录与二进制文件管理、工作区上传和系统回收站完成本机验证，补齐迟到响应的任务状态保护；完整设置与附件解码、文档提取等 P2 后续功能继续按交接推进';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -343,8 +343,15 @@ item(
 item(
   'CA-SESSION-015',
   'partial',
-  [...runtimeContinuation, 'src/server/run-queue.ts', 'src/server/http.ts', 'src/ui/App.tsx'],
-  '最多 4 个会话同时运行，超限按先后顺序排队，最多等待 64 个；队列满时保留原草稿和历史。同会话锁与请求幂等，排队可独立取消且不出站，出队重新检查供应商和当前权限；完成、失败、取消和退出均释放任务位置。页面显示排队与执行状态，重启保留历史并将未完任务明确标为中断。',
+  [
+    ...runtimeContinuation,
+    'src/server/run-queue.ts',
+    'src/server/http.ts',
+    'src/ui/App.tsx',
+    'src/ui/run-status-cache.ts',
+    'tests/run-status-cache.test.ts',
+  ],
+  '最多 4 个会话同时运行，超限按先后顺序排队，最多等待 64 个；队列满时保留原草稿和历史。同会话锁与请求幂等，排队可独立取消且不出站，出队重新检查供应商和当前权限；完成、失败、取消和退出均释放任务位置。页面显示排队与执行状态，重启保留历史并将未完任务明确标为中断。迟到的创建响应不能把新执行状态降回排队或复活已结束任务；已用延迟响应与旧快照实测重试提示。',
   '长时间后台休眠与恢复、真实模型高负载和跨平台资源回收尚未专项验证。',
 );
 
@@ -566,9 +573,17 @@ item(
 item(
   'CA-WORK-003',
   'partial',
-  ['src/server/workspace.ts', 'src/ui/Workspace.tsx', ...continuation],
-  '可以新建文本文件和文件夹、复制和移动文本文件，重名时拒绝覆盖（已核对磁盘结果）。',
-  '移动文件夹、上传到工作区、回收站和跨根目录移动还没有。',
+  [
+    'src/server/workspace.ts',
+    'src/server/file-operations.ts',
+    'src/ui/Workspace.tsx',
+    'src/ui/WorkspaceActions.tsx',
+    'tests/p2-file-operations.test.ts',
+    'tests/desktop-file-operations.mjs',
+    ...continuation,
+  ],
+  '可以新建文本文件和目录、复制任意字节文件、移动文件和含空目录的目录、批量上传文件并逐项报告失败、确认后移入系统回收站。跨授权根移动检查两边和子目录权限；同名拒绝覆盖，内容变化和旧工作台请求拒绝执行，未保存文件草稿阻止界面移动或回收。Windows 桌面实际调用回收站接口通过。',
+  '跨磁盘移动明确拒绝且保留原文件；目录复制、应用内回收站恢复界面尚未提供。单文件 / 上传最多 16 MiB，目录操作最多 32 MiB、1024 项、32 层；外部进程持续替换路径的攻击、网络盘及其他操作系统未专项验证。',
 );
 item(
   'CA-WORK-004',
@@ -580,9 +595,14 @@ item(
     'src/ui/document-markdown.ts',
     'tests/document-markdown.test.ts',
     'tests/desktop-documents.mjs',
+    'src/server/file-drafts.ts',
+    'src/ui/file-draft-cache.ts',
+    'tests/p2-file-drafts.test.ts',
+    'tests/file-draft-cache.test.ts',
+    'tests/desktop-file-drafts.mjs',
   ],
-  '右侧多标签编辑 2 MiB 以内的 UTF-8 文本；Markdown 可以在“文档”模式直接改字（另有源码、预览模式），每个标签独立草稿和撤销，没改的段落保留原写法；手动保存和 Ctrl+S；文件被外部改过时拒绝保存，可重新读取；只读会话不能编辑。',
-  '表格、脚注等扩展格式只能在源码模式编辑；退出后文件草稿不保留，崩溃后也不能恢复。',
+  '右侧多标签编辑 2 MiB 以内的 UTF-8 文本和 Markdown；手动保存和 Ctrl+S，外部修改拒绝静默覆盖。文件草稿按会话 / 工作区持久化，自动保存恢复草稿不改源文件；正常退出等待保存回执，强制退出后可恢复已落盘文字、标签、显示模式和滚动位置。草稿版本冲突不覆盖，权限撤销后隐藏并保留，重新授权可找回。',
+  '表格、脚注等扩展格式只能在源码模式编辑。撤销栈只在进程内保留；最多 10 个标签、草稿与原文合计 8 MiB。硬退出前尚未完成落盘的最后约 350 ms 修改不能保证恢复。',
 );
 item(
   'CA-WORK-005',
@@ -624,9 +644,14 @@ item(
 item(
   'CA-FILE-003',
   'partial',
-  ['src/server/workspace.ts', 'tests/p1-p2.test.ts'],
-  '复制、移动文本文件时核对 BOM、换行和 SHA-256，不覆盖已有文件。',
-  '任意二进制文件的复制、把附件复制到工作区还没有。',
+  [
+    'src/server/workspace.ts',
+    'src/server/file-operations.ts',
+    'tests/p1-p2.test.ts',
+    'tests/p2-file-operations.test.ts',
+  ],
+  '书桌可以复制和移动文本或任意字节文件；核对 BOM、换行、SHA-256 与字节内容，不覆盖已有目标。',
+  '工具调用层的二进制复制、把对话附件复制到工作区仍未提供。',
 );
 item(
   'CA-FILE-005',
