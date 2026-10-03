@@ -63,7 +63,8 @@ async function fixture() {
     },
     cleanup: async () => {
       await app.close();
-      await f.cleanup();
+      await f.rt.close();
+      await removeTemporary(f.home);
       await removeTemporary(workspace);
     },
   };

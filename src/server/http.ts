@@ -22,6 +22,7 @@ import { createResource, resourceBytes, removeResource, resourceLimit } from './
 import { fileHistory, restoreFile, manageFile, watchWorkspace } from './workspace.ts';
 import { usageReport } from './usage.ts';
 import { searchSessions, orderedSessions, saveSessionOrder } from './session-navigation.ts';
+import { loadFileDrafts, saveFileDrafts } from './file-drafts.ts';
 
 interface ServerOptions {
   port?: number;
@@ -467,6 +468,16 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
             clearInterval(ping);
             rt.events.off('event', send);
           });
+          return;
+        }
+        if (action === 'file-drafts' && method === 'GET') {
+          json(res, {
+            data: await loadFileDrafts(rt.store, session, url.searchParams.get('workspace') ?? ''),
+          });
+          return;
+        }
+        if (action === 'file-drafts' && method === 'PUT') {
+          json(res, { data: await saveFileDrafts(rt.store, session, await body(req)) });
           return;
         }
         if (action === 'files' && method === 'GET') {
