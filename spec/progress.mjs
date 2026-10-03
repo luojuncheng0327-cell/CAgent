@@ -11,7 +11,7 @@
 export const asOf = '2026-10-03';
 
 export const milestone =
-  'P2 文件草稿持久化、目录与二进制文件管理、工作区上传和系统回收站完成本机验证，补齐迟到响应的任务状态保护；完整设置与附件解码、文档提取等 P2 后续功能继续按交接推进';
+  'P2 图片完整解码、PDF / Word DOCX 文字提取、剪贴板附件及导入恢复完成本机切片；多语言、头像资料及其余附件格式继续按交接推进';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -224,9 +224,16 @@ item(
 item(
   'CA-MODEL-012',
   'partial',
-  [...continuation, 'src/server/resources.ts', 'src/server/models.ts', 'src/ui/Attachments.tsx'],
-  'UTF-8 文本和 PNG / JPEG / GIF / WebP 图片附件可以上传、鉴权、存草稿，五种协议都能发送图片；不支持图片的模型会拒收图片。',
-  '图片只按文件签名判断类型，没有完整解码和像素上限；PDF、Office、音视频的内容提取、辅助模型转换和真实视觉账号都还没有。',
+  [
+    ...continuation,
+    'tests/p2-attachment-parsing.test.ts',
+    'tests/p2-parser-bounds.test.ts',
+    'tests/desktop-attachments.mjs',
+    'src/server/resources.ts',
+    'src/server/attachment-worker.ts',
+  ],
+  'UTF-8 文本和 PNG / JPEG / GIF / WebP 附件可以上传、鉴权、存草稿，图片经过完整解码及边长 / 总像素 / 帧数限制；PDF 和 Word DOCX 在本机提取文字后进入模型请求，保留原文件。五种协议图片映射保留，非视觉模型拒收图片。解析有并发、时间和内存限制；损坏 / 空文档 / 超限拒绝，部分 PDF 缺字提示同时送给用户和模型。',
+  '扫描文档 OCR、其余 Office 格式、音视频、辅助模型转换和真实视觉账号未验；复杂 PDF 排版、数学公式、所有语言字体和所有厂商文档兼容性未完整验证。',
 );
 
 // P1 · 会话与组织
@@ -387,9 +394,14 @@ item(
 item(
   'CA-CHAT-006',
   'partial',
-  [...continuation, 'src/server/resources.ts', 'src/server/models.ts', 'src/ui/Attachments.tsx'],
-  '文本和图片附件可以多选或拖入；多个文件上传失败会分别提示；发送前删掉的附件不会被带上。',
-  '不能粘贴附件；音频、视频、PDF、Office 附件还不支持。',
+  [
+    ...continuation,
+    'tests/desktop-attachments.mjs',
+    'tests/p2-attachment-parsing.test.ts',
+    'src/ui/Attachments.tsx',
+  ],
+  '文本、图片、PDF 和 DOCX 可以多选、拖入或从剪贴板粘贴；混合文件失败逐项提示，保留有效附件和文字草稿；同步上传锁避免重复粘贴并发，统一数量 / 字节预算，上传中阻止会话切换。文档显示提取状态与缺失提示。',
+  '音频、视频、旧 Word DOC、Excel、PowerPoint 和扫描文档 OCR 尚未提供；不同操作系统和原生剪贴板来源仍需实机矩阵。',
 );
 item(
   'CA-CHAT-009',
@@ -480,8 +492,8 @@ item(
 item(
   'CA-DATA-004',
   'partial',
-  ['src/server/backup.ts', 'tests/p1-p2.test.ts'],
-  '中立备份 v2 包含附件原始字节，导入时核对数量和 hash，可重复导入，被删助手的数据隔离；也能导入 v1 备份。',
+  ['src/server/backup.ts', 'tests/p1-p2.test.ts', 'tests/p2-attachment-parsing.test.ts'],
+  '中立备份 v3 包含附件原始字节，导入时核对数量和 hash，并重新解码图片、提取文档，全部校验成功后事务合并；可重复导入，被删助手的数据隔离，兼容 v1 / v2。提取缓存由原文件重建，不信任备份里的派生文字。',
   '文件历史、用量和审计不在备份里；撤销导入、超大备份的流式处理还没有。',
 );
 item(
@@ -621,8 +633,13 @@ item(
 item(
   'CA-WORK-011',
   'partial',
-  [...continuation, 'src/server/resources.ts'],
-  '上传的附件有稳定编号，按会话隔离；下载时核对字节；分支各有独立副本；备份包含附件字节。',
+  [
+    ...continuation,
+    'src/server/resources.ts',
+    'tests/p2-attachment-parsing.test.ts',
+    'tests/p2-parser-bounds.test.ts',
+  ],
+  '附件有稳定编号并按会话隔离，下载核对原始字节；分支各有独立原文件与提取缓存，备份按原文件重建缓存；旧图片首次使用重新解码，解析期间归档或取消不落盘。删除资源 / 会话同步清理派生文字。',
   '工具产出文件的自动登记、右侧产物列表和资源清理界面还没有。',
 );
 

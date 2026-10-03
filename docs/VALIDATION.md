@@ -6,14 +6,14 @@
 
 ## 当前结论
 
-最后更新：2026-10-03，P2 文件恢复草稿、文件与目录操作、上传、系统回收站以及任务状态顺序保护完成本机验证，新版 0.1.0 便携包已实际启动。
+最后更新：2026-10-03，P2 图片完整解码、PDF / DOCX 本机文字提取、剪贴板附件、中文 PDF 修正与原生组件打包完成本机验证，新版 0.1.0 附件便携包已实际启动。
 
-- `pnpm run verify` 全部通过：格式；生成状态；类型；122 项单元 / 服务测试，0 失败 / 0 跳过；UI 与 Electron 构建；独立性检查覆盖 `src/` 下 181 个文件，违规 0，原目录 2,901 个受版本管理文件的指纹一致；相似度检查越线 0，没有新增例外。
-- 最终构建的十二组桌面覆盖共 145 项通过，页面异常断言全部通过：smoke 10、onboarding 23、p1-p2 12、appearance 8、layout 9、menus 13、documents 24、navigation 12、directories 10、runtime 11、file-drafts 6、file-operations 7。完整命令通过前九组后暴露重试夹具的时间竞争；仅修正夹具的响应同步后，串行续跑最后三组通过，产品代码未变。实际包内程序另外通过同一文件 / 草稿 / 执行链 24 项，不重复累计覆盖。来源和失败记录见第 21 轮及 `docs/P2-FILES-TDD.md`。
-- 本轮四个新增持久化 / 文件 / 任务状态模块的 23 项聚焦测试通过；合计行覆盖 97.01%、分支 93.02%、函数 94.87%，三个 80% 门槛均通过。这些数字不代表整个应用覆盖率。
+- 最终代码与打包配置的 `pnpm run verify` 全部通过：格式；生成状态；类型；137 项单元 / 服务测试，0 失败 / 0 跳过；UI 与 Electron 构建；独立性检查覆盖 `src/` 下 184 个文件，违规 0，原目录 2,901 个受版本管理文件的指纹一致；相似度越线 0，4 条公共约定例外（本轮新增 3 条标准 OOXML 声明）。最终命令日志为 `p2-attachment-verify-package-final-20261003.log`。
+- 十三组完整桌面命令退出 0，共 154 项通过，页面异常断言全部通过：smoke 10、onboarding 23、p1-p2 12、appearance 8、layout 9、menus 13、documents 24、navigation 12、directories 10、runtime 11、file-drafts 6、file-operations 7、attachments 9。随后补充真实中文 PDF 发现并修正服务端字符拼接问题；包内再发现并修正原生库打包遗漏。最终包内复跑附件 9、执行链 11 及实际中文 PDF 全通过，`app.isPackaged=true`，不重复累计为新覆盖。未把修正前的完整桌面命令说成针对修正后重新跑了全部十三组。来源见第 22 轮。
+- 三个新解析模块 `attachment-parser.ts`、`attachment-worker.ts`、`document-budget.ts` 的 15 项聚焦测试通过；合计行覆盖 99.39%、分支 91.11%、函数 83.33%，三个 80% 门槛均通过。这些数字不代表整个应用覆盖率。
 - 进度：必做 208 项中本机已验证 27、部分实现 52、未开始 129；另有计划中 1 项、外部待定 1 项。逐项见 `docs/功能实现情况.md`。
 - 发布门禁关闭：`node scripts/release-gate.mjs` 按设计退出 1。
-- 最新本地便携包：`release/CAgent-0.1.0-Windows-x64-files.exe`，112,456,461 字节；SHA-256 `bf6bc043b68adae1d6c2c2dd3d169e9e2e767ab1b470d6868de6d0c807b3193c`。125 个包内构建文件与最终构建 hash 一致，图片与维护者原图一致；包内程序与便携启动器均已实际启动，`app.isPackaged=true`，包内 24 项检查通过，健康接口 200 / independent / 0.1.0，启动检查模型请求 0。成品未签名；标准文件名仍是 2026-10-01 旧包，本轮另名交付。详见第 21 轮。
+- 最新本地便携包：`release/CAgent-0.1.0-Windows-x64-attachments.exe`，131,897,420 字节；SHA-256 `833993aca9e98c10d1d1e3b0cfccb3d02c71330d04b0895d2d6333c1fc940732`。126 个包内构建文件与最终构建 hash 一致；三库版本、原生解包标记、图片与维护者原图一致性均核对。最终 EXE 自身启动，健康接口 200 / independent / 0.1.0，启动检查模型请求 0；未签名。本轮另名交付，旧标准文件名 hash 未变。详见第 22 轮。
 - 从未验证：真实账号和收费模型、订阅 OAuth、外部消息平台、跨平台、系统沙盒、安装与更新、所有窗口宽度和完整多语言视觉矩阵。五语仅覆盖首次引导，主界面仍为简体中文；辅助模型职责会保存，自动分工尚未实现。
 
 ## 相似度检查的已审核例外
@@ -23,7 +23,7 @@
 - 每条例外必须写明类别、我们的文件、审核时的最大尺寸、理由和日期，可限定参考文件和必须包含的文字；缺字段时检查直接报错。
 - 例外只放行同类别、同文件且不超过审核尺寸的发现：重合变大、换文件、换类别或文字不同都会重新判为越线。放行项和已不再命中的例外都写进报告。
 - `tests/similarity.test.ts` 新增 1 项覆盖以上规则。
-- 目前只有 1 条例外：`scripts/fetch-fonts.mjs` 里的标准 Chrome 浏览器标识（User-Agent），整串 23 个单位（见第 9 轮）。
+- 目前有 4 条例外：`scripts/fetch-fonts.mjs` 的标准 Chrome 浏览器标识（23 单位，见第 9 轮），以及 `tests/fixtures/attachment-files.ts` 的 3 条 OOXML 标准命名空间 / 内容类型 / 关系声明（上限分别为 26、20、16 单位，见第 22 轮）。新例外都限定参考文件与完整匹配文字，不改变相似度阈值。
 
 ## 历史记录
 
@@ -449,3 +449,36 @@
 - 包内实际执行 runtime 11、file-drafts 6、file-operations 7，合计 24 项通过，均检查 `app.isPackaged=true`；日志 `p2-complete-packaged-*-20261003.log`。头像与图标 hash 与维护者原图一致，健康和搜索接口 200，页面异常 0。
 - 便携 EXE 自身解压启动通过，health 200、independent / 0.1.0、模型请求 0；日志 `p2-complete-portable-start-20261003.log`。所有成功成品检查使用独立临时应用数据和工作区，并由各自夹具清理。
 - 标准文件名旧包的 hash 仍为 `024233d1e9645cbc323dbbd983f9aa2c789a22ea750b5ec87c4b1036875e4ccc`。正式产品门禁实测退出 1，`releaseAllowed:false`、208 项未完整验证；日志 `p2-complete-release-gate-20261003.log`。
+
+### 22. P2 附件解码、文档提取与便携预览（2026-10-03）
+
+按交接顺序继续独立版的附件能力，维护者明确批准 sharp 0.35.5、pdfjs-dist 6.3.289、mammoth 1.13.0。新增图片完整解码、PDF / DOCX 文字提取、剪贴板附件、分支及备份恢复中的派生缓存。原始字节保留，解析有输入 / 输出 / 并发 / 时间 / 像素与解压预算。所有功能保证、限制和 RED / GREEN 提交见 [P2 附件验证](P2-ATTACHMENTS-TDD.md)。
+
+最终验证：
+
+- `pnpm run verify` 退出 0，137 项服务测试，0 失败 / 0 跳过；格式、状态生成、类型、构建、独立性和相似度均通过。最终日志 `p2-attachment-verify-package-final-20261003.log`。原目录 2,901 个文件指纹保持，184 个应用源文件检查违规 0；相似度越线 0，4 条公共约定例外。新增的 3 条仅匹配 DOCX 标准 XML 声明，没有改动阈值或放行应用实现。
+- `pnpm run test:desktop` 完整退出 0，十三组 154 项，日志 `p2-attachment-desktop-full-20261003.log`。后续真实中文 PDF 检查又发现服务端文字拼接问题，并发现打包配置遗漏，因此最终另用真实包内程序补跑附件 9 项、执行链 11 项和实际中文 PDF；分别见 `p2-native-package-green-v2-20261003.log`、`p2-attachment-packaged-runtime-20261003.log`、`p2-attachment-packaged-chinese-20261003.log`，均要求 `packaged:true`。UI 产品代码在这段补验期间没有变化，仅增加了测试诊断输出；没有把补验算成重新执行全部十三组。
+- 三个新模块的 15 项聚焦测试通过；行覆盖 99.39%、分支 91.11%、函数 83.33%，三个 80% 阈值均通过。日志 `p2-parser-coverage-delivery-20261003.log`；不代表整个应用覆盖率。
+- v2 旧图片备份的导入、重新解码、消息关联与原始字节一致性实际通过，日志 `p2-backup-v2-20261003.log`。v1 仍由原服务测试覆盖；新导出为 v3，派生文字从原文档再生成，数据库仍为 schema 2。
+- 原生 Chromium 打印的一页中文 / 英文 PDF 实际提取成功，独立测试夹具正文和英文字符串保持；开发与包内日志分别为 `p2-chinese-pdf-green-20261003.log` 和 `p2-attachment-packaged-chinese-20261003.log`。另外有不嵌入任何字体的合成 ToUnicode 回归，确认不误改上标及全角字符。
+
+发现与修正：
+
+1. 原入口只认图片签名，不解码，且不接受 PDF / DOCX，剪贴板文件也未处理。补齐后失败按文件报告，保留有效附件与草稿，同一事件周期重复粘贴不会并发重复上传。
+2. 异步解码后若调用者改变输入 Buffer，曾能保存和解码结果不一致的字节；增加输入快照。会话归档、取消、超时、处理名额释放和损坏备份的零导入均有回归。
+3. 部分 PDF 页没有文字时，最初只在元数据中提示，模型没有收到；现在模型上下文也包含缺失说明。
+4. 中文 PDF 实测得到 `中 ⽂ 附件解析验证`。PDF.js 已提供实际空格，原代码在每个字体片段之间又加了空格；现只使用源文本及换行标记，并仅对康熙部首范围做对应汉字映射。回归保留 `¹` 和 `Ａ`。中途类型检查指出回调参数 `char` 为隐式 any，已补显式类型并重新跑最终完整检查。
+5. 首次便携包漏带 pnpm 图中的可选原生模块；加入后 DLL 仍被放在归档里，运行时报 `ERR_DLOPEN_FAILED`。`scripts/native-parsers.cjs` 现在解析并包含三个已安装的原生间接依赖，二进制按扩展名解包，包内真实上传成功。没有新增第四个直接依赖。失败日志 `p2-native-package-red-20261003.log`、`p2-packaged-diagnostic-20261003.log`、`p2-packaged-diagnostic-v2-20261003.log` 保留；首次有问题的 EXE 已由同一任务的最终成品替换，旧用户预览保持不变。
+6. 包内容检查脚本最初把正斜杠及带根分隔符的路径直接交给 Windows ASAR API，产生“文件不存在”的检查错误；已按本地路径规则规范化后重新核对。实际原生依赖缺失与这个检查脚本问题分别记录，未混为一谈。
+
+最终本地成品：
+
+- 先生成目录并完成包内验证，再执行 `pnpm exec electron-builder --win portable --x64 --publish never --prepackaged release/win-unpacked --config.win.artifactName=CAgent-0.1.0-Windows-x64-attachments.exe`，退出 0。日志 `p2-attachment-package-final-20261003.log`。
+- `release/CAgent-0.1.0-Windows-x64-attachments.exe` 为 131,897,420 字节，SHA-256 `833993aca9e98c10d1d1e3b0cfccb3d02c71330d04b0895d2d6333c1fc940732`，附同名 `.sha256`。Authenticode 实测 `NotSigned`，见 `p2-attachment-signature-20261003.json`。
+- 126 个包内构建文件与最终构建逐字节 hash 一致；三库版本、原生 `.node` / `.dll` 的 `unpacked` 标记、随包依赖说明、头像与图标的原图 hash 均核对。日志 `p2-attachment-package-content-final-v2-20261003.log`，结构化记录 `p2-attachment-package-content-20261003.json`。
+- 最终便携 EXE 自身解压启动，健康检查 200 / independent / 0.1.0，启动模型请求 0；日志 `p2-attachment-portable-start-20261003.log`。包内程序与便携启动检查均使用独立临时应用数据。
+- 旧标准名的 SHA-256 仍为 `024233d1e9645cbc323dbbd983f9aa2c789a22ea750b5ec87c4b1036875e4ccc`。未安装、未覆盖用户正在运行的旧程序、未 push 或发布。
+
+可视检查：已查看 1280×800 的 `.artifacts/p2-attachments.png`，PDF / DOCX 状态、附件下载、损坏图片提示可读，没有新增的主要裁切；没有把现有界面称为全部 1:1 复刻完成。
+
+范围仍有限：文档只提取文字，扫描件 OCR、旧 DOC / Excel / PowerPoint、音视频、完整字体 / 排版矩阵、真实视觉模型、跨平台和系统剪贴板来源矩阵待后续。当前必做 208 项的统计仍为本机已验证 27、部分实现 52、未开始 129；新切片没有被标成整项完整验收。发布门禁实测退出 1，`releaseAllowed:false`、208 项未完整验证，日志 `p2-attachment-release-gate-20261003.log`。下一批 P2 优先五种语言、头像和用户资料。
