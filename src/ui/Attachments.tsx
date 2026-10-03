@@ -58,11 +58,17 @@ export function AttachmentPicker({
   const [errors, setErrors] = useState<string[]>([]),
     [busy, setBusy] = useState(false);
   const controller = useRef<AbortController | null>(null),
-    latest = useRef(ids);
+    latest = useRef(ids),
+    sizes = useRef(new Map<string, number>());
   latest.current = ids;
+  for (const resource of resources) sizes.current.set(resource.id, resource.bytes);
   useEffect(() => () => controller.current?.abort(), []);
   async function upload(files: File[]) {
-    if (disabled || busy) return;
+    if (!files.length || disabled) return;
+    if (controller.current) {
+      setErrors((old) => [...old, '附件正在上传，请完成后再添加']);
+      return;
+    }
     const abort = new AbortController();
     controller.current = abort;
     setBusy(true);
@@ -74,6 +80,9 @@ export function AttachmentPicker({
         try {
           if (latest.current.length >= 8) throw new Error('每条消息最多 8 个附件');
           if (file.size > 4 * 1024 * 1024) throw new Error('文件超过 4 MiB');
+          const total = latest.current.reduce((sum, id) => sum + (sizes.current.get(id) ?? 0), 0);
+          if (total + file.size > 16 * 1024 * 1024)
+            throw new Error('每条消息的附件总计不能超过 16 MiB');
           const response = await fetch(`/api/v1/sessions/${sessionId}/resources`, {
             method: 'POST',
             credentials: 'same-origin',
@@ -87,6 +96,7 @@ export function AttachmentPicker({
           const result = await response.json();
           if (!response.ok) throw new ApiError(result.error.code, result.error.message);
           if (abort.signal.aborted) break;
+          sizes.current.set(result.data.id, result.data.bytes);
           onUploaded(result.data);
           latest.current = [...latest.current, result.data.id];
           onChange(latest.current);
@@ -99,6 +109,7 @@ export function AttachmentPicker({
         }
       }
     } finally {
+      controller.current = null;
       setBusy(false);
       onBusy(false);
     }
@@ -106,6 +117,12 @@ export function AttachmentPicker({
   return (
     <div
       className="attachment-picker"
+      onPaste={(event) => {
+        const files = [...event.clipboardData.files];
+        if (!files.length) return;
+        event.preventDefault();
+        void upload(files);
+      }}
       onDragOver={(e) => {
         e.preventDefault();
       }}
@@ -116,7 +133,7 @@ export function AttachmentPicker({
     >
       <label
         className="button-file attach-trigger"
-        title={busy ? '正在保存附件…' : '添加附件 / 拖入文件'}
+        title={busy ? '正在保存附件…' : '添加附件 / 拖入或粘贴文件'}
       >
         <Icon name={busy ? 'clock' : 'plus'} size={16} />
         <input

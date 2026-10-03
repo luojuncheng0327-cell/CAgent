@@ -15,6 +15,7 @@ const checks = [],
   errors = [];
 let app;
 try {
+  f.rt.saveProvider({ ...f.provider, clearKey: true }, f.provider.id);
   f.rt.saveModel({ ...f.model, supportsImages: true }, f.model.id);
   f.rt.savePreferences({ ...f.rt.preferences(), setupComplete: true, theme: 'light' });
   const other = await f.rt.createSession({ ...f.session, title: '另一个附件会话' });
@@ -124,7 +125,7 @@ try {
     () => document.querySelector('input[aria-label="添加附件"]')?.disabled,
   );
   assert.equal(await button('发送消息').isDisabled(), true);
-  await button('另一个附件会话').click();
+  assert.equal(await button('另一个附件会话').isDisabled(), true);
   assert.equal(await input.inputValue(), '');
   await page.waitForFunction(
     () => document.querySelector('.attach-trigger')?.getAttribute('title') === '正在保存附件…',
@@ -141,15 +142,13 @@ try {
   checks.push('same-tick pastes stay exclusive and pending upload prevents session switching');
   await page.unrouteAll({ behavior: 'wait' });
 
-  await page
-    .getByLabel('添加附件', { exact: true })
-    .setInputFiles(
-      Array.from({ length: 8 }, (_, i) => ({
-        name: `限额-${i}.txt`,
-        mimeType: 'text/plain',
-        buffer: Buffer.from('x'),
-      })),
-    );
+  await page.getByLabel('添加附件', { exact: true }).setInputFiles(
+    Array.from({ length: 8 }, (_, i) => ({
+      name: `限额-${i}.txt`,
+      mimeType: 'text/plain',
+      buffer: Buffer.from('x'),
+    })),
+  );
   await page.getByRole('alert').filter({ hasText: '每条消息最多 8 个附件' }).waitFor();
   assert.equal(await page.locator('.draft-attachments button').count(), 8);
   checks.push('clipboard and file picker share the eight attachment budget');
