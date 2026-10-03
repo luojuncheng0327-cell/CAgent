@@ -27,6 +27,7 @@ import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
 import { Workspace, forgetWorkspaceDrafts } from './Workspace.tsx';
 import { flushFileDrafts, hasPendingFileDrafts } from './file-draft-cache.ts';
+import { rememberRunStatus, resolveRunStatus } from './run-status-cache.ts';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { DirectoryPermissions } from './DirectoryPermissions.tsx';
@@ -143,6 +144,7 @@ export function App() {
     const id = setTimeout(() => void refreshList().catch(report), 150);
     return () => clearTimeout(id);
   }, [data, refreshList, report]);
+  const runStates = useRef(new Map<string, Run['status']>());
   const loadSession = useCallback(async (id: string, restoreDraft = false) => {
     const value = await api<SessionDetail>('/sessions/' + id);
     if (selected.current !== id) return;
@@ -171,6 +173,8 @@ export function App() {
       };
     }
     currentDetail.current = value;
+    for (const run of value.runs.slice(0, 128).reverse())
+      rememberRunStatus(runStates.current, run.id, run.status);
     setDetail(value);
     cursor.current.set(id, value.eventCursor);
     setLive(value.live);
@@ -361,6 +365,14 @@ export function App() {
       if (selected.current !== id || event.id <= (cursor.current.get(id) ?? 0)) return;
       cursor.current.set(id, event.id);
       const p = event.payload as any;
+      if (event.kind === 'run.start') rememberRunStatus(runStates.current, event.runId, 'queued');
+      if (
+        event.kind === 'run.running' ||
+        event.kind === 'model.retry' ||
+        event.kind === 'compact.progress'
+      )
+        rememberRunStatus(runStates.current, event.runId, 'running');
+      if (event.kind === 'run.end') rememberRunStatus(runStates.current, event.runId, p.status);
       if (event.kind === 'model.retry' || event.kind === 'compact.progress')
         setActivity(activityText(event));
       if (event.kind === 'text' || event.kind === 'reasoning' || event.kind === 'message')
@@ -452,7 +464,7 @@ export function App() {
         await selectSession(run.sessionId);
         return;
       }
-      setActive(run);
+      setActive(resolveRunStatus(runStates.current, run));
       setDraft('');
       currentDraft.current = '';
       attachmentsChanged([]);
