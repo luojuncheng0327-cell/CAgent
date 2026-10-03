@@ -103,6 +103,7 @@ export async function createResource(
   const session = store.need<Session>('session', sessionId);
   invariant(!session.archived, 'SESSION_ARCHIVED', '归档会话不能添加附件', 409);
   const type = identifyResource(name, bytes);
+  bytes = Buffer.from(bytes);
   const parsed = type.kind === 'text' ? {} : await parseAttachment(type.mime, bytes, signal);
   signal?.throwIfAborted();
   invariant(
