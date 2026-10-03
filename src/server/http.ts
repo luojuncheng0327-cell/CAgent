@@ -23,11 +23,17 @@ import { fileHistory, restoreFile, manageFile, watchWorkspace } from './workspac
 import { usageReport } from './usage.ts';
 import { searchSessions, orderedSessions, saveSessionOrder } from './session-navigation.ts';
 import { loadFileDrafts, saveFileDrafts } from './file-drafts.ts';
+import {
+  inspectWorkspaceItem,
+  uploadWorkspaceFile,
+  workspaceUploadLimit,
+} from './file-operations.ts';
 
 interface ServerOptions {
   port?: number;
   token?: string;
   uiDir?: string;
+  trashItem?: (target: string) => Promise<void>;
 }
 const equal = (a: string, b: string) => {
   const left = Buffer.from(a),
@@ -476,6 +482,27 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           });
           return;
         }
+        if (action === 'file-info' && method === 'GET') {
+          json(res, {
+            data: await inspectWorkspaceItem(rt.store, session, url.searchParams.get('path') ?? ''),
+          });
+          return;
+        }
+        if (action === 'file-upload' && method === 'POST') {
+          json(
+            res,
+            {
+              data: await uploadWorkspaceFile(
+                rt.store,
+                session,
+                url.searchParams.get('path') ?? '',
+                await bytes(req, workspaceUploadLimit),
+              ),
+            },
+            201,
+          );
+          return;
+        }
         if (action === 'file-drafts' && method === 'PUT') {
           json(res, { data: await saveFileDrafts(rt.store, session, await body(req)) });
           return;
@@ -529,7 +556,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           return;
         }
         if (action === 'file-operation' && method === 'POST') {
-          json(res, { data: await manageFile(rt.store, session, await body(req)) });
+          json(res, { data: await manageFile(rt.store, session, await body(req), options) });
           return;
         }
       }

@@ -4,9 +4,11 @@ import path from 'node:path';
 import type { Store } from './store.ts';
 import type { Session, Stored } from '../shared/contracts.ts';
 import { invariant, AppError } from './errors.ts';
-import { workspacePath, readWorkspaceFile, writeWorkspaceFile, hash } from './tools.ts';
+import { workspacePath, writeWorkspaceFile, hash } from './tools.ts';
 import { z } from 'zod';
 import { requireDirectory, directoryFor } from './directories.ts';
+import { changeWorkspaceItem } from './file-operations.ts';
+import type { FileServices } from './file-operations.ts';
 
 interface FileVersion extends Stored {
   sessionId: string;
@@ -44,16 +46,24 @@ export async function restoreFile(store: Store, session: Session, raw: unknown) 
   // writeWorkspaceFile saves the current version before restoring, so restoration itself can be undone.
   return writeWorkspaceFile(store, session, b.path, text, b.expectedHash);
 }
-export async function manageFile(store: Store, session: Session, raw: unknown) {
+export async function manageFile(
+  store: Store,
+  session: Session,
+  raw: unknown,
+  services: FileServices = {},
+) {
   const b = z
     .object({
-      operation: z.enum(['create-file', 'create-directory', 'rename', 'copy']),
+      operation: z.enum(['create-file', 'create-directory', 'rename', 'copy', 'trash']),
       path: z.string().min(1),
       destination: z.string().min(1).optional(),
       text: z.string().max(1000000).default(''),
       expectedHash: z.string().optional(),
+      confirmed: z.boolean().optional(),
     })
     .parse(raw);
+  if (b.operation === 'rename' || b.operation === 'copy' || b.operation === 'trash')
+    return changeWorkspaceItem(store, session, { ...b, operation: b.operation }, services);
   const allowed = () => {
     const latest = store.need<Session>('session', session.id);
     invariant(
@@ -79,39 +89,6 @@ export async function manageFile(store: Store, session: Session, raw: unknown) {
     });
     return { path: b.path };
   }
-  invariant(b.destination, 'DESTINATION_REQUIRED', '需要目标路径');
-  const destination = await workspacePath(store, session, b.destination, true, true);
-  invariant(
-    destination !== session.workspace && destination !== target,
-    'INVALID_DESTINATION',
-    '目标路径无效',
-  );
-  invariant(
-    !(await fs.lstat(destination).catch((e) => {
-      if (e.code === 'ENOENT') return null;
-      throw e;
-    })),
-    'FILE_EXISTS',
-    '目标已存在，未覆盖',
-    409,
-  );
-  const source = await readWorkspaceFile(store, session, b.path);
-  invariant(source.sha256 === b.expectedHash, 'FILE_CONFLICT', '请先刷新文件再移动或复制', 409);
-  allowed();
-  const result = await writeWorkspaceFile(store, session, b.destination, source.text);
-  if (b.operation === 'rename') {
-    const latest = await readWorkspaceFile(store, session, b.path);
-    invariant(
-      latest.sha256 === source.sha256,
-      'FILE_CONFLICT',
-      '复制完成，但源文件已变化，未删除源文件',
-      409,
-    );
-    allowed();
-    await workspacePath(store, session, b.path, false, true);
-    await fs.unlink(target);
-  }
-  return result;
 }
 let watcherCount = 0;
 export const activeWorkspaceWatchers = () => watcherCount;

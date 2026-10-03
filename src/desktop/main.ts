@@ -106,7 +106,10 @@ if (single)
             : path.join(app.getPath('desktop'), 'CAgent-Workspace'),
         fetcher: (url, init) => net.fetch(String(url), init),
       });
-      server = await serve(rt, { uiDir: path.join(__dirname, '../ui') });
+      server = await serve(rt, {
+        uiDir: path.join(__dirname, '../ui'),
+        trashItem: (target) => shell.trashItem(target),
+      });
       fs.writeFileSync(
         path.join(home, 'connection.json'),
         JSON.stringify({ origin: server.origin, token: server.token, pid: process.pid }),
