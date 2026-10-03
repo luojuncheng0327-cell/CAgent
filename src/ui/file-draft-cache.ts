@@ -43,7 +43,7 @@ function serialize(view: View) {
 export async function loadFileDraftView(sessionId: string, workspace: string) {
   const key = keyFor(sessionId, workspace);
   const old = cache.get(key);
-  if (old) return JSON.parse(old.value) as View;
+  if (old) await drain(old);
   const view = await api<View & { revision: number; hidden: number }>(
     `/sessions/${sessionId}/file-drafts?workspace=${encodeURIComponent(workspace)}`,
   );
@@ -110,4 +110,13 @@ export const hasPendingFileDrafts = () =>
   [...cache.values()].some((entry) => entry.value !== entry.saved);
 export async function flushFileDrafts() {
   for (const entry of cache.values()) await drain(entry);
+}
+export function forgetFileDrafts(sessionId: string) {
+  for (const [key, entry] of cache) {
+    if (entry.sessionId !== sessionId) continue;
+    clearTimeout(entry.timer);
+    entry.value = entry.saved;
+    entry.notify = () => {};
+    cache.delete(key);
+  }
 }

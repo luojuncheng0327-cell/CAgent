@@ -84,6 +84,26 @@ export async function saveFileDrafts(store: Store, session: Session, raw: unknow
   targets.forEach((target) => requireDirectory(store, session, target));
   const key = keyFor(session.id, root);
   const previous = store.get<DraftRecord>('file-drafts', key);
+  const hidden = (previous?.tabs ?? []).filter((tab) => {
+    try {
+      requireDirectory(store, session, targetFor(root, tab.path));
+      return false;
+    } catch {
+      return true;
+    }
+  });
+  const combined = [...input.tabs, ...hidden];
+  invariant(
+    combined.length <= 10 &&
+      combined.reduce(
+        (total, tab) => total + Buffer.byteLength(tab.text) + Buffer.byteLength(tab.saved),
+        0,
+      ) <=
+        8 * 1024 * 1024,
+    'DRAFT_SIZE',
+    '保留的草稿已达上限，请重新授权并整理之前的文件草稿',
+    413,
+  );
   invariant(
     (previous?.revision ?? 0) === input.revision,
     'VERSION_CONFLICT',
@@ -96,7 +116,7 @@ export async function saveFileDrafts(store: Store, session: Session, raw: unknow
     {
       sessionId: session.id,
       workspace: root,
-      tabs: input.tabs,
+      tabs: combined,
       active: input.active,
     },
     previous?.revision,

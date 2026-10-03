@@ -7,7 +7,13 @@ import { Soon } from './Shell.tsx';
 import { ResourceLinks } from './Attachments.tsx';
 import type { DocumentMemory } from './DocumentEditor.tsx';
 import { inspectDocument } from './document-markdown.ts';
-import { loadFileDraftView, rememberFileDraftView, flushFileDrafts } from './file-draft-cache.ts';
+import { WorkspaceActions, uploadWorkspaceFiles } from './WorkspaceActions.tsx';
+import {
+  loadFileDraftView,
+  rememberFileDraftView,
+  flushFileDrafts,
+  forgetFileDrafts,
+} from './file-draft-cache.ts';
 
 const DocumentEditor = lazy(() =>
   import('./DocumentEditor.tsx').then((module) => ({ default: module.DocumentEditor })),
@@ -33,9 +39,10 @@ interface Version extends Stored {
   bytes: number;
 }
 const drafts = new Map<string, { tabs: FileTab[]; active: string | null }>();
-export const hasUnsavedFiles = () =>
-  [...drafts.values()].some((value) => value.tabs.some((t) => t.text !== t.saved));
-export const discardFileDrafts = () => drafts.clear();
+export function forgetWorkspaceDrafts(sessionId: string) {
+  for (const key of drafts.keys()) if (key.startsWith(sessionId + '|')) drafts.delete(key);
+  forgetFileDrafts(sessionId);
+}
 export function Workspace({
   session,
   preferences,
@@ -61,7 +68,10 @@ export function Workspace({
 }) {
   const key = session.id + '|' + session.workspace,
     prefix = `/sessions/${session.id}`;
+  const draftScope = JSON.stringify([session.directoryGrants, session.blockedDirectories]);
   const [area, setArea] = useState<'files' | 'resources'>('files');
+  const [managed, setManaged] = useState<string | null>(null);
+  const uploadInput = useRef<HTMLInputElement>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [draftStatus, setDraftStatus] = useState('正在恢复文件草稿…');
   const [folder, setFolder] = useState('.'),
@@ -88,6 +98,25 @@ export function Workspace({
     listRequest = useRef(0),
     file = tabs.find((t) => t.path === active);
   const savePending = useRef(false);
+  function containsFile(target: string, candidate: string) {
+    const normalize = (value: string) => {
+      const absolute = /^(?:[a-z]:[\\/]|\/)/i.test(value) ? value : session.workspace + '/' + value;
+      return absolute.replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
+    };
+    const root = normalize(target),
+      filePath = normalize(candidate);
+    return root === filePath || filePath.startsWith(root + '/');
+  }
+  async function itemChanged(operation: string, target: string) {
+    if (operation !== 'copy') {
+      const retained = tabRef.current.filter((tab) => !containsFile(target, tab.path));
+      setTabs(retained);
+      if (active && containsFile(target, active)) setActive(retained.at(-1)?.path ?? null);
+      if (!retained.length) setShow(false);
+    }
+    await load();
+    report(operation === 'trash' ? '已移入系统回收站，可在系统回收站中恢复' : '文件操作已完成');
+  }
   const markdownFile = /\.(md|markdown)$/i.test(file?.path ?? '');
   const document = useMemo(() => {
     if (!file || !markdownFile) return null;
@@ -132,16 +161,21 @@ export function Workspace({
       return;
     }
     let current = true;
+    setDraftReady(false);
     void loadFileDraftView(session.id, session.workspace)
       .then((value) => {
         if (!current) return;
         const remembered = drafts.get(key);
-        const restored = remembered?.tabs.length
-          ? remembered
-          : {
-              tabs: value.tabs.map((tab) => ({ ...tab, changed: !!tab.changed, generation: 0 })),
-              active: value.active,
-            };
+        const restored = {
+          tabs: value.tabs.map((tab) => {
+            const old = remembered?.tabs.find(
+              (item) =>
+                item.path === tab.path && item.text === tab.text && item.saved === tab.saved,
+            );
+            return { ...old, ...tab, changed: !!tab.changed, generation: old?.generation ?? 0 };
+          }),
+          active: value.active,
+        };
         setTabs(restored.tabs);
         setActive(restored.active);
         setShow(!!restored.tabs.length);
@@ -157,7 +191,7 @@ export function Workspace({
     return () => {
       current = false;
     };
-  }, [key, session.id, session.workspace, report]);
+  }, [key, session.id, session.workspace, draftScope, report]);
   useEffect(() => {
     if (!session.workspace) return;
     let closed = false;
@@ -379,6 +413,34 @@ export function Workspace({
           disabled={area !== 'files' || !session.workspace}
         />
         <div className="desk-tools">
+          <input
+            type="file"
+            multiple
+            hidden
+            ref={uploadInput}
+            aria-label="上传工作区文件"
+            disabled={!session.workspace || readonly || busy || !draftReady}
+            onChange={(event) => {
+              const files = Array.from(event.target.files ?? []);
+              event.target.value = '';
+              setBusy(true);
+              void uploadWorkspaceFiles(session.id, folder, files, report)
+                .then(async (count) => {
+                  await load();
+                  if (count) report(`已上传 ${count} 个文件`);
+                })
+                .catch(report)
+                .finally(() => setBusy(false));
+            }}
+          />
+          <button
+            aria-label="上传文件到工作区"
+            title="上传文件到工作区"
+            disabled={!session.workspace || readonly || busy || !draftReady}
+            onClick={() => uploadInput.current?.click()}
+          >
+            上传
+          </button>
           <button
             aria-label="新建文件"
             title="新建文件"
@@ -468,38 +530,51 @@ export function Workspace({
                   {entries
                     .filter((e) => e.name.toLowerCase().includes(filter.toLowerCase()))
                     .map((entry) => (
-                      <button
-                        key={entry.name}
-                        aria-label={
-                          entry.kind === 'link' ||
-                          (entry.kind === 'file' && futurePreview(entry.name))
-                            ? `${entry.name} · 即将提供`
-                            : entry.name
-                        }
-                        disabled={
-                          !draftReady ||
-                          entry.kind === 'link' ||
-                          (entry.kind === 'file' && futurePreview(entry.name))
-                        }
-                        title={
-                          entry.kind === 'link' ||
-                          (entry.kind === 'file' && futurePreview(entry.name))
-                            ? entry.name + ' · 即将提供'
-                            : entry.name
-                        }
-                        onClick={() => {
-                          const target = (folder === '.' ? '' : folder + '/') + entry.name;
-                          if (entry.kind === 'directory') setFolder(target);
-                          else void openFile(target).catch(report);
-                        }}
-                      >
-                        <Icon name={entry.kind === 'directory' ? 'folder' : 'file'} size={14} />
-                        <span>{entry.name}</span>
-                        {(entry.kind === 'link' ||
-                          (entry.kind === 'file' && futurePreview(entry.name))) && (
-                          <small>即将提供</small>
-                        )}
-                      </button>
+                      <div className="file-list-row" key={entry.name}>
+                        <button
+                          key={entry.name}
+                          aria-label={
+                            entry.kind === 'link' ||
+                            (entry.kind === 'file' && futurePreview(entry.name))
+                              ? `${entry.name} · 即将提供`
+                              : entry.name
+                          }
+                          disabled={
+                            !draftReady ||
+                            entry.kind === 'link' ||
+                            (entry.kind === 'file' && futurePreview(entry.name))
+                          }
+                          title={
+                            entry.kind === 'link' ||
+                            (entry.kind === 'file' && futurePreview(entry.name))
+                              ? entry.name + ' · 即将提供'
+                              : entry.name
+                          }
+                          onClick={() => {
+                            const target = (folder === '.' ? '' : folder + '/') + entry.name;
+                            if (entry.kind === 'directory') setFolder(target);
+                            else void openFile(target).catch(report);
+                          }}
+                        >
+                          <Icon name={entry.kind === 'directory' ? 'folder' : 'file'} size={14} />
+                          <span>{entry.name}</span>
+                          {(entry.kind === 'link' ||
+                            (entry.kind === 'file' && futurePreview(entry.name))) && (
+                            <small>即将提供</small>
+                          )}
+                        </button>
+                        <button
+                          className="file-manage"
+                          aria-label={'管理 ' + entry.name}
+                          title={'管理 ' + entry.name}
+                          disabled={entry.kind === 'link' || !draftReady || busy}
+                          onClick={() =>
+                            setManaged((folder === '.' ? '' : folder + '/') + entry.name)
+                          }
+                        >
+                          ⋯
+                        </button>
+                      </div>
                     ))}
                   {!entries.some((e) => e.name.toLowerCase().includes(filter.toLowerCase())) && (
                     <p className="panel-empty">没有匹配的文件</p>
@@ -830,6 +905,16 @@ export function Workspace({
             </div>
           </div>
         </section>
+      )}
+      {managed && (
+        <WorkspaceActions
+          session={session}
+          target={managed}
+          readonly={!!readonly}
+          dirty={tabs.some((tab) => containsFile(managed, tab.path) && tab.text !== tab.saved)}
+          onClose={() => setManaged(null)}
+          onChanged={itemChanged}
+        />
       )}
       {operation && (
         <Modal

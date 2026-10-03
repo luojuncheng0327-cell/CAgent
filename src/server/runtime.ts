@@ -444,6 +444,11 @@ export class Runtime {
           this.store.remove('resource', r.id);
         }
       this.store.remove('compaction', id);
+      this.store.db
+        .prepare(
+          "DELETE FROM records WHERE kind='file-drafts' AND json_extract(body,'$.sessionId')=?",
+        )
+        .run(id);
       this.store.remove('session', id);
       this.store.audit('session.delete', id, 'ok');
     });

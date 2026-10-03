@@ -25,7 +25,7 @@ import { Settings } from './Settings.tsx';
 import { Setup } from './Setup.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
-import { Workspace } from './Workspace.tsx';
+import { Workspace, forgetWorkspaceDrafts } from './Workspace.tsx';
 import { flushFileDrafts, hasPendingFileDrafts } from './file-draft-cache.ts';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
 import { SearchResults } from './SearchResults.tsx';
@@ -249,6 +249,7 @@ export function App() {
     setNavigating(true);
     try {
       await persistDraft();
+      await flushFileDrafts();
       selected.current = id;
       setDirectoryPermissions(false);
       searchJump.current++;
@@ -422,6 +423,8 @@ export function App() {
   }, [detail?.messages.length, live.text, active?.id]);
   async function patch(values: Record<string, unknown>) {
     if (!detail) return;
+    if ('workspace' in values || 'directoryGrants' in values || 'permission' in values)
+      await flushFileDrafts();
     const saved = await api<Session>('/sessions/' + detail.session.id, 'PATCH', {
       ...values,
       revision: detail.session.revision,
@@ -1181,6 +1184,7 @@ export function App() {
                                         title: '永久删除此会话？',
                                         action: async () => {
                                           await api('/sessions/' + current.id, 'DELETE');
+                                          forgetWorkspaceDrafts(current.id);
                                           setDetail(null);
                                           selected.current = null;
                                           setSessionId(null);

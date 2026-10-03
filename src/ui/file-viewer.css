@@ -11,6 +11,28 @@
   font-size: 11px;
   color: var(--text-faint);
 }
+.file-list-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.file-list-row > button:first-child {
+  flex: 1;
+  overflow: hidden;
+}
+.file-list-row .file-manage {
+  flex-shrink: 0;
+  width: 24px;
+  justify-content: center;
+  opacity: 0;
+}
+.file-list-row:hover .file-manage,
+.file-list-row:focus-within .file-manage {
+  opacity: 1;
+}
+.managed-path {
+  overflow-wrap: anywhere;
+}
 .desk-editor .file-tabs > div {
   max-width: 150px;
   flex-shrink: 0;
