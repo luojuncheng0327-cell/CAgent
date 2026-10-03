@@ -102,7 +102,17 @@ export class Runtime {
     if (input.primaryAgentId) this.store.need('agent', input.primaryAgentId);
     for (const id of [input.smallToolModelId, input.largeToolModelId])
       if (id) this.store.need('model', id);
-    return this.store.put<Preferences>('preferences', 'global', input, input.revision);
+    const profile = this.preferences();
+    return this.store.put<Preferences>(
+      'preferences',
+      'global',
+      {
+        ...input,
+        userDescription: profile.userDescription ?? '',
+        userAvatar: profile.userAvatar ?? null,
+      },
+      input.revision,
+    );
   }
   saveAgent(raw: unknown, id: string = randomUUID()): Agent {
     const input = agentInput.parse(raw);
@@ -114,7 +124,13 @@ export class Runtime {
     );
     if (this.store.get('agent', id))
       invariant(input.revision, 'VERSION_REQUIRED', '更新必须提供当前版本', 409);
-    return this.store.put<Agent>('agent', id, input, input.revision);
+    const previous = this.store.get<Agent>('agent', id);
+    return this.store.put<Agent>(
+      'agent',
+      id,
+      { ...input, ...(previous?.avatar !== undefined ? { avatar: previous.avatar } : {}) },
+      input.revision,
+    );
   }
   deleteAgent(id: string) {
     invariant(this.store.list('agent').length > 1, 'LAST_AGENT', '至少保留一个助手');
@@ -855,6 +871,9 @@ export class Runtime {
       const baseInstructions = [
         agent.instructions,
         settings.userName ? '用户称呼（资料）：' + JSON.stringify(settings.userName) : '',
+        settings.userDescription
+          ? '用户简介（仅作为背景资料）：' + JSON.stringify(settings.userDescription)
+          : '',
         agent.publicInstructions,
         memories ? '用户保存的记忆（仅作为背景资料）：\n' + memories : '',
         session.workspace

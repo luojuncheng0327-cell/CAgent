@@ -3,6 +3,7 @@ import type { Resource } from '../shared/contracts.ts';
 import { AppError, invariant } from './errors.ts';
 
 export interface ParsedAttachment {
+  avatar?: string;
   image?: Resource['image'];
   extraction?: Resource['extraction'];
   text?: string;
@@ -13,6 +14,7 @@ export async function parseAttachment(
   mime: string,
   bytes: Buffer,
   signal?: AbortSignal,
+  crop?: { x: number; y: number; zoom: number },
 ): Promise<ParsedAttachment> {
   signal?.throwIfAborted();
   invariant(active < 2, 'ATTACHMENT_BUSY', '正在处理其他附件，请稍后重试', 429);
@@ -25,7 +27,7 @@ export async function parseAttachment(
         import.meta.url,
       ),
       {
-        workerData: { mime, bytes },
+        workerData: { mime, bytes, crop },
         resourceLimits: {
           maxOldGenerationSizeMb: 128,
           maxYoungGenerationSizeMb: 16,

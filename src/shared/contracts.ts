@@ -46,6 +46,7 @@ export const modelInput = z.object({
 });
 export const agentInput = z.object({
   name: label,
+  description: z.string().trim().max(2000).default(''),
   instructions: z
     .string()
     .max(50000)
@@ -112,8 +113,13 @@ export interface Stored {
 export type Provider = Stored &
   Omit<z.infer<typeof providerInput>, 'apiKey' | 'clearKey' | 'revision'> & { hasKey: boolean };
 export type Model = Stored & Omit<z.infer<typeof modelInput>, 'revision'>;
-export type Agent = Stored & Omit<z.infer<typeof agentInput>, 'revision'>;
-export type Preferences = Stored & Omit<z.infer<typeof preferenceInput>, 'revision'>;
+export type Agent = Stored &
+  Omit<z.infer<typeof agentInput>, 'revision'> & { avatar?: string | null };
+export type Preferences = Stored &
+  Omit<z.infer<typeof preferenceInput>, 'revision'> & {
+    userDescription?: string;
+    userAvatar?: string | null;
+  };
 export type Session = Stored &
   z.infer<typeof sessionInput> & {
     archived: boolean;

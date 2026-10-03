@@ -142,10 +142,41 @@ export async function decodeAttachment(mime: string, bytes: Buffer): Promise<Par
   }
 }
 
+export async function decodeAvatar(
+  mime: string,
+  bytes: Buffer,
+  crop: { x: number; y: number; zoom: number },
+): Promise<ParsedAttachment> {
+  await decodeAttachment(mime, bytes);
+  const { default: sharp } = await import('sharp');
+  // Orient before cropping so coordinates match the browser's displayed image.
+  const oriented = await sharp(bytes, { failOn: 'warning', limitInputPixels: 16 * 1024 * 1024 })
+    .rotate()
+    .png()
+    .toBuffer({ resolveWithObject: true });
+  const size = Math.max(
+    1,
+    Math.floor(Math.min(oriented.info.width, oriented.info.height) / crop.zoom),
+  );
+  const png = await sharp(oriented.data)
+    .extract({
+      left: Math.round((oriented.info.width - size) * crop.x),
+      top: Math.round((oriented.info.height - size) * crop.y),
+      width: size,
+      height: size,
+    })
+    .resize(256, 256)
+    .png()
+    .toBuffer();
+  return { avatar: 'data:image/png;base64,' + png.toString('base64') };
+}
+
 if (parentPort) {
   try {
     parentPort.postMessage({
-      data: await decodeAttachment(workerData.mime, Buffer.from(workerData.bytes)),
+      data: workerData.crop
+        ? await decodeAvatar(workerData.mime, Buffer.from(workerData.bytes), workerData.crop)
+        : await decodeAttachment(workerData.mime, Buffer.from(workerData.bytes)),
     });
   } catch (error) {
     const failure =

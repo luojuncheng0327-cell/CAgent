@@ -5,6 +5,7 @@ import { randomBytes, timingSafeEqual, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { Runtime } from './runtime.ts';
 import { completeSetup, prepareSetupWorkspace } from './setup.ts';
+import { saveProfile } from './profiles.ts';
 import type {
   Session,
   Run,
@@ -207,6 +208,17 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
       }
       if (route === '/api/v1/preferences' && method === 'PUT') {
         json(res, { data: rt.savePreferences(await body(req)) });
+        return;
+      }
+      const profile = route.match(/^\/api\/v1\/profiles\/(user|agents\/([^/]+))$/);
+      if (profile && method === 'PUT') {
+        json(res, {
+          data: await saveProfile(
+            rt,
+            profile[2] ? decodeURIComponent(profile[2]) : null,
+            await body(req),
+          ),
+        });
         return;
       }
       if (route === '/api/v1/setup/workspace' && method === 'POST') {

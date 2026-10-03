@@ -15,6 +15,7 @@ import { invariant, stamp } from './errors.ts';
 import { identifyResource, resourceBytes, resourceLimit, cacheExtraction } from './resources.ts';
 import { parseAttachment } from './attachment-parser.ts';
 import type { ParsedAttachment } from './attachment-parser.ts';
+import { validateStoredAvatar, restoreAvatar } from './profiles.ts';
 
 const kinds = ['agent', 'provider', 'model', 'session', 'preferences', 'memory'] as const;
 const row = z.object({
@@ -95,14 +96,21 @@ export function inspectBackup(rt: Runtime, raw: unknown) {
     known.add(key);
     counts[r.kind] = (counts[r.kind] ?? 0) + 1;
     const b = JSON.parse(r.body);
-    if (r.kind === 'agent') agentInput.parse(b);
+    if (r.kind === 'agent') {
+      agentInput.parse(b);
+      validateStoredAvatar(b.avatar);
+    }
     if (r.kind === 'model') modelInput.parse(b);
     if (r.kind === 'provider') {
       providerInput.parse(b);
       invariant(!('apiKey' in b) && !('api_key' in b), 'BACKUP_SECRET', '备份不能包含明文凭据');
     }
     if (r.kind === 'session') sessionInput.parse(b);
-    if (r.kind === 'preferences') preferenceInput.parse(b);
+    if (r.kind === 'preferences') {
+      preferenceInput.parse(b);
+      z.string().max(2000).optional().parse(b.userDescription);
+      validateStoredAvatar(b.userAvatar);
+    }
     if (r.kind === 'memory')
       z.object({
         agentId: z.string(),
@@ -199,6 +207,13 @@ export async function importBackup(rt: Runtime, raw: unknown, confirm: string) {
   invariant(confirm === plan.sha256, 'CONFIRM_REQUIRED', '请确认已校验的备份指纹');
   if (plan.alreadyImported) return { imported: false, alreadyImported: true, counts: plan.counts };
   const parsed = new Map<string, ParsedAttachment>();
+  const avatars = new Map<string, string>();
+  for (const record of plan.data.records) {
+    if (record.kind !== 'agent' && record.kind !== 'preferences') continue;
+    const data = JSON.parse(record.body);
+    const avatar = record.kind === 'agent' ? data.avatar : data.userAvatar;
+    if (avatar) avatars.set(record.kind + ':' + record.id, await restoreAvatar(avatar));
+  }
   for (const resource of plan.data.resources)
     if (resource.kind !== 'text')
       parsed.set(
@@ -237,6 +252,7 @@ export async function importBackup(rt: Runtime, raw: unknown, confirm: string) {
     for (const r of plan.data.records) {
       if (r.kind === 'preferences') continue;
       const b = JSON.parse(r.body);
+      if (r.kind === 'agent' && b.avatar) b.avatar = avatars.get('agent:' + r.id);
       for (const [key, kind] of Object.entries({
         agentId: 'agent',
         modelId: 'model',

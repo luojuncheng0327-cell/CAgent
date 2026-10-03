@@ -124,7 +124,7 @@ test('P2 非法头像、外链、超限与越界裁剪不改变原资料，删�
       assert.deepEqual(f.rt.preferences(), old);
     }
     const forbidden = await f.put('user', { name: '匿名', revision: old.revision }, false);
-    assert.equal(forbidden.status, 403);
+    assert.equal(forbidden.status, 401);
     const good = await f.put('user', {
       name: '小罗',
       description: '',
@@ -231,7 +231,7 @@ test('P2 助手头像备份重新解码，恶意或损坏头像整批导入失�
     ]) {
       const bad = structuredClone(backup);
       const record = bad.data.records.find((x) => x.kind === 'agent')!;
-      record.body = JSON.stringify({ ...JSON.parse(record.body), avatar: value });
+      record.body = JSON.stringify({ ...JSON.parse(String(record.body)), avatar: value });
       bad.sha256 = createHash('sha256').update(JSON.stringify(bad.data)).digest('hex');
       const before = g.rt.store.list('agent');
       await assert.rejects(importBackup(g.rt, bad, bad.sha256));
