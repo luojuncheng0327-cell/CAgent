@@ -62,19 +62,16 @@
   },
   "packageManager": "pnpm@11.19.0",
   "build": {
+    "extends": "./scripts/native-parsers.cjs",
     "appId": "com.chengpingan.cagent.independent",
     "productName": "CAgent",
     "asar": true,
-    "asarUnpack": ["node_modules/@img/**/*", "node_modules/sharp/**/*", "node_modules/@napi-rs/**/*"],
+    "asarUnpack": ["node_modules/@img/**/*", "node_modules/sharp/**/*", "node_modules/@napi-rs/**/*", "**/*.node", "**/*.dll", "**/icudtl.dat"],
     "npmRebuild": false,
     "electronDist": "node_modules/electron/dist",
     "directories": {
       "output": "release"
     },
-    "files": [
-      "dist/**/*",
-      "package.json"
-    ],
     "extraResources": [
       {
         "from": "src/ui/fonts/licenses",
