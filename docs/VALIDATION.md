@@ -6,15 +6,15 @@
 
 ## 当前结论
 
-最后更新：2026-10-03，P2 图片完整解码、PDF / DOCX 本机文字提取、剪贴板附件、中文 PDF 修正与原生组件打包完成本机验证，新版 0.1.0 附件便携包已实际启动。
+最后更新：2026-10-04，P2 五语界面、用户 / 助手资料与头像裁剪完成本机及打包验证，完整产品仍未完成。
 
-- 最终代码与打包配置的 `pnpm run verify` 全部通过：格式；生成状态；类型；137 项单元 / 服务测试，0 失败 / 0 跳过；UI 与 Electron 构建；独立性检查覆盖 `src/` 下 184 个文件，违规 0，原目录 2,901 个受版本管理文件的指纹一致；相似度越线 0，4 条公共约定例外（本轮新增 3 条标准 OOXML 声明）。最终命令日志为 `p2-attachment-verify-package-final-20261003.log`。
-- 十三组完整桌面命令退出 0，共 154 项通过，页面异常断言全部通过：smoke 10、onboarding 23、p1-p2 12、appearance 8、layout 9、menus 13、documents 24、navigation 12、directories 10、runtime 11、file-drafts 6、file-operations 7、attachments 9。随后补充真实中文 PDF 发现并修正服务端字符拼接问题；包内再发现并修正原生库打包遗漏。最终包内复跑附件 9、执行链 11 及实际中文 PDF 全通过，`app.isPackaged=true`，不重复累计为新覆盖。未把修正前的完整桌面命令说成针对修正后重新跑了全部十三组。来源见第 22 轮。
-- 三个新解析模块 `attachment-parser.ts`、`attachment-worker.ts`、`document-budget.ts` 的 15 项聚焦测试通过；合计行覆盖 99.39%、分支 91.11%、函数 83.33%，三个 80% 门槛均通过。这些数字不代表整个应用覆盖率。
-- 进度：必做 208 项中本机已验证 27、部分实现 52、未开始 129；另有计划中 1 项、外部待定 1 项。逐项见 `docs/功能实现情况.md`。
-- 发布门禁关闭：`node scripts/release-gate.mjs` 按设计退出 1。
-- 最新本地便携包：`release/CAgent-0.1.0-Windows-x64-attachments.exe`，131,897,420 字节；SHA-256 `833993aca9e98c10d1d1e3b0cfccb3d02c71330d04b0895d2d6333c1fc940732`。126 个包内构建文件与最终构建 hash 一致；三库版本、原生解包标记、图片与维护者原图一致性均核对。最终 EXE 自身启动，健康接口 200 / independent / 0.1.0，启动检查模型请求 0；未签名。本轮另名交付，旧标准文件名 hash 未变。详见第 22 轮。
-- 从未验证：真实账号和收费模型、订阅 OAuth、外部消息平台、跨平台、系统沙盒、安装与更新、所有窗口宽度和完整多语言视觉矩阵。五语仅覆盖首次引导，主界面仍为简体中文；辅助模型职责会保存，自动分工尚未实现。
+- 最终 `pnpm run verify` 退出 0：格式、生成状态、类型、147 项单元 / 服务测试（0 失败 / 跳过）、UI / Electron 构建、独立性与相似度均通过。189 个源码文件、旧目录 2,901 个指纹；独立性违规 0，相似度越线 0，4 条既有公共约定例外未增减。日志 `p2-profile-locale-verify-repaired-20261003.log`。
+- 最终完整 `pnpm run test:desktop` 十五组退出 0，共 169 项：smoke 10、onboarding 23、p1-p2 12、appearance 8、layout 9、menus 13、documents 24、navigation 12、directories 10、runtime 11、file-drafts 6、file-operations 7、attachments 9、profiles 8、locales 7；页面异常断言通过。日志 `p2-profile-locale-desktop-delivery-20261003.log`。五语组遍历当前六个设置页，检查模型菜单、Markdown 工具栏、文件编辑器及同步状态，不把每个页面重复计为新检查项。
+- 两个新服务 / 翻译模块的聚焦 10 项检查通过，行覆盖 100%、分支 97.67%、函数 100%。仅代表 `profiles.ts` 与 `i18n.ts` 两个模块。
+- 最终包内资料 8、语言 7、附件 9、执行链 11 共 35 项，以及实际中文 PDF 检查通过，均为打包程序；这些复验不重复累计为新覆盖。EXE 自身解压启动，健康接口 independent / 0.1.0 / 200，使用干净临时数据，未联调真实模型账号。
+- 成品 `release/CAgent-0.1.0-Windows-x64-profiles.exe` 为 131,943,536 字节，SHA-256 `af79981db5e9068d689f54d9e6fbb1871f27adf600cb49d87627f2ebf8cf6857`，附同名校验文件；Authenticode 为 `NotSigned`。126 个包内构建文件逐一匹配当前构建，原生组件解包和维护者原图核对通过。旧标准文件名 hash 保持 `024233d1e9645cbc323dbbd983f9aa2c789a22ea750b5ec87c4b1036875e4ccc`。
+- 进度：必做 208 项中本机已验证 29、部分实现 50、未开始 129；另有计划中 1、外部待定 1。发布门禁仍关闭，208 项未达到完整验证。
+- 验证边界：当前五语界面的 Windows 本机矩阵已测，母语审校、所有宽度 / 系统字体、所有设备图片 / EXIF、真实读屏软件、真实账号、跨平台、系统沙盒、正式安装 / 签名更新未完成。
 
 ## 相似度检查的已审核例外
 
@@ -482,3 +482,33 @@
 可视检查：已查看 1280×800 的 `.artifacts/p2-attachments.png`，PDF / DOCX 状态、附件下载、损坏图片提示可读，没有新增的主要裁切；没有把现有界面称为全部 1:1 复刻完成。
 
 范围仍有限：文档只提取文字，扫描件 OCR、旧 DOC / Excel / PowerPoint、音视频、完整字体 / 排版矩阵、真实视觉模型、跨平台和系统剪贴板来源矩阵待后续。当前必做 208 项的统计仍为本机已验证 27、部分实现 52、未开始 129；新切片没有被标成整项完整验收。发布门禁实测退出 1，`releaseAllowed:false`、208 项未完整验证，日志 `p2-attachment-release-gate-20261003.log`。下一批 P2 优先五种语言、头像和用户资料。
+
+### 23. P2 五语界面与用户 / 助手资料（2026-10-03 开始，2026-10-04 收尾）
+
+沿用交接顺序实现 CA-AGENT-004 与 CA-PREF-002 的本机验收。没有新增第三方依赖，复用此前批准的 sharp 和受限解析工作线程。冻结规格未改；设置增加“我的资料”，完整设置弹层复刻仍待用户决定。TDD 检查点、每项保证和原始 RED / GREEN 输出索引见 [P2 资料与语言验证](P2-PROFILES-LOCALES-TDD.md)。
+
+本轮实现：
+
+- 用户与助手分别保存名字、简介和头像，按版本保护并发修改。裁剪支持缩放与水平 / 垂直移动；PNG / JPEG / GIF / WebP 完整解码后转成 256px 静态 PNG，非法、超限、外链和越界裁剪拒绝。解码期间资料修改或助手删除不被迟到结果覆盖；助手备份头像重新验证，损坏头像整批拒绝。用户简介进入模型背景，头像字节不进入模型；保存失败保留输入，真实重启保持。
+- 560 条共享词条覆盖当前五语界面。语言保存、未知旧语言回退、时区日期和原生托盘标签已接通；语言切换不重建文档编辑器，不改写用户消息、模型正文、代码或文件。上游与未收录的错误详情保留原文，未做母语审校。
+
+实际修复与测试边界：
+
+1. 服务测试发现大型 base64 的重复正则校验可能导致内部错误；改为先限长，再检查解码 / 重新编码一致性。
+2. 异步图片处理结束后重新检查版本，保证不会覆盖新资料或重新建立已删除的助手；并发服务测试通过。
+3. 首次全量开发检查的 147 项测试通过，但相似度门禁发现设置页一般 JSX 条件渲染结构连续重合 90 词元。改为按键映射选择页面后通过，阈值与例外均未放宽。
+4. 读屏用的文件同步状态保存了旧语言文字；改为保存源文案并在渲染时翻译，五语回归通过。
+5. 首次完整桌面检查发现文档字数空格丢失，原断言“选中 0 字 · 共 64 字”失败；新增英文断言得到 `Selected0 characters · Total13 characters`。对照本轮修改前 JSX 的实际文本语义，恢复 10 处空格边界，文档 24 项、五语场景与最终完整十五组均通过。
+6. 初始自动化脚本曾使用错误的既有入口 / 方法名、过宽的导航选择器，以及不稳定的隐藏窗口截图方式；修正夹具后才记录有效 RED，未把这些脚本问题算作产品故障。最终五张语言截图 PNG 头均为 1280×800，已实际查看。
+
+最终开发日志：`p2-profile-locale-verify-repaired-20261003.log`、`p2-profile-locale-desktop-delivery-20261003.log`。聚焦覆盖率：`p2-profile-locale-coverage-20261003.log`。本轮午夜后收尾，日志沿用开始日期；后续仅更新文档和状态日期，并重新检查生成文件与格式。
+
+先以 `electron-builder --win --dir --x64 --publish never` 生成目录，在包内执行资料 / 语言 / 附件 / 运行四组，全部断言 `app.isPackaged=true`。35 项及实际打印的中文 PDF 通过后，使用 `--prepackaged release/win-unpacked` 生成另名便携包。最终 131,943,536 字节，SHA-256 `af79981db5e9068d689f54d9e6fbb1871f27adf600cb49d87627f2ebf8cf6857`；126 个包内构建文件逐一匹配，原生库解包及图片核对通过；EXE 自身启动的健康检查 200。签名状态 `NotSigned`。
+
+包内和成品记录：
+
+- `p2-profile-locale-packaged-profiles-20261003.log`、`p2-profile-locale-packaged-locales-20261003.log`、`p2-profile-locale-packaged-attachments-20261003.log`、`p2-profile-locale-packaged-runtime-20261003.log`、`p2-profile-locale-packaged-chinese-pdf-20261003.log`。
+- `p2-profile-locale-package-content-20261003.json`、`p2-profile-locale-portable-start-20261003.log`、`p2-profile-locale-signature-20261003.json`。
+- 截图 `.artifacts/p2-profiles.png` 与 `.artifacts/locales/*.png` 已实际查看；它们使用隔离测试数据，不是用户的真实资料。
+
+完整产品门禁保持关闭。29 项本机已验证不能当作真实平台和完整产品验收。未安装、发布、推送或覆盖旧标准预览；旧目录受跟踪文件指纹一致。
