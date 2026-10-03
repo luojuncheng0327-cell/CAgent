@@ -25,7 +25,8 @@ import { Settings } from './Settings.tsx';
 import { Setup } from './Setup.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
-import { Workspace, hasUnsavedFiles, discardFileDrafts } from './Workspace.tsx';
+import { Workspace } from './Workspace.tsx';
+import { flushFileDrafts, hasPendingFileDrafts } from './file-draft-cache.ts';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { DirectoryPermissions } from './DirectoryPermissions.tsx';
@@ -229,17 +230,13 @@ export function App() {
     () =>
       window.cagent?.onFlush(async () => {
         await persistDraft();
-        if (hasUnsavedFiles()) {
-          if (!window.confirm('工作区文件仍有未保存的修改。放弃这些文件草稿并退出？'))
-            throw new Error('存在未保存文件');
-          discardFileDrafts();
-        }
+        await flushFileDrafts();
       }),
     [],
   );
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedFiles()) {
+      if (hasPendingFileDrafts()) {
         e.preventDefault();
         e.returnValue = '存在未保存的文件修改';
       }

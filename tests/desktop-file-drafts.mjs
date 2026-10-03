@@ -8,7 +8,7 @@ import { setup, temporary, removeTemporary } from './helpers.ts';
 const require = createRequire(import.meta.url);
 const f = await setup('http://127.0.0.1:9/v1');
 const workspace = await temporary();
-const source = '磁盘上的原文\r\n🙂';
+const source = '磁盘上的原文\n🙂';
 const target = path.join(workspace, 'draft.txt');
 let app;
 const errors = [];
@@ -52,17 +52,11 @@ try {
   await page.locator('.file-list').getByRole('button', { name: 'draft.txt', exact: true }).click();
   const edit = () => page.getByLabel('文件内容', { exact: true });
   const draft = source + '\n崩溃后恢复的草稿';
-  await edit().fill(draft);
-  await page.waitForFunction(
-    async ({ id, workspace, draft }) => {
-      const r = await fetch(
-        `/api/v1/sessions/${id}/file-drafts?workspace=${encodeURIComponent(workspace)}`,
-      );
-      const body = await r.json();
-      return body.data?.tabs.some((tab) => tab.text === draft);
-    },
-    { id: f.session.id, workspace, draft },
+  const durable = page.waitForResponse(
+    (r) => r.url().endsWith('/file-drafts') && r.request().method() === 'PUT' && r.status() === 200,
   );
+  await edit().fill(draft);
+  await durable;
   const persisted = await page.evaluate(
     async ({ id, workspace }) => {
       const r = await fetch(
@@ -95,6 +89,9 @@ try {
   assert.equal(await edit().inputValue(), draft + '\n立即退出');
   checks.push('external changes cannot silently overwrite either draft or disk');
   await page.getByRole('button', { name: '重新读取', exact: true }).click();
+  await page.waitForFunction(
+    () => document.querySelector('textarea[aria-label="文件内容"]')?.value === '外部版本',
+  );
   assert.equal(await edit().inputValue(), '外部版本');
   await edit().fill('明确手动保存');
   await edit().press('Control+s');

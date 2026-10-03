@@ -7,6 +7,7 @@ import { Soon } from './Shell.tsx';
 import { ResourceLinks } from './Attachments.tsx';
 import type { DocumentMemory } from './DocumentEditor.tsx';
 import { inspectDocument } from './document-markdown.ts';
+import { loadFileDraftView, rememberFileDraftView, flushFileDrafts } from './file-draft-cache.ts';
 
 const DocumentEditor = lazy(() =>
   import('./DocumentEditor.tsx').then((module) => ({ default: module.DocumentEditor })),
@@ -61,6 +62,8 @@ export function Workspace({
   const key = session.id + '|' + session.workspace,
     prefix = `/sessions/${session.id}`;
   const [area, setArea] = useState<'files' | 'resources'>('files');
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('正在恢复文件草稿…');
   const [folder, setFolder] = useState('.'),
     [entries, setEntries] = useState<{ name: string; kind: string }[]>([]),
     [truncated, setTruncated] = useState(false),
@@ -116,7 +119,45 @@ export function Workspace({
   }, [load, report]);
   useEffect(() => {
     drafts.set(key, { tabs, active });
-  }, [key, tabs, active]);
+    if (draftReady && session.workspace) {
+      rememberFileDraftView(session.id, session.workspace, { tabs, active }, (status, error) => {
+        setDraftStatus(status);
+        if (error) report(error);
+      });
+    }
+  }, [key, tabs, active, draftReady, session.workspace, session.id, report]);
+  useEffect(() => {
+    if (!session.workspace) {
+      setDraftReady(true);
+      return;
+    }
+    let current = true;
+    void loadFileDraftView(session.id, session.workspace)
+      .then((value) => {
+        if (!current) return;
+        const remembered = drafts.get(key);
+        const restored = remembered?.tabs.length
+          ? remembered
+          : {
+              tabs: value.tabs.map((tab) => ({ ...tab, changed: !!tab.changed, generation: 0 })),
+              active: value.active,
+            };
+        setTabs(restored.tabs);
+        setActive(restored.active);
+        setShow(!!restored.tabs.length);
+        setDraftReady(true);
+        setDraftStatus('恢复草稿已保存');
+      })
+      .catch((error) => {
+        if (current) {
+          setDraftStatus('恢复草稿读取失败，请重新打开工作区');
+          report(error);
+        }
+      });
+    return () => {
+      current = false;
+    };
+  }, [key, session.id, session.workspace, report]);
   useEffect(() => {
     if (!session.workspace) return;
     let closed = false;
@@ -185,6 +226,7 @@ export function Workspace({
     });
   }
   async function openFile(target: string, refresh = false) {
+    if (!draftReady) return;
     const old = tabRef.current.find((t) => t.path === target);
     if (old && !refresh) {
       setActive(target);
@@ -340,7 +382,7 @@ export function Workspace({
           <button
             aria-label="新建文件"
             title="新建文件"
-            disabled={!session.workspace || readonly}
+            disabled={!session.workspace || readonly || !draftReady}
             onClick={() => {
               setName('');
               setOperation('create-file');
@@ -351,7 +393,7 @@ export function Workspace({
           <button
             aria-label="新建目录"
             title="新建目录"
-            disabled={!session.workspace || readonly}
+            disabled={!session.workspace || readonly || !draftReady}
             onClick={() => {
               setName('');
               setOperation('create-directory');
@@ -435,6 +477,7 @@ export function Workspace({
                             : entry.name
                         }
                         disabled={
+                          !draftReady ||
                           entry.kind === 'link' ||
                           (entry.kind === 'file' && futurePreview(entry.name))
                         }
@@ -778,6 +821,12 @@ export function Workspace({
               >
                 保存文件
               </button>
+            </div>
+            <div className="file-draft-status" role="status">
+              <span>{draftStatus} · 源文件仍需手动保存</span>
+              {draftStatus.includes('失败') && (
+                <button onClick={() => void flushFileDrafts().catch(report)}>重试保存草稿</button>
+              )}
             </div>
           </div>
         </section>

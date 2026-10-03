@@ -3,6 +3,14 @@
   width: min(580px, 52vw);
   padding-right: 8px;
 }
+.file-draft-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 8px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
 .desk-editor .file-tabs > div {
   max-width: 150px;
   flex-shrink: 0;
