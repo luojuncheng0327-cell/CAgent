@@ -131,8 +131,8 @@ export function UsagePage({ data, report }: { data: Bootstrap; report: (error: u
             ))}
           </div>
           <p className="muted">
-            {t('共')}
-            {value.requests} {t('笔请求 · 价格币种由接口配置约定；账本不会进行汇率换算。')}
+            {t('共')} {value.requests}{' '}
+            {t('笔请求 · 价格币种由接口配置约定；账本不会进行汇率换算。')}
           </p>
           <div className="usage-table">
             <table>

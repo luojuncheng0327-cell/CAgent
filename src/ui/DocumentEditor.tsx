@@ -184,9 +184,7 @@ export function DocumentEditor({
       </div>
       <div className="document-canvas" ref={mount} />
       <div className="document-count" aria-live="off">
-        {t('选中')}
-        {selectionLength} {t('字 · 共')}
-        {text.length} {t('字')}
+        {t('选中')} {selectionLength} {t('字 · 共')} {text.length} {t('字')}
       </div>
     </div>
   );

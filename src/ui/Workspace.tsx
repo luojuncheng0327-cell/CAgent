@@ -596,8 +596,7 @@ export function Workspace({
               )}
               {!!tabs.length && (
                 <button className="reopen-files" onClick={() => setShow(true)}>
-                  {t('已打开')}
-                  {tabs.length} {t('个文件')}
+                  {t('已打开')} {tabs.length} {t('个文件')}
                   {tabs.some((t) => t.text !== t.saved) ? t(' · 有未保存修改') : ''}
                 </button>
               )}
