@@ -133,6 +133,7 @@ try {
 
   await button('移除头像').click();
   assert.equal((await bootstrap()).preferences.userAvatar, avatar);
+  await page.getByLabel('称呼', { exact: true }).fill('本机小罗');
   await button('保存资料').click();
   await page.getByRole('status').filter({ hasText: '资料已保存' }).waitFor();
   assert.equal((await bootstrap()).preferences.userAvatar, null);

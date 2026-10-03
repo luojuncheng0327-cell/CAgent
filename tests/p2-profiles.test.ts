@@ -5,6 +5,7 @@ import { randomUUID, createHash } from 'node:crypto';
 import { Runtime } from '../src/server/runtime.ts';
 import { serve } from '../src/server/http.ts';
 import { exportBackup, importBackup } from '../src/server/backup.ts';
+import { saveProfile } from '../src/server/profiles.ts';
 import { setup, fixture, response } from './helpers.ts';
 
 async function profileFixture() {
@@ -271,5 +272,45 @@ test('P2 用户简介作为背景进入模型，头像字节不进入模型', as
     await http.close();
     await f.cleanup();
     await mock.close();
+  }
+});
+
+test('P2 解码期间资料变化和助手删除均不被迟到的头像保存覆盖', async () => {
+  const f = await setup('http://127.0.0.1:9/v1');
+  try {
+    const avatar = await picture();
+    const pending = saveProfile(f.rt, null, {
+      name: '旧值',
+      description: '',
+      revision: f.rt.preferences().revision,
+      avatar,
+    });
+    f.rt.savePreferences({ ...f.rt.preferences(), userName: '新值' });
+    await assert.rejects(pending, (e: any) => e.code === 'VERSION_CONFLICT');
+    assert.equal(f.rt.preferences().userName, '新值');
+    f.rt.saveAgent({ name: '保留的助手' });
+    const deleting = saveProfile(f.rt, f.agent.id, {
+      name: '迟到保存',
+      description: '',
+      revision: f.agent.revision,
+      avatar,
+    });
+    f.rt.deleteAgent(f.agent.id);
+    await assert.rejects(deleting, (e: any) => e.code === 'VERSION_CONFLICT');
+    assert.equal(f.rt.store.get('agent', f.agent.id), null);
+    const kept: any = await saveProfile(f.rt, null, {
+      name: '保留头像',
+      description: '',
+      revision: f.rt.preferences().revision,
+      avatar,
+    });
+    const edited: any = await saveProfile(f.rt, null, {
+      name: '只改名字',
+      description: '新简介',
+      revision: kept.revision,
+    });
+    assert.equal(edited.userAvatar, kept.userAvatar);
+  } finally {
+    await f.cleanup();
   }
 });

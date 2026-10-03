@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { translate, normalizeLocale, localeTag, copy } from '../src/shared/i18n.ts';
+import { translate, normalizeLocale, localeTag, copy, errorText } from '../src/shared/i18n.ts';
+import fs from 'node:fs/promises';
+import ts from 'typescript';
 import { setup } from './helpers.ts';
 
 test('P2 五语文本完整，插值保留参数且不解析参数内的占位符', () => {
@@ -18,6 +20,37 @@ test('P2 五语文本完整，插值保留参数且不解析参数内的占位�
     }
   }
   assert.equal(translate('en', '用户的私人内容'), '用户的私人内容');
+  assert.equal(translate('en', '移除附件 {0}'), 'Remove attachment {0}');
+  assert.match(
+    errorText('en', 'VERSION_CONFLICT', '内容已变化，请刷新后再保存'),
+    /^Content changed/,
+  );
+  assert.match(
+    errorText('en', 'UPSTREAM_ERROR', 'remote diagnostic'),
+    /UPSTREAM_ERROR.*\nremote diagnostic/,
+  );
+  assert.equal(errorText('zh', 'UPSTREAM_ERROR', '上游信息'), '上游信息');
+});
+
+test('P2 每个界面翻译调用均有四语词条，防止静默遗漏新按钮', async () => {
+  const root = new URL('../src/ui/', import.meta.url);
+  for (const name of (await fs.readdir(root)).filter((name) => name.endsWith('.tsx'))) {
+    const source = await fs.readFile(new URL(name, root), 'utf8');
+    const file = ts.createSourceFile(name, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const visit = (node: ts.Node) => {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isIdentifier(node.expression) &&
+        node.expression.text === 't' &&
+        node.arguments[0] &&
+        ts.isStringLiteral(node.arguments[0])
+      ) {
+        assert.ok(copy[node.arguments[0].text], name + ': ' + node.arguments[0].text);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(file);
+  }
 });
 
 test('P2 未知语言回退中文，持久化旧设置可读取而非法设置请求不接受', async () => {
@@ -32,6 +65,9 @@ test('P2 未知语言回退中文，持久化旧设置可读取而非法设置�
     for (const locale of ['zh', 'zh-TW', 'en', 'ja', 'ko']) {
       f.rt.savePreferences({ ...f.rt.preferences(), locale });
       assert.equal(f.rt.preferences().locale, locale);
+      const created = await f.rt.createSession({ agentId: f.agent.id });
+      assert.equal(created.title, translate(locale, '新会话'));
+      assert.equal(f.rt.store.need<any>('session', f.session.id).title, '测试会话');
     }
   } finally {
     await f.cleanup();

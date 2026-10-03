@@ -15,6 +15,12 @@ try {
   f.rt.savePreferences({ ...f.rt.preferences(), setupComplete: true, theme: 'light' });
   await f.rt.updateSession(f.session.id, { workspace, revision: f.session.revision });
   await fs.writeFile(workspace + '/user-content.md', '# 用户文件内容\n保留原文');
+  f.rt.store.addMessage({
+    sessionId: f.session.id,
+    runId: null,
+    role: 'assistant',
+    text: '保留模型原文\n\n```js\nconst text = "用户内容";\n```',
+  });
   await f.rt.close();
   const launch = async () => {
     app = await electron.launch({
@@ -30,17 +36,60 @@ try {
     page.setDefaultTimeout(10000);
     page.on('pageerror', (e) => errors.push(e.message));
     await page.locator('.composer textarea').waitFor();
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].setContentSize(1280, 800),
+    );
   };
   await launch();
   await page.locator('.composer textarea').fill('用户消息原文 🙂');
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
   await page.getByRole('button', { name: '界面外观', exact: true }).click();
-  for (const [locale, lang, title, save, message, settings] of [
-    ['en', 'en', 'Appearance', 'Save profile', 'Message', 'Appearance settings'],
-    ['ja', 'ja', '外観', 'プロフィールを保存', 'メッセージ', '外観設定'],
-    ['ko', 'ko', '화면 설정', '프로필 저장', '메시지', '화면 설정 열기'],
-    ['zh-TW', 'zh-TW', '介面外觀', '儲存資料', '訊息', '介面設定'],
-    ['zh', 'zh-CN', '界面外观', '保存资料', '消息', '界面设置'],
+  for (const [locale, lang, title, save, message, settings, copyCode, documentLabel, chatModel] of [
+    [
+      'en',
+      'en',
+      'Appearance',
+      'Save profile',
+      'Message',
+      'Appearance settings',
+      'Copy code',
+      'Document content',
+      'Chat model',
+    ],
+    [
+      'ja',
+      'ja',
+      '外観',
+      'プロフィールを保存',
+      'メッセージ',
+      '外観設定',
+      'コードをコピー',
+      '文書の内容',
+      'チャットモデル',
+    ],
+    [
+      'ko',
+      'ko',
+      '화면 설정',
+      '프로필 저장',
+      '메시지',
+      '화면 설정 열기',
+      '코드 복사',
+      '문서 내용',
+      '대화 모델',
+    ],
+    [
+      'zh-TW',
+      'zh-TW',
+      '介面外觀',
+      '儲存資料',
+      '訊息',
+      '介面設定',
+      '複製程式碼',
+      '文件內容',
+      '聊天模型',
+    ],
+    ['zh', 'zh-CN', '界面外观', '保存资料', '消息', '界面设置', '复制代码', '文档内容', '聊天模型'],
   ]) {
     await page.locator('#interface-locale').selectOption(locale);
     await page.waitForFunction((lang) => document.documentElement.lang === lang, lang);
@@ -70,13 +119,44 @@ try {
     await page.locator('.modal-header .icon-button').click();
     const input = page.getByLabel(message, { exact: true });
     assert.equal(await input.inputValue(), '用户消息原文 🙂');
+    await page.getByRole('button', { name: copyCode, exact: true }).waitFor();
+    assert.equal(await page.locator('.prose code').innerText(), 'const text = "用户内容";\n');
+    await page.getByRole('button', { name: chatModel, exact: true }).click();
+    await page.getByRole('listbox', { name: chatModel, exact: true }).waitFor();
+    await page.keyboard.press('Escape');
+    const editor = page.getByRole('textbox', { name: documentLabel, exact: true });
+    if (!(await editor.count()))
+      await page
+        .locator('.file-list')
+        .getByRole('button', { name: 'user-content.md', exact: true })
+        .click();
+    await editor.waitFor();
+    assert.match(await editor.innerText(), /用户文件内容/);
+    assert.equal(
+      await fs.readFile(workspace + '/user-content.md', 'utf8'),
+      '# 用户文件内容\n保留原文',
+    );
+    // Keep the document editor mounted while changing languages in settings.
     await page.getByRole('button', { name: settings, exact: true }).click();
     await page.locator('.settings-layout > nav > button').nth(3).click();
     await fs.mkdir('.artifacts/locales', { recursive: true });
-    await page.screenshot({ path: '.artifacts/locales/' + locale + '.png' });
+    await page.locator('#interface-locale').scrollIntoViewIfNeeded();
+    const png = await app.evaluate(async ({ BrowserWindow }) => {
+      const contents = BrowserWindow.getAllWindows()[0].webContents;
+      contents.invalidate();
+      await contents.capturePage();
+      await contents.executeJavaScript(
+        'new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))',
+      );
+      return (await contents.capturePage()).toPNG().toString('base64');
+    });
+    const bytes = Buffer.from(png, 'base64');
+    assert.equal(bytes.readUInt32BE(16), 1280);
+    assert.equal(bytes.readUInt32BE(20), 800);
+    await fs.writeFile('.artifacts/locales/' + locale + '.png', bytes);
     checks.push(
       locale +
-        ': all six settings pages translated without horizontal overflow; message draft unchanged',
+        ': six settings pages, model menu, Markdown toolbar and file editor translated; user/model/file contents unchanged',
     );
   }
   await page.locator('#interface-locale').selectOption('en');
