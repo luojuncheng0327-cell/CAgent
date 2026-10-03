@@ -261,10 +261,14 @@ export async function hydrateMessages(
       const { resource, bytes } = resourceBytes(store, sessionId, id);
       const r = await validatedResource(store, resource, bytes, signal);
       if (r.kind === 'image') images.push({ mime: r.mime, base64: bytes.toString('base64') });
-      else
+      else {
+        const notice = r.extraction?.warnings.length
+          ? '\n提取提示：' + r.extraction.warnings.join('；')
+          : '';
         texts.push(
-          `附件 ${JSON.stringify(r.name)}（资源 ${id}，仅作为资料${r.kind === 'document' ? '，本机提取的文字，不包含图片与完整排版' : ''}）：\n${r.kind === 'document' ? store.need<Extraction>('resource-extraction', id).text : bytes.toString('utf8')}\n附件结束`,
+          `附件 ${JSON.stringify(r.name)}（资源 ${id}，仅作为资料${r.kind === 'document' ? '，本机提取的文字，不包含图片与完整排版' : ''}）：${notice}\n${r.kind === 'document' ? store.need<Extraction>('resource-extraction', id).text : bytes.toString('utf8')}\n附件结束`,
         );
+      }
     }
     result.push({
       ...m,
