@@ -196,9 +196,29 @@ try {
     )
       await api(`/sessions/${run.sessionId}/cancel`, 'POST', { runId: run.id });
   await page.getByRole('button', { name: '发送消息', exact: true }).waitFor();
+  const retrySessionPath = `/sessions/${sessions[5].id}`;
+  const beforeRetry = await api(retrySessionPath);
+  const snapshotRoute = '**/api/v1' + retrySessionPath;
+  const startRoute = snapshotRoute + '/runs';
+  await page.route(snapshotRoute, async (route) => {
+    if (route.request().method() === 'GET') await route.fulfill({ json: { data: beforeRetry } });
+    else await route.continue();
+  });
+  await page.route(startRoute, async (route) => {
+    const response = await route.fetch();
+    await until(() => retryRequests === 1);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await route.fulfill({ response });
+  });
   await page.getByLabel('消息', { exact: true }).fill('网络重试验收');
-  await page.getByRole('button', { name: '发送消息', exact: true }).click();
-  await page.getByText('网络暂时不可用，将自动重试', { exact: true }).waitFor();
+  // Begin observing the short retry interval before dispatch, including time spent returning
+  // from the click action over the desktop automation transport.
+  await Promise.all([
+    page.getByText('网络暂时不可用，将自动重试', { exact: true }).waitFor(),
+    page.getByRole('button', { name: '发送消息', exact: true }).click(),
+  ]);
+  await page.unroute(snapshotRoute);
+  await page.unroute(startRoute);
   checks.push('网络失败的重试等待可见');
   await page.getByText('重试后的完整回复', { exact: true }).waitFor();
   assert.equal(retryRequests, 2);
@@ -265,6 +285,36 @@ try {
       pageErrors: errors,
     }),
   );
+} catch (error) {
+  await fs.mkdir('.artifacts/logs', { recursive: true });
+  await fs.writeFile(
+    '.artifacts/logs/runtime-desktop-failure.json',
+    JSON.stringify(
+      {
+        packaged: !!packagedExe,
+        message: String(error),
+        checks,
+        retryRequests,
+        pageErrors: errors,
+        visibleText:
+          page && !page.isClosed() ? (await page.locator('body').innerText()).slice(0, 20000) : '',
+      },
+      null,
+      2,
+    ),
+  );
+  if (app) {
+    await page?.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => {});
+    const child = app.process();
+    const closed = new Promise((resolve) => {
+      if (child.exitCode !== null || child.signalCode !== null) resolve();
+      else child.once('close', resolve);
+    });
+    await app.evaluate(({ app }) => app.exit(1)).catch(() => {});
+    await closed;
+    app = undefined;
+  }
+  throw error;
 } finally {
   await app?.close();
   mock.closeAllConnections();
