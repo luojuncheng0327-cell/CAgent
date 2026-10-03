@@ -141,6 +141,11 @@ try {
         .click();
     await editor.waitFor();
     assert.match(await editor.innerText(), /用户文件内容/);
+    if (locale === 'en')
+      assert.equal(
+        await page.locator('.document-count').innerText(),
+        'Selected 0 characters · Total ' + '# 用户文件内容\n保留原文'.length + ' characters',
+      );
     assert.equal(
       await fs.readFile(workspace + '/user-content.md', 'utf8'),
       '# 用户文件内容\n保留原文',
