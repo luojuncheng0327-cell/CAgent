@@ -31,6 +31,7 @@ import { rememberRunStatus, resolveRunStatus } from './run-status-cache.ts';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { DirectoryPermissions } from './DirectoryPermissions.tsx';
+import { portraitSource } from './Marks.tsx';
 
 const reasoningNames: Record<string, string> = {
   off: '关闭',
@@ -878,11 +879,7 @@ export function App() {
                         <Portrait
                           name={agent?.name ?? 'CAgent'}
                           size={100}
-                          src={
-                            agent?.id === data.preferences.primaryAgentId
-                              ? assistantPortrait
-                              : undefined
-                          }
+                          src={portraitSource(agent, data.preferences.primaryAgentId)}
                         />
                         <h1>今天，想一起做些什么？</h1>
                         <button
@@ -921,11 +918,9 @@ export function App() {
                           }}
                           onRetry={() => void revise(m, 'retry')}
                           agentName={agent?.name ?? 'CAgent'}
-                          agentPortrait={
-                            agent?.id === data.preferences.primaryAgentId
-                              ? assistantPortrait
-                              : undefined
-                          }
+                          agentPortrait={portraitSource(agent, data.preferences.primaryAgentId)}
+                          userName={data.preferences.userName}
+                          userPortrait={data.preferences.userAvatar ?? undefined}
                           onCopy={() =>
                             void navigator.clipboard
                               .writeText(m.text)
@@ -950,11 +945,7 @@ export function App() {
                         <div className="message-heading">
                           <Portrait
                             name={agent?.name ?? 'CAgent'}
-                            src={
-                              agent?.id === data.preferences.primaryAgentId
-                                ? assistantPortrait
-                                : undefined
-                            }
+                            src={portraitSource(agent, data.preferences.primaryAgentId)}
                           />
                           <b>{agent?.name ?? 'CAgent'}</b>
                           <span className="muted">
@@ -1442,6 +1433,8 @@ function MessageView({
   message: m,
   agentName,
   agentPortrait,
+  userName,
+  userPortrait,
   onCopy,
   onFork,
   onEdit,
@@ -1454,6 +1447,8 @@ function MessageView({
   message: Message;
   agentName: string;
   agentPortrait?: string;
+  userName: string;
+  userPortrait?: string;
   onCopy: () => void;
   onFork: () => void;
   onEdit: () => void;
@@ -1495,10 +1490,10 @@ function MessageView({
     >
       <div className="message-heading">
         <Portrait
-          name={m.role === 'user' ? '我' : agentName}
-          src={m.role === 'assistant' ? agentPortrait : undefined}
+          name={m.role === 'user' ? userName || '我' : agentName}
+          src={m.role === 'assistant' ? agentPortrait : userPortrait}
         />
-        <b>{m.role === 'user' ? '你' : agentName}</b>
+        <b>{m.role === 'user' ? userName || '你' : agentName}</b>
       </div>
       <div className="message-content">
         {m.reasoning && (

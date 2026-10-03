@@ -1,6 +1,11 @@
 import React from 'react';
+import type { Agent } from '../shared/contracts.ts';
 
 export const assistantPortrait = new URL('./assets/assistant-portrait.png', import.meta.url).href;
+
+export function portraitSource(agent: Agent | undefined, primaryId: string | null) {
+  return agent?.avatar ?? (agent?.id === primaryId ? assistantPortrait : undefined);
+}
 
 // Drawn here on a 24-unit grid from simple geometric primitives.
 const strokes: Record<string, React.ReactNode> = {
@@ -193,6 +198,7 @@ export function Portrait({ name, size = 32, src }: { name: string; size?: number
       {letters[0]?.toLocaleUpperCase() ?? 'C'}
       {src && (
         <img
+          key={src}
           src={src}
           alt=""
           width={size}

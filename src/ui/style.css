@@ -944,3 +944,29 @@ html[data-font='mono'] .prose {
   margin-top: 8px;
   line-height: 1.6;
 }
+/* Profile forms share the existing settings layout. */
+.profile-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.profile-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 12px 0 20px;
+}
+.profile-avatar-row canvas {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.profile-avatar-row small {
+  display: block;
+  margin-top: 10px;
+}
+.avatar-crop-controls {
+  max-width: 360px;
+}

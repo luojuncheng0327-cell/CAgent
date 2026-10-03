@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Bootstrap } from './api.ts';
 import type { Session, SearchHit } from '../shared/contracts.ts';
-import { Icon, Portrait, assistantPortrait } from './Marks.tsx';
+import { Icon, Portrait, portraitSource } from './Marks.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
 
@@ -267,11 +267,10 @@ export function SessionRail({
                     >
                       <span className="session-title">
                         <Portrait
-                          src={
-                            session.agentId === data.preferences.primaryAgentId
-                              ? assistantPortrait
-                              : undefined
-                          }
+                          src={portraitSource(
+                            data.agents.find((a) => a.id === session.agentId),
+                            data.preferences.primaryAgentId,
+                          )}
                           name={
                             data.agents.find((a) => a.id === session.agentId)?.name ??
                             session.agentName ??

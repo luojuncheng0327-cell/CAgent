@@ -1,4 +1,6 @@
 import { UsagePage } from './UsagePage.tsx';
+import { ProfileEditor } from './ProfileEditor.tsx';
+import { portraitSource } from './Marks.tsx';
 import React, { useState } from 'react';
 import type { Bootstrap } from './api.ts';
 import { api } from './api.ts';
@@ -29,6 +31,7 @@ export function Settings({
   const tabs = [
     ['models', '供应商'],
     ['agents', '我的助手'],
+    ['profile', '我的资料'],
     ['appearance', '界面外观'],
     ['data', '数据管理'],
     ['about', '关于 CAgent'],
@@ -64,7 +67,8 @@ export function Settings({
           )}
           {tab === 'usage' && <UsagePage data={data} report={report} />}
           {tab === 'models' && <ModelSettings data={data} attempt={attempt} report={report} />}
-          {tab === 'agents' && <Agents data={data} attempt={attempt} />}
+          {tab === 'agents' && <Agents data={data} attempt={attempt} refresh={refresh} />}
+          {tab === 'profile' && <ProfileEditor data={data} refresh={refresh} />}
           {tab === 'appearance' && <Appearance data={data} attempt={attempt} />}
           {tab === 'data' && <DataSettings attempt={attempt} report={report} />}
           {tab === 'about' && (
@@ -551,11 +555,14 @@ function ModelEditor({
 function Agents({
   data,
   attempt,
+  refresh,
 }: {
   data: Bootstrap;
   attempt: (fn: () => Promise<unknown>) => Promise<void>;
+  refresh: () => Promise<void>;
 }) {
   const [editing, setEditing] = useState<Agent | null | undefined>(undefined);
+  const [profile, setProfile] = useState<Agent | null>(null);
   return (
     <>
       <div className="section-heading">
@@ -573,12 +580,13 @@ function Agents({
           <Portrait
             name={a.name}
             size={36}
-            src={a.id === data.preferences.primaryAgentId ? assistantPortrait : undefined}
+            src={portraitSource(a, data.preferences.primaryAgentId)}
           />
           <div className="grow">
             <b>{a.name}</b>
             <small>{data.models.find((m) => m.id === a.modelId)?.name ?? '未选择默认模型'}</small>
           </div>
+          <button onClick={() => setProfile(a)}>资料与头像</button>
           <button onClick={() => setEditing(a)}>编辑</button>
         </div>
       ))}
@@ -589,6 +597,11 @@ function Agents({
           done={() => setEditing(undefined)}
           attempt={attempt}
         />
+      )}
+      {profile && (
+        <Modal title="助手资料" onClose={() => setProfile(null)}>
+          <ProfileEditor data={data} agent={profile} refresh={refresh} />
+        </Modal>
       )}
     </>
   );
@@ -624,6 +637,7 @@ function AgentEditor({
               memoryEnabled,
               publicInstructions,
               disabledTools,
+              description: initial?.description ?? '',
               revision: initial?.revision,
             });
             done();
