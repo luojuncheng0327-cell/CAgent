@@ -5,6 +5,8 @@ import path from 'node:path';
 import { setup, temporary, removeTemporary } from './helpers.ts';
 import { serve } from '../src/server/http.ts';
 import { hash } from '../src/server/tools.ts';
+import { manageFile } from '../src/server/workspace.ts';
+import { uploadWorkspaceFile } from '../src/server/file-operations.ts';
 
 async function fixture(trashItem?: (target: string) => Promise<void>) {
   const f = await setup('http://127.0.0.1:9/v1');
@@ -323,5 +325,44 @@ test('P2 回收调用已校验的绝对路径；纯服务模式明确拒绝并�
     await f.cleanup();
     await plain.cleanup();
     await removeTemporary(bin);
+  }
+});
+
+test('P2 切换工作区后旧请求不能移动或上传到新的根目录', async () => {
+  const f = await fixture();
+  try {
+    for (const root of [f.root, f.other]) await fs.writeFile(path.join(root, 'keep.bin'), 'same');
+    await f.rt.updateSession(f.session.id, { workspace: f.other, revision: f.session.revision });
+    await assert.rejects(
+      manageFile(f.rt.store, f.session, {
+        operation: 'rename',
+        path: 'keep.bin',
+        destination: 'wrong.bin',
+        expectedHash: hash('same'),
+      }),
+      (e: any) => e.code === 'WORKSPACE_CHANGED',
+    );
+    await assert.rejects(
+      uploadWorkspaceFile(f.rt.store, f.session, 'wrong.bin', Buffer.from('no')),
+      (e: any) => e.code === 'WORKSPACE_CHANGED',
+    );
+    assert.equal(
+      (
+        await f.op({
+          operation: 'rename',
+          path: 'keep.bin',
+          destination: 'wrong.bin',
+          workspace: f.root,
+          expectedHash: hash('same'),
+        })
+      ).error.code,
+      'WORKSPACE_CHANGED',
+    );
+    for (const root of [f.root, f.other]) {
+      assert.equal(await fs.readFile(path.join(root, 'keep.bin'), 'utf8'), 'same');
+      await assert.rejects(fs.stat(path.join(root, 'wrong.bin')));
+    }
+  } finally {
+    await f.cleanup();
   }
 });
