@@ -45,6 +45,14 @@ export function Settings({
       report(e);
     }
   }
+  const panels: Record<string, React.ReactNode> = {
+    models: <ModelSettings data={data} attempt={attempt} report={report} />,
+    usage: <UsagePage data={data} report={report} />,
+    agents: <Agents data={data} attempt={attempt} refresh={refresh} />,
+    profile: <ProfileEditor data={data} refresh={refresh} />,
+    appearance: <Appearance data={data} attempt={attempt} />,
+    data: <DataSettings attempt={attempt} report={report} />,
+  };
   return (
     <Modal title={t('设置')} onClose={close} wide>
       <div className="settings-layout">
@@ -66,12 +74,7 @@ export function Settings({
               <button onClick={() => setTab('usage')}>{t('用量')}</button>
             </div>
           )}
-          {tab === 'usage' && <UsagePage data={data} report={report} />}
-          {tab === 'models' && <ModelSettings data={data} attempt={attempt} report={report} />}
-          {tab === 'agents' && <Agents data={data} attempt={attempt} refresh={refresh} />}
-          {tab === 'profile' && <ProfileEditor data={data} refresh={refresh} />}
-          {tab === 'appearance' && <Appearance data={data} attempt={attempt} />}
-          {tab === 'data' && <DataSettings attempt={attempt} report={report} />}
+          {panels[tab]}
           {tab === 'about' && (
             <div className="about">
               <div className="brand-mark">C</div>
