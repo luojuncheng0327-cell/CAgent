@@ -133,6 +133,16 @@ test('P2 Word 压缩包校验目录、字节、XML 实体与实际展开大小',
 });
 
 test('P2 解码器拒绝格式伪报、像素和帧数超限，文档返回真实文字', async () => {
+  const frames = Buffer.alloc(121 * 4, 255);
+  const animation = await sharp(frames, {
+    raw: { width: 1, height: 121, channels: 4, pageHeight: 1 },
+  })
+    .gif({ keepDuplicateFrames: true })
+    .toBuffer();
+  await assert.rejects(
+    decodeAttachment('image/gif', animation),
+    (e: any) => e.code === 'IMAGE_LIMIT',
+  );
   const png = await sharp({ create: { width: 2, height: 2, channels: 3, background: 'white' } })
     .png()
     .toBuffer();
@@ -162,4 +172,30 @@ test('P2 解码器拒绝格式伪报、像素和帧数超限，文档返回真�
     decodeAttachment('application/pdf', Buffer.from('%PDF-1.7\ninvalid')),
     (e: any) => e.code === 'DOCUMENT_INVALID',
   );
+});
+
+test('P2 部分 PDF 页没有文字时，提取提示同时传给用户和模型', async () => {
+  const f = await setup('http://127.0.0.1:9/v1');
+  try {
+    const r = await createResource(
+      f.rt.store,
+      f.session.id,
+      '混合.pdf',
+      pdfFile(['readable page', '']),
+    );
+    assert.equal(r.extraction?.pages, 2);
+    assert.deepEqual(r.extraction?.warnings, ['1 页没有可提取文字，可能是空白页或扫描图片']);
+    const m = f.rt.store.addMessage({
+      sessionId: f.session.id,
+      role: 'user',
+      runId: null,
+      text: '',
+      attachmentIds: [r.id],
+    });
+    const messages = await hydrateMessages(f.rt.store, f.session.id, [m], f.model);
+    assert.match(messages[0].text, /1 页没有可提取文字/);
+    assert.match(messages[0].text, /readable page/);
+  } finally {
+    await f.cleanup();
+  }
 });

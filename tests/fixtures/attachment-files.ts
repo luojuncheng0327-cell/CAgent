@@ -1,13 +1,15 @@
 import { crc32, deflateRawSync } from 'node:zlib';
 
-export function pdfFile(text = 'PDF attachment evidence', pages = 1) {
+export function pdfFile(text: string | string[] = 'PDF attachment evidence', pages = 1) {
+  if (Array.isArray(text)) pages = text.length;
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     `<< /Type /Pages /Kids [${Array.from({ length: pages }, (_, n) => `${4 + n * 2} 0 R`).join(' ')}] /Count ${pages} >>`,
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
   ];
   for (let n = 0; n < pages; n++) {
-    const content = `BT /F1 12 Tf 20 100 Td (${text.replace(/[\\()]/g, '\\$&')}) Tj ET`;
+    const pageText = Array.isArray(text) ? text[n] : text;
+    const content = `BT /F1 12 Tf 20 100 Td (${pageText.replace(/[\\()]/g, '\\$&')}) Tj ET`;
     objects.push(
       `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 240 180] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + n * 2} 0 R >>`,
       `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
