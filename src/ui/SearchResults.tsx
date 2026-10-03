@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 import React, { useEffect, useRef, useState } from 'react';
 import type { SearchPage, SearchHit } from '../shared/contracts.ts';
 import { api, ApiError } from './api.ts';
@@ -57,7 +58,7 @@ export function SearchResults({
       if (e instanceof ApiError && e.code === 'SEARCH_CURSOR_EXPIRED') {
         report(e);
         setRetry((x) => x + 1);
-      } else setError(e instanceof Error ? e.message : '搜索失败');
+      } else setError(e instanceof Error ? e.message : t('搜索失败'));
     } finally {
       if (generation.current === version) setBusy(false);
     }
@@ -66,15 +67,15 @@ export function SearchResults({
     <div className="search-results" aria-busy={busy}>
       <p className="search-count" role="status">
         {busy
-          ? '正在搜索…'
+          ? t('正在搜索…')
           : page.hits.length
-            ? `已载入 ${page.hits.length} 个命中`
-            : '没有匹配的内容'}
+            ? t('已载入 {0} 个命中', [page.hits.length])
+            : t('没有匹配的内容')}
       </p>
       {error && (
         <div role="alert">
           <p>{error}</p>
-          <button onClick={() => setRetry((x) => x + 1)}>重试搜索</button>
+          <button onClick={() => setRetry((x) => x + 1)}>{t('重试搜索')}</button>
         </div>
       )}
       {page.hits.map((hit) => (
@@ -89,12 +90,12 @@ export function SearchResults({
             <mark>{hit.snippet.slice(hit.matchStart, hit.matchStart + hit.matchLength)}</mark>
             {hit.snippet.slice(hit.matchStart + hit.matchLength)}
           </span>
-          <small>{hit.source === 'title' ? '会话标题' : `消息 ${hit.position}`}</small>
+          <small>{hit.source === 'title' ? t('会话标题') : t('消息 {0}', [hit.position])}</small>
         </button>
       ))}
       {page.cursor && (
         <button disabled={busy} className="history-more" onClick={() => void more()}>
-          更多搜索结果
+          {t('更多搜索结果')}
         </button>
       )}
     </div>

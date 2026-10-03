@@ -4,6 +4,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { z } from 'zod';
+import { normalizeLocale, translate } from '../shared/i18n.ts';
 import {
   agentInput,
   providerInput,
@@ -87,7 +88,8 @@ export class Runtime {
   }
   preferences() {
     const saved = this.store.need<Preferences>('preferences', 'global');
-    return { ...preferenceInput.parse(saved), ...saved };
+    const locale = normalizeLocale(saved.locale);
+    return { ...preferenceInput.parse({ ...saved, locale }), ...saved, locale };
   }
   sessionOrder() {
     return getSessionOrder(this.store);
@@ -103,7 +105,7 @@ export class Runtime {
     for (const id of [input.smallToolModelId, input.largeToolModelId])
       if (id) this.store.need('model', id);
     const profile = this.preferences();
-    return this.store.put<Preferences>(
+    const saved = this.store.put<Preferences>(
       'preferences',
       'global',
       {
@@ -113,6 +115,8 @@ export class Runtime {
       },
       input.revision,
     );
+    this.events.emit('preferences.changed');
+    return saved;
   }
   saveAgent(raw: unknown, id: string = randomUUID()): Agent {
     const input = agentInput.parse(raw);
@@ -236,6 +240,8 @@ export class Runtime {
   }
   async createSession(raw: unknown): Promise<Session> {
     const input = sessionInput.parse(raw);
+    if (raw && typeof raw === 'object' && !('title' in raw))
+      input.title = translate(this.preferences().locale, '新会话');
     if (raw && typeof raw === 'object' && !('workspace' in raw))
       input.workspace = this.preferences().defaultWorkspace;
     const agent = this.store.need<Agent>('agent', input.agentId);

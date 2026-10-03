@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Marks.tsx';
@@ -109,7 +110,7 @@ export function ChoiceMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-        title={`${label}：${selected?.label ?? '未选择'}`}
+        title={`${label}：${selected?.label ?? t('未选择')}`}
         disabled={disabled}
         onClick={toggle}
         onKeyDown={(event) => {
@@ -121,7 +122,7 @@ export function ChoiceMenu({
         }}
       >
         <Icon name={icon} size={compact ? 15 : 14} />
-        {!compact && <span>{selected?.label ?? '选择模型'}</span>}
+        {!compact && <span>{selected?.label ?? t('选择模型')}</span>}
       </button>
       {open &&
         createPortal(
@@ -183,7 +184,7 @@ export function ChoiceMenu({
                   type="button"
                   role="option"
                   aria-selected={item.id === value}
-                  aria-label={item.disabled ? `${item.label} · 即将提供` : item.label}
+                  aria-label={item.disabled ? t('{0} · 即将提供', [item.label]) : item.label}
                   disabled={item.disabled}
                   tabIndex={-1}
                   className={item.group ? 'choice-row grouped' : 'choice-row'}
@@ -196,7 +197,7 @@ export function ChoiceMenu({
                   {item.icon && <Icon name={item.icon} size={14} />}
                   <span>{item.label}</span>
                   {item.disabled ? (
-                    <small>即将提供</small>
+                    <small>{t('即将提供')}</small>
                   ) : (
                     item.hint && <small>{item.hint}</small>
                   )}
@@ -204,7 +205,7 @@ export function ChoiceMenu({
               </React.Fragment>
             ))}
             {!items.length && (
-              <p className="choice-empty">还没有可用模型，请在供应商设置中添加。</p>
+              <p className="choice-empty">{t('还没有可用模型，请在供应商设置中添加。')}</p>
             )}
           </div>,
           document.body,

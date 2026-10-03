@@ -1,3 +1,4 @@
+import { t, currentLocaleTag } from './i18n.ts';
 import React from 'react';
 import type { Bootstrap } from './api.ts';
 import type { Session, SearchHit } from '../shared/contracts.ts';
@@ -18,14 +19,14 @@ export function Soon({
     <button
       disabled
       className={compact ? 'future-control compact' : 'future-control'}
-      aria-label={`${label} · 即将提供`}
-      title={`${label} · 即将提供`}
+      aria-label={t('{0} · 即将提供', [label])}
+      title={t('{0} · 即将提供', [label])}
     >
       {icon && <Icon name={icon} size={15} />}
       {!compact && (
         <>
           <span>{label}</span>
-          <small>即将提供</small>
+          <small>{t('即将提供')}</small>
         </>
       )}
     </button>
@@ -47,28 +48,38 @@ export function TopStrip({
 }) {
   return (
     <header className="topbar">
-      <button className="icon-button" aria-label="侧边栏" aria-expanded={rail} onClick={toggleRail}>
+      <button
+        className="icon-button"
+        aria-label={t('侧边栏')}
+        aria-expanded={rail}
+        onClick={toggleRail}
+      >
         <Icon name="sidebar" size={17} />
       </button>
-      <div className="mode-switch" aria-label="工作模式">
+      <div className="mode-switch" aria-label={t('工作模式')}>
         <button className="current" onClick={chat}>
-          聊天
+          {t('聊天')}
         </button>
-        <Soon label="频道" />
+        <Soon label={t('频道')} />
       </div>
       <div className="topbar-actions">
-        <button className="icon-button" aria-label="书桌" aria-expanded={desk} onClick={toggleDesk}>
+        <button
+          className="icon-button"
+          aria-label={t('书桌')}
+          aria-expanded={desk}
+          onClick={toggleDesk}
+        >
           <Icon name="panel" size={17} />
         </button>
         {window.cagent && (
           <div className="window-controls">
-            <button aria-label="最小化" onClick={() => window.cagent!.minimize()}>
+            <button aria-label={t('最小化')} onClick={() => window.cagent!.minimize()}>
               <Icon name="minus" size={14} />
             </button>
-            <button aria-label="最大化" onClick={() => window.cagent!.maximize()}>
+            <button aria-label={t('最大化')} onClick={() => window.cagent!.maximize()}>
               <Icon name="maximize" size={14} />
             </button>
-            <button aria-label="关闭窗口" onClick={() => window.cagent!.close()}>
+            <button aria-label={t('关闭窗口')} onClick={() => window.cagent!.close()}>
               <Icon name="close" size={14} />
             </button>
           </div>
@@ -114,53 +125,60 @@ export function SessionRail({
   report: (error: unknown) => void;
 }) {
   const date = (iso: string) =>
-    new Intl.DateTimeFormat('zh-CN', { timeZone: data.preferences.timezone }).format(new Date(iso));
+    new Intl.DateTimeFormat(currentLocaleTag(), { timeZone: data.preferences.timezone }).format(
+      new Date(iso),
+    );
   const today = date(new Date().toISOString());
   const groups = archived
-    ? [['已归档', sessions] as const]
+    ? [[t('已归档'), sessions] as const]
     : data.preferences.sessionSort === 'manual'
       ? [
-          ['置顶', sessions.filter((s) => s.pinned)] as const,
-          ['对话', sessions.filter((s) => !s.pinned)] as const,
+          [t('置顶'), sessions.filter((s) => s.pinned)] as const,
+          [t('对话'), sessions.filter((s) => !s.pinned)] as const,
         ]
       : [
-          ['置顶', sessions.filter((s) => s.pinned)] as const,
-          ['今天', sessions.filter((s) => !s.pinned && date(s.updatedAt) === today)] as const,
-          ['更早', sessions.filter((s) => !s.pinned && date(s.updatedAt) !== today)] as const,
+          [t('置顶'), sessions.filter((s) => s.pinned)] as const,
+          [t('今天'), sessions.filter((s) => !s.pinned && date(s.updatedAt) === today)] as const,
+          [t('更早'), sessions.filter((s) => !s.pinned && date(s.updatedAt) !== today)] as const,
         ];
   return (
-    <aside className="sidebar" aria-label="对话列表">
+    <aside className="sidebar" aria-label={t('对话列表')}>
       <div className="rail-heading">
-        <h2>对话</h2>
+        <h2>{t('对话')}</h2>
         <div className="grow" />
         <button
           className="icon-button"
-          aria-label="新对话"
-          title="新对话 · Ctrl + N"
+          aria-label={t('新对话')}
+          title={t('新对话 · Ctrl + N')}
           disabled={busy}
           onClick={create}
         >
           <Icon name="plus" size={16} />
         </button>
-        <button className="icon-button" aria-label="界面设置" title="设置" onClick={settings}>
+        <button
+          className="icon-button"
+          aria-label={t('界面设置')}
+          title={t('设置')}
+          onClick={settings}
+        >
           <Icon name="gear" size={16} />
         </button>
-        <button className="icon-button" aria-label="收起侧边栏" onClick={collapse}>
+        <button className="icon-button" aria-label={t('收起侧边栏')} onClick={collapse}>
           <Icon name="back" size={14} />
         </button>
       </div>
-      <nav className="rail-shortcuts" aria-label="功能入口">
-        <Soon label="社交平台" icon="link" />
-        <Soon label="助手活动" icon="activity" />
-        <Soon label="任务计划" icon="clock" />
+      <nav className="rail-shortcuts" aria-label={t('功能入口')}>
+        <Soon label={t('社交平台')} icon="link" />
+        <Soon label={t('助手活动')} icon="activity" />
+        <Soon label={t('任务计划')} icon="clock" />
         <Soon label="Skills" icon="tools" />
       </nav>
       <div className="rail-divider" />
       <div className="search-box">
         <Icon name="search" size={14} />
         <input
-          aria-label="搜索会话"
-          placeholder="搜索聊天记录"
+          aria-label={t('搜索会话')}
+          placeholder={t('搜索聊天记录')}
           value={search}
           onChange={(e) => onSearch(e.target.value)}
         />
@@ -171,31 +189,31 @@ export function SessionRail({
         ) : (
           groups.map(
             ([label, items]) =>
-              (label !== '更早' || items.length > 0) && (
+              (label !== t('更早') || items.length > 0) && (
                 <section key={label} className="session-group">
                   <div className="list-heading">
                     <span>
                       {label}
-                      {label === '置顶' && <Icon name="pin" size={11} />}
+                      {label === t('置顶') && <Icon name="pin" size={11} />}
                     </span>
-                    {(label === '今天' || label === '对话' || archived) && (
+                    {(label === t('今天') || label === t('对话') || archived) && (
                       <div className="rail-list-actions">
                         <ChoiceMenu
-                          label="排序方式"
+                          label={t('排序方式')}
                           compact
                           icon="sort"
                           value={data.preferences.sessionSort}
                           disabled={busy}
                           items={[
-                            { id: 'updated', label: '最近更新' },
-                            { id: 'manual', label: '手动排序', hint: '拖动或 Alt + ↑ / ↓' },
+                            { id: 'updated', label: t('最近更新') },
+                            { id: 'manual', label: t('手动排序'), hint: t('拖动或 Alt + ↑ / ↓') },
                           ]}
                           onChange={(id) => sort(id as 'updated' | 'manual')}
                         />
                         <button
                           className="icon-button"
-                          aria-label={archived ? '查看活动会话' : '查看归档会话'}
-                          title={archived ? '查看活动会话' : '查看归档会话'}
+                          aria-label={archived ? t('查看活动会话') : t('查看归档会话')}
+                          title={archived ? t('查看活动会话') : t('查看归档会话')}
                           onClick={onArchive}
                         >
                           <Icon name="archive" size={13} />
@@ -215,7 +233,7 @@ export function SessionRail({
                       }
                       title={
                         session.pinned || data.preferences.sessionSort === 'manual'
-                          ? '拖动排序；也可按 Alt + ↑ / ↓'
+                          ? t('拖动排序；也可按 Alt + ↑ / ↓')
                           : session.title
                       }
                       onDragStart={(event) => {
@@ -286,9 +304,9 @@ export function SessionRail({
                       <small>
                         {data.agents.find((a) => a.id === session.agentId)?.name ??
                           session.agentName ??
-                          '助手'}{' '}
-                        · {session.workspace?.split(/[\\/]/).at(-1) ?? '未选择工作台'} ·{' '}
-                        {date(session.updatedAt) === today ? '今天' : date(session.updatedAt)}
+                          t('助手')}{' '}
+                        · {session.workspace?.split(/[\\/]/).at(-1) ?? t('未选择工作台')} ·{' '}
+                        {date(session.updatedAt) === today ? t('今天') : date(session.updatedAt)}
                       </small>
                     </button>
                   ))}
@@ -297,7 +315,7 @@ export function SessionRail({
           )
         )}
         {!search.trim() && !sessions.length && (
-          <p className="empty-list">{search ? '没有匹配的对话' : '还没有保存的对话'}</p>
+          <p className="empty-list">{search ? t('没有匹配的对话') : t('还没有保存的对话')}</p>
         )}
       </div>
     </aside>

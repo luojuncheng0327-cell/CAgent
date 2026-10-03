@@ -1,3 +1,4 @@
+import { t, useLocale } from './i18n.ts';
 import React, { useEffect, useRef, useId, useMemo, useState } from 'react';
 import MarkdownIt from 'markdown-it';
 import { protocols } from '../shared/contracts.ts';
@@ -19,7 +20,7 @@ export function ProtocolSelect({
 }) {
   return (
     <select
-      aria-label="接口协议"
+      aria-label={t('接口协议')}
       value={value}
       onChange={(e) => onChange(e.target.value as Protocol)}
     >
@@ -48,17 +49,18 @@ markdown.renderer.rules.image = (tokens, index) => {
   const src = token.attrGet('src') ?? '';
   const safe = /^https?:\/\//i.test(src);
   return safe
-    ? `<a href="${markdown.utils.escapeHtml(src)}" target="_blank" rel="noopener noreferrer">图片：${markdown.utils.escapeHtml(token.content || '打开图片')}</a>`
-    : markdown.utils.escapeHtml(token.content || '[图片]');
+    ? `<a href="${markdown.utils.escapeHtml(src)}" target="_blank" rel="noopener noreferrer">${t('图片：')}${markdown.utils.escapeHtml(token.content || t('打开图片'))}</a>`
+    : markdown.utils.escapeHtml(token.content || t('[图片]'));
 };
 markdown.renderer.rules.fence = (tokens, index) => {
   const code = markdown.utils.escapeHtml(tokens[index].content);
   const icon = (path: string) =>
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
-  return `<section class="code-panel"><div class="code-tools"><button type="button" data-code-action="wrap" aria-label="代码自动换行" aria-pressed="false" title="自动换行">${icon('M3 6h17M3 11h13a4 4 0 0 1 0 8h-5m3-3-3 3 3 3M3 16h3')}</button><button type="button" data-code-action="copy" aria-label="复制代码" title="复制代码">${icon('M8 7h12v14H8ZM15 4H4v13')}</button></div><pre><code>${code}</code></pre></section>`;
+  return `<section class="code-panel"><div class="code-tools"><button type="button" data-code-action="wrap" aria-label="${t('代码自动换行')}" aria-pressed="false" title="${t('自动换行')}">${icon('M3 6h17M3 11h13a4 4 0 0 1 0 8h-5m3-3-3 3 3 3M3 16h3')}</button><button type="button" data-code-action="copy" aria-label="${t('复制代码')}" title="${t('复制代码')}">${icon('M8 7h12v14H8ZM15 4H4v13')}</button></div><pre><code>${code}</code></pre></section>`;
 };
 export function Markdown({ text }: { text: string }) {
-  const html = useMemo(() => markdown.render(text), [text]);
+  const locale = useLocale();
+  const html = useMemo(() => markdown.render(text), [text, locale]);
   const [notice, setNotice] = useState('');
   return (
     <>
@@ -79,10 +81,10 @@ export function Markdown({ text }: { text: string }) {
             void navigator.clipboard
               .writeText(panel.querySelector('code')?.textContent ?? '')
               .then(() => {
-                setNotice('代码已复制');
-                button.title = '已复制';
+                setNotice(t('代码已复制'));
+                button.title = t('已复制');
               })
-              .catch(() => setNotice('复制失败，请选择代码后手动复制'));
+              .catch(() => setNotice(t('复制失败，请选择代码后手动复制')));
           }
         }}
       />
@@ -125,7 +127,7 @@ export function Modal({
     >
       <div className="modal-header">
         <h2>{title}</h2>
-        <button className="icon-button" aria-label="关闭对话框" onClick={onClose}>
+        <button className="icon-button" aria-label={t('关闭对话框')} onClick={onClose}>
           <Icon name="close" />
         </button>
       </div>

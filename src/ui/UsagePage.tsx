@@ -1,3 +1,4 @@
+import { t, currentLocaleTag } from './i18n.ts';
 import React, { useEffect, useState } from 'react';
 import type { Bootstrap } from './api.ts';
 import { api } from './api.ts';
@@ -54,47 +55,57 @@ export function UsagePage({ data, report }: { data: Bootstrap; report: (error: u
     }
   }
   const number = (n: number | null) =>
-    n === null ? '未知' : n.toLocaleString('zh-CN', { maximumFractionDigits: 6 });
+    n === null ? t('未知') : n.toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 });
   return (
     <section className="usage-page">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">本机账本</p>
-          <h1>模型用量</h1>
+          <p className="eyebrow">{t('本机账本')}</p>
+          <h1>{t('模型用量')}</h1>
           <p>
-            含成功、失败、取消和上下文压缩请求。费用为保存时的价格估计，未返回的计数保留为未知。
+            {t(
+              '含成功、失败、取消和上下文压缩请求。费用为保存时的价格估计，未返回的计数保留为未知。',
+            )}
           </p>
         </div>
       </div>
       <div className="usage-filters">
         <label>
-          开始日期（UTC）
+          {t('开始日期（UTC）')}
           <input
-            aria-label="用量开始日期"
+            aria-label={t('用量开始日期')}
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
           />
         </label>
         <label>
-          结束日期（UTC，不含）
+          {t('结束日期（UTC，不含）')}
           <input
-            aria-label="用量结束日期"
+            aria-label={t('用量结束日期')}
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
           />
         </label>
-        <select aria-label="用量助手" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-          <option value="">所有助手</option>
+        <select
+          aria-label={t('用量助手')}
+          value={agentId}
+          onChange={(e) => setAgentId(e.target.value)}
+        >
+          <option value="">{t('所有助手')}</option>
           {data.agents.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
             </option>
           ))}
         </select>
-        <select aria-label="用量模型" value={modelId} onChange={(e) => setModelId(e.target.value)}>
-          <option value="">所有模型</option>
+        <select
+          aria-label={t('用量模型')}
+          value={modelId}
+          onChange={(e) => setModelId(e.target.value)}
+        >
+          <option value="">{t('所有模型')}</option>
           {data.models.map((m) => (
             <option key={m.id} value={m.id}>
               {m.name}
@@ -107,53 +118,63 @@ export function UsagePage({ data, report }: { data: Bootstrap; report: (error: u
           <div className="usage-totals">
             {(['input', 'output', 'cached', 'cost'] as const).map((key, i) => (
               <article key={key}>
-                <small>{['输入 token', '输出 token', '缓存 token', '估算费用'][i]}</small>
+                <small>
+                  {[t('输入 token'), t('输出 token'), t('缓存 token'), t('估算费用')][i]}
+                </small>
                 <b>{number(value.totals[key].known)}</b>
                 <small>
                   {value.totals[key].unknown
-                    ? `${value.totals[key].unknown} 笔未知，合计不完整`
-                    : '全部已知'}
+                    ? t('{0} 笔未知，合计不完整', [value.totals[key].unknown])
+                    : t('全部已知')}
                 </small>
               </article>
             ))}
           </div>
           <p className="muted">
-            共 {value.requests} 笔请求 · 价格币种由接口配置约定；账本不会进行汇率换算。
+            {t('共')}
+            {value.requests} {t('笔请求 · 价格币种由接口配置约定；账本不会进行汇率换算。')}
           </p>
           <div className="usage-table">
             <table>
               <thead>
                 <tr>
-                  {['时间', '会话 / 用途', '模型', '状态', '输入', '输出', '缓存', '费用'].map(
-                    (h) => (
-                      <th key={h}>{h}</th>
-                    ),
-                  )}
+                  {[
+                    t('时间'),
+                    t('会话 / 用途'),
+                    t('模型'),
+                    t('状态'),
+                    t('输入'),
+                    t('输出'),
+                    t('缓存'),
+                    t('费用'),
+                  ].map((h) => (
+                    <th key={h}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {value.rows.map((u) => (
                   <tr key={u.id}>
                     <td>
-                      {new Date(u.createdAt).toLocaleString('zh-CN', {
+                      {new Date(u.createdAt).toLocaleString(currentLocaleTag(), {
                         timeZone: data.preferences.timezone,
                       })}
                     </td>
                     <td>
                       {u.sessionTitle}
-                      <small>{u.purpose === 'compact' ? '上下文压缩' : '对话'}</small>
+                      <small>{u.purpose === 'compact' ? t('上下文压缩') : t('对话')}</small>
                     </td>
                     <td>{data.models.find((m) => m.id === u.modelId)?.name ?? u.modelId}</td>
                     <td>
                       {(
                         {
-                          succeeded: '成功',
-                          failed: '失败',
-                          cancelled: '取消',
-                          interrupted: '中断',
-                          running: '执行中',
-                          queued: '排队',
-                          awaiting_approval: '等待确认',
+                          succeeded: t('成功'),
+                          failed: t('失败'),
+                          cancelled: t('取消'),
+                          interrupted: t('中断'),
+                          running: t('执行中'),
+                          queued: t('排队'),
+                          awaiting_approval: t('等待确认'),
                         } as Record<string, string>
                       )[u.status] ?? u.status}
                     </td>
@@ -165,15 +186,15 @@ export function UsagePage({ data, report }: { data: Bootstrap; report: (error: u
               </tbody>
             </table>
           </div>
-          {!value.rows.length && <p className="panel-empty">当前范围没有用量记录</p>}
+          {!value.rows.length && <p className="panel-empty">{t('当前范围没有用量记录')}</p>}
           {value.hasMore && (
             <button disabled={busy} onClick={() => void more()}>
-              加载更多记录
+              {t('加载更多记录')}
             </button>
           )}
         </>
       )}
-      {busy && <p role="status">正在读取用量…</p>}
+      {busy && <p role="status">{t('正在读取用量…')}</p>}
     </section>
   );
 }

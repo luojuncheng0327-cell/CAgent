@@ -1,3 +1,4 @@
+import { t, useLocale } from './i18n.ts';
 import React, { useEffect, useRef, useState } from 'react';
 import { EditorState, type Command } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -76,6 +77,7 @@ export function DocumentEditor({
   onChange: (text: string, memory: DocumentMemory) => void;
 }) {
   const mount = useRef<HTMLDivElement>(null);
+  const locale = useLocale();
   const view = useRef<EditorView | null>(null);
   const callback = useRef(onChange);
   const locked = useRef(readonly);
@@ -91,7 +93,7 @@ export function DocumentEditor({
       state: memory?.state ?? initialState(source),
       attributes: {
         role: 'textbox',
-        'aria-label': '文档内容',
+        'aria-label': t('文档内容'),
         'aria-multiline': 'true',
         spellcheck: 'false',
       },
@@ -130,6 +132,9 @@ export function DocumentEditor({
   useEffect(() => {
     view.current?.setProps({ editable: () => !readonly });
   }, [readonly]);
+  useEffect(() => {
+    view.current?.dom.setAttribute('aria-label', t('文档内容'));
+  }, [locale]);
   const run = (command: Command) => {
     const editor = view.current;
     if (!editor || readonly) return;
@@ -139,19 +144,19 @@ export function DocumentEditor({
   const { nodes, marks } = documentSchema;
   const tools: { label: string; mark?: string; icon?: string; text?: string; command: Command }[] =
     [
-      { label: '撤销', icon: 'back', command: undo },
-      { label: '重做', icon: 'arrow', command: redo },
-      { label: '加粗', mark: 'strong', text: 'B', command: toggleMark(marks.strong) },
-      { label: '斜体', mark: 'em', text: 'I', command: toggleMark(marks.em) },
-      { label: '二级标题', text: 'H2', command: setBlockType(nodes.heading, { level: 2 }) },
-      { label: '正文', text: '¶', command: setBlockType(nodes.paragraph) },
-      { label: '项目列表', text: '•', command: wrapInList(nodes.bullet_list) },
-      { label: '引用段落', text: '❞', command: wrapIn(nodes.blockquote) },
-      { label: '代码块', text: '</>', command: setBlockType(nodes.code_block) },
+      { label: t('撤销'), icon: 'back', command: undo },
+      { label: t('重做'), icon: 'arrow', command: redo },
+      { label: t('加粗'), mark: 'strong', text: 'B', command: toggleMark(marks.strong) },
+      { label: t('斜体'), mark: 'em', text: 'I', command: toggleMark(marks.em) },
+      { label: t('二级标题'), text: 'H2', command: setBlockType(nodes.heading, { level: 2 }) },
+      { label: t('正文'), text: '¶', command: setBlockType(nodes.paragraph) },
+      { label: t('项目列表'), text: '•', command: wrapInList(nodes.bullet_list) },
+      { label: t('引用段落'), text: '❞', command: wrapIn(nodes.blockquote) },
+      { label: t('代码块'), text: '</>', command: setBlockType(nodes.code_block) },
     ];
   return (
     <div className="document-editing">
-      <div className="document-formatting" role="toolbar" aria-label="文档格式">
+      <div className="document-formatting" role="toolbar" aria-label={t('文档格式')}>
         {tools.map((tool) => (
           <button
             type="button"
@@ -179,7 +184,9 @@ export function DocumentEditor({
       </div>
       <div className="document-canvas" ref={mount} />
       <div className="document-count" aria-live="off">
-        选中 {selectionLength} 字 · 共 {text.length} 字
+        {t('选中')}
+        {selectionLength} {t('字 · 共')}
+        {text.length} {t('字')}
       </div>
     </div>
   );

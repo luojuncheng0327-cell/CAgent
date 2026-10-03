@@ -19,6 +19,7 @@ import path from 'node:path';
 import { Runtime } from '../server/runtime.ts';
 import { serve } from '../server/http.ts';
 import type { SecretCodec } from '../server/vault.ts';
+import { translate } from '../shared/i18n.ts';
 
 const home = path.resolve(process.env.CAGENT_HOME ?? path.join(os.homedir(), '.cagent'));
 if (home.split(/[\\/]/).some((p) => p.toLowerCase() === '.hanako'))
@@ -41,6 +42,7 @@ let window: BrowserWindow | null = null,
   tray: Tray | null = null,
   quitting = false,
   shutdownReady = false;
+const t = (source: string) => translate(rt?.preferences().locale, source);
 async function flushRenderer() {
   if (!window || window.isDestroyed() || window.webContents.isLoadingMainFrame()) return true;
   const id = crypto.randomUUID();
@@ -197,19 +199,22 @@ if (single)
       if (process.env.CAGENT_SMOKE !== '1') {
         tray = new Tray(icon());
         tray.setToolTip('CAgent');
-        tray.setContextMenu(
-          Menu.buildFromTemplate([
-            {
-              label: '打开 CAgent',
-              click: () => {
-                window?.show();
-                window?.focus();
+        const refreshTray = () =>
+          tray?.setContextMenu(
+            Menu.buildFromTemplate([
+              {
+                label: t('打开 CAgent'),
+                click: () => {
+                  window?.show();
+                  window?.focus();
+                },
               },
-            },
-            { type: 'separator' },
-            { label: '退出', click: () => app.quit() },
-          ]),
-        );
+              { type: 'separator' },
+              { label: t('退出'), click: () => app.quit() },
+            ]),
+          );
+        refreshTray();
+        rt.events.on('preferences.changed', refreshTray);
         tray.on('double-click', () => {
           window?.show();
           window?.focus();
@@ -225,8 +230,8 @@ if (single)
     .catch((error) => {
       console.error('CAgent startup failed:', error instanceof Error ? error.message : 'unknown');
       dialog.showErrorBox(
-        'CAgent 启动失败',
-        error instanceof Error ? error.message : '请检查本机诊断',
+        t('CAgent 启动失败'),
+        error instanceof Error ? error.message : t('请检查本机诊断'),
       );
       app.quit();
     });
@@ -239,7 +244,7 @@ app.on('before-quit', (event) => {
     if (!(await flushRenderer())) {
       quitting = false;
       window?.show();
-      dialog.showErrorBox('草稿尚未保存', '退出前保存未完成。请检查当前会话后再次退出。');
+      dialog.showErrorBox(t('草稿尚未保存'), t('退出前保存未完成。请检查当前会话后再次退出。'));
       return;
     }
     globalShortcut.unregisterAll();

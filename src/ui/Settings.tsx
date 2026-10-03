@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 import { UsagePage } from './UsagePage.tsx';
 import { ProfileEditor } from './ProfileEditor.tsx';
 import { portraitSource } from './Marks.tsx';
@@ -29,12 +30,12 @@ export function Settings({
 }) {
   const [tab, setTab] = useState('models');
   const tabs = [
-    ['models', '供应商'],
-    ['agents', '我的助手'],
-    ['profile', '我的资料'],
-    ['appearance', '界面外观'],
-    ['data', '数据管理'],
-    ['about', '关于 CAgent'],
+    ['models', t('供应商')],
+    ['agents', t('我的助手')],
+    ['profile', t('我的资料')],
+    ['appearance', t('界面外观')],
+    ['data', t('数据管理')],
+    ['about', t('关于 CAgent')],
   ];
   async function attempt(fn: () => Promise<unknown>) {
     try {
@@ -45,9 +46,9 @@ export function Settings({
     }
   }
   return (
-    <Modal title="设置" onClose={close} wide>
+    <Modal title={t('设置')} onClose={close} wide>
       <div className="settings-layout">
-        <nav aria-label="设置分类">
+        <nav aria-label={t('设置分类')}>
           {tabs.map(([id, label]) => (
             <button
               key={id}
@@ -61,8 +62,8 @@ export function Settings({
         <section className="settings-body">
           {(tab === 'models' || tab === 'usage') && (
             <div className="provider-sections">
-              <button onClick={() => setTab('models')}>模型与接口</button>
-              <button onClick={() => setTab('usage')}>用量</button>
+              <button onClick={() => setTab('models')}>{t('模型与接口')}</button>
+              <button onClick={() => setTab('usage')}>{t('用量')}</button>
             </div>
           )}
           {tab === 'usage' && <UsagePage data={data} report={report} />}
@@ -75,20 +76,20 @@ export function Settings({
             <div className="about">
               <div className="brand-mark">C</div>
               <h1>CAgent</h1>
-              <p>你的个人 AI 工作空间</p>
-              <span className="version">0.1.0 · 开发预览</span>
+              <p>{t('你的个人 AI 工作空间')}</p>
+              <span className="version">{t('0.1.0 · 开发预览')}</span>
               <div className="settings-card">
                 <div className="setting-row">
-                  <span>维护者</span>
-                  <span>呈平安</span>
+                  <span>{t('维护者')}</span>
+                  <span>{t('呈平安')}</span>
                 </div>
                 <div className="setting-row">
-                  <span>运行方式</span>
-                  <span>独立本机应用</span>
+                  <span>{t('运行方式')}</span>
+                  <span>{t('独立本机应用')}</span>
                 </div>
                 <div className="setting-row">
-                  <span>更新状态</span>
-                  <span>尚无独立版发布</span>
+                  <span>{t('更新状态')}</span>
+                  <span>{t('尚无独立版发布')}</span>
                 </div>
               </div>
             </div>
@@ -120,8 +121,8 @@ function ModelSettings({
     <>
       <div className="section-heading">
         <div>
-          <h2>模型与接口</h2>
-          <p>选择你信任的服务，自由配置模型。</p>
+          <h2>{t('模型与接口')}</h2>
+          <p>{t('选择你信任的服务，自由配置模型。')}</p>
         </div>
         <button
           onClick={() => {
@@ -130,17 +131,17 @@ function ModelSettings({
           }}
         >
           <Icon name="plus" />
-          添加接口
+          {t('添加接口')}
         </button>
       </div>
-      {data.providers.length === 0 && <p className="muted">还没有连接的接口。</p>}
+      {data.providers.length === 0 && <p className="muted">{t('还没有连接的接口。')}</p>}
       {data.providers.map((p) => (
         <div className="settings-card" key={p.id}>
           <div className="setting-row">
             <div className="grow">
               <b>{p.name}</b>
               <small>
-                {protocolLabels[p.protocol]} · {p.hasKey ? '已保存凭据' : '未设置凭据'}
+                {protocolLabels[p.protocol]} · {p.hasKey ? t('已保存凭据') : t('未设置凭据')}
               </small>
             </div>
             <button
@@ -151,7 +152,7 @@ function ModelSettings({
                   .catch(report)
               }
             >
-              获取模型
+              {t('获取模型')}
             </button>
             <button
               className="text-button"
@@ -160,7 +161,7 @@ function ModelSettings({
                 setShowProvider(true);
               }}
             >
-              编辑
+              {t('编辑')}
             </button>
           </div>
           <div className="provider-url">{p.baseUrl}</div>
@@ -171,7 +172,8 @@ function ModelSettings({
                 <div>
                   <strong>{m.name}</strong>
                   <small>
-                    {m.model} · {Math.round(m.contextWindow / 1000)}k 上下文
+                    {m.model} · {Math.round(m.contextWindow / 1000)}
+                    {t('k 上下文')}
                   </small>
                 </div>
                 <button
@@ -181,19 +183,19 @@ function ModelSettings({
                     setShowModel(true);
                   }}
                 >
-                  配置
+                  {t('配置')}
                 </button>
                 <button
                   disabled={!!probe}
                   onClick={() => {
                     setProbe(m.id);
                     void api<any>(`/models/${m.id}/test`, 'POST', {})
-                      .then((r) => report('连接成功：' + r.text))
+                      .then((r) => report(t('连接成功：') + r.text))
                       .catch(report)
                       .finally(() => setProbe(''));
                   }}
                 >
-                  {probe === m.id ? '测试中…' : '测试连接'}
+                  {probe === m.id ? t('测试中…') : t('测试连接')}
                 </button>
               </div>
             ))}
@@ -208,7 +210,7 @@ function ModelSettings({
         }}
       >
         <Icon name="plus" />
-        添加模型
+        {t('添加模型')}
       </button>
       {showProvider && (
         <ProviderEditor initial={editing} done={() => setShowProvider(false)} attempt={attempt} />
@@ -222,7 +224,7 @@ function ModelSettings({
         />
       )}
       {discovered && (
-        <Modal title="发现的模型" onClose={() => setDiscovered(null)}>
+        <Modal title={t('发现的模型')} onClose={() => setDiscovered(null)}>
           <div className="editor-form">
             {discovered.models.length ? (
               discovered.models.map((m) => (
@@ -239,16 +241,16 @@ function ModelSettings({
                     onClick={() =>
                       void attempt(async () => {
                         await api('/models', 'POST', { ...m, providerId: discovered.providerId });
-                        report('模型已添加，可在配置中设置能力');
+                        report(t('模型已添加，可在配置中设置能力'));
                       })
                     }
                   >
-                    添加
+                    {t('添加')}
                   </button>
                 </div>
               ))
             ) : (
-              <p>供应商返回了空的模型列表，可以手动添加。</p>
+              <p>{t('供应商返回了空的模型列表，可以手动添加。')}</p>
             )}
           </div>
         </Modal>
@@ -273,7 +275,7 @@ function ProviderEditor({
     [headers, setHeaders] = useState(JSON.stringify(initial?.headers ?? {}, null, 2)),
     [busy, setBusy] = useState(false);
   return (
-    <Modal title={initial ? '编辑接口' : '添加接口'} onClose={done}>
+    <Modal title={initial ? t('编辑接口') : t('添加接口')} onClose={done}>
       <form
         className="editor-form"
         onSubmit={(e) => {
@@ -294,14 +296,14 @@ function ProviderEditor({
         }}
       >
         <div className="form-grid">
-          <Field label="接口名称">
+          <Field label={t('接口名称')}>
             <input required value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="接口协议">
+          <Field label={t('接口协议')}>
             <ProtocolSelect value={protocol} onChange={setProtocol} />
           </Field>
         </div>
-        <Field label="接口地址">
+        <Field label={t('接口地址')}>
           <input
             required
             type="url"
@@ -312,7 +314,7 @@ function ProviderEditor({
         </Field>
         <Field
           label="API Key"
-          hint={initial?.hasKey ? '留空保留已保存的凭据' : '无需凭据的本地服务可留空'}
+          hint={initial?.hasKey ? t('留空保留已保存的凭据') : t('无需凭据的本地服务可留空')}
         >
           <input
             type="password"
@@ -328,21 +330,21 @@ function ProviderEditor({
               checked={clearKey}
               onChange={(e) => setClearKey(e.target.checked)}
             />
-            清除已保存的凭据
+            {t('清除已保存的凭据')}
           </label>
         )}
         <details>
-          <summary>自定义请求头</summary>
-          <Field label="JSON 对象" hint="请求头的值与密钥一样加密保存。">
+          <summary>{t('自定义请求头')}</summary>
+          <Field label={t('JSON 对象')} hint={t('请求头的值与密钥一样加密保存。')}>
             <textarea rows={4} value={headers} onChange={(e) => setHeaders(e.target.value)} />
           </Field>
         </details>
         <div className="form-actions">
           <button type="button" onClick={done}>
-            取消
+            {t('取消')}
           </button>
           <button className="primary" disabled={busy}>
-            {busy ? '保存中…' : '保存接口'}
+            {busy ? t('保存中…') : t('保存接口')}
           </button>
         </div>
       </form>
@@ -378,7 +380,7 @@ function ModelEditor({
   const [mapping, setMapping] = useState(JSON.stringify(value.reasoningMap)),
     [busy, setBusy] = useState(false);
   return (
-    <Modal title={initial ? '配置模型' : '添加模型'} onClose={done}>
+    <Modal title={initial ? t('配置模型') : t('添加模型')} onClose={done}>
       <form
         className="editor-form"
         onSubmit={(e) => {
@@ -394,7 +396,7 @@ function ModelEditor({
           }).finally(() => setBusy(false));
         }}
       >
-        <Field label="所属接口">
+        <Field label={t('所属接口')}>
           <select
             value={value.providerId}
             onChange={(e) => setValue({ ...value, providerId: e.target.value })}
@@ -407,14 +409,14 @@ function ModelEditor({
           </select>
         </Field>
         <div className="form-grid">
-          <Field label="显示名称">
+          <Field label={t('显示名称')}>
             <input
               required
               value={value.name}
               onChange={(e) => setValue({ ...value, name: e.target.value })}
             />
           </Field>
-          <Field label="模型 ID">
+          <Field label={t('模型 ID')}>
             <input
               required
               value={value.model}
@@ -423,7 +425,7 @@ function ModelEditor({
           </Field>
         </div>
         <div className="form-grid">
-          <Field label="上下文窗口">
+          <Field label={t('上下文窗口')}>
             <input
               type="number"
               min={1024}
@@ -431,7 +433,7 @@ function ModelEditor({
               onChange={(e) => setValue({ ...value, contextWindow: Number(e.target.value) })}
             />
           </Field>
-          <Field label="最大输出 token">
+          <Field label={t('最大输出 token')}>
             <input
               type="number"
               min={16}
@@ -441,7 +443,7 @@ function ModelEditor({
           </Field>
         </div>
         <fieldset>
-          <legend>模型实际支持的推理档位</legend>
+          <legend>{t('模型实际支持的推理档位')}</legend>
           <div className="checks">
             {(['low', 'medium', 'high', 'xhigh', 'max'] as const).map((level) => (
               <label key={level}>
@@ -464,7 +466,7 @@ function ModelEditor({
             ))}
           </div>
         </fieldset>
-        <Field label="默认推理档位">
+        <Field label={t('默认推理档位')}>
           <select
             value={value.defaultReasoning}
             onChange={(e) => setValue({ ...value, defaultReasoning: e.target.value })}
@@ -474,7 +476,7 @@ function ModelEditor({
             ))}
           </select>
         </Field>
-        <Field label="出站参数映射" hint={'例如 {"xhigh":"max"}；留 {} 表示原值发送。'}>
+        <Field label={t('出站参数映射')} hint={t('例如 {"xhigh":"max"}；留 {} 表示原值发送。')}>
           <input value={mapping} onChange={(e) => setMapping(e.target.value)} />
         </Field>
         <label className="check-row">
@@ -483,7 +485,7 @@ function ModelEditor({
             checked={value.supportsTools}
             onChange={(e) => setValue({ ...value, supportsTools: e.target.checked })}
           />
-          允许工具调用
+          {t('允许工具调用')}
         </label>
         <label className="check-row">
           <input
@@ -491,11 +493,11 @@ function ModelEditor({
             checked={value.supportsImages}
             onChange={(e) => setValue({ ...value, supportsImages: e.target.checked })}
           />
-          此模型支持图片输入
+          {t('此模型支持图片输入')}
         </label>
         <Field
-          label="每百万缓存读取 token 价格"
-          hint="未知则留空；缺失用量、缓存计价或缓存写入费用时不会伪造总价。"
+          label={t('每百万缓存读取 token 价格')}
+          hint={t('未知则留空；缺失用量、缓存计价或缓存写入费用时不会伪造总价。')}
         >
           <input
             type="number"
@@ -511,7 +513,7 @@ function ModelEditor({
           />
         </Field>
         <div className="form-grid">
-          <Field label="每百万输入 token 价格" hint="用于本机估算，留空表示未知。">
+          <Field label={t('每百万输入 token 价格')} hint={t('用于本机估算，留空表示未知。')}>
             <input
               type="number"
               min={0}
@@ -525,7 +527,7 @@ function ModelEditor({
               }
             />
           </Field>
-          <Field label="每百万输出 token 价格">
+          <Field label={t('每百万输出 token 价格')}>
             <input
               type="number"
               min={0}
@@ -542,10 +544,10 @@ function ModelEditor({
         </div>
         <div className="form-actions">
           <button type="button" onClick={done}>
-            取消
+            {t('取消')}
           </button>
           <button className="primary" disabled={busy}>
-            保存模型
+            {t('保存模型')}
           </button>
         </div>
       </form>
@@ -567,12 +569,12 @@ function Agents({
     <>
       <div className="section-heading">
         <div>
-          <h2>我的助手</h2>
-          <p>给不同工作选择各自的模型和说明。</p>
+          <h2>{t('我的助手')}</h2>
+          <p>{t('给不同工作选择各自的模型和说明。')}</p>
         </div>
         <button onClick={() => setEditing(null)}>
           <Icon name="plus" />
-          新建助手
+          {t('新建助手')}
         </button>
       </div>
       {data.agents.map((a) => (
@@ -584,10 +586,12 @@ function Agents({
           />
           <div className="grow">
             <b>{a.name}</b>
-            <small>{data.models.find((m) => m.id === a.modelId)?.name ?? '未选择默认模型'}</small>
+            <small>
+              {data.models.find((m) => m.id === a.modelId)?.name ?? t('未选择默认模型')}
+            </small>
           </div>
-          <button onClick={() => setProfile(a)}>资料与头像</button>
-          <button onClick={() => setEditing(a)}>编辑</button>
+          <button onClick={() => setProfile(a)}>{t('资料与头像')}</button>
+          <button onClick={() => setEditing(a)}>{t('编辑')}</button>
         </div>
       ))}
       {editing !== undefined && (
@@ -599,7 +603,7 @@ function Agents({
         />
       )}
       {profile && (
-        <Modal title="助手资料" onClose={() => setProfile(null)}>
+        <Modal title={t('助手资料')} onClose={() => setProfile(null)}>
           <ProfileEditor data={data} agent={profile} refresh={refresh} />
         </Modal>
       )}
@@ -624,7 +628,7 @@ function AgentEditor({
   const [publicInstructions, setPublicInstructions] = useState(initial?.publicInstructions ?? ''),
     [disabledTools, setDisabledTools] = useState<string[]>(initial?.disabledTools ?? []);
   return (
-    <Modal title={initial ? '编辑助手' : '新建助手'} onClose={done}>
+    <Modal title={initial ? t('编辑助手') : t('新建助手')} onClose={done}>
       <form
         className="editor-form"
         onSubmit={(e) => {
@@ -644,12 +648,12 @@ function AgentEditor({
           });
         }}
       >
-        <Field label="名称">
+        <Field label={t('名称')}>
           <input required value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="默认模型">
+        <Field label={t('默认模型')}>
           <select value={modelId} onChange={(e) => setModelId(e.target.value)}>
-            <option value="">在会话中选择</option>
+            <option value="">{t('在会话中选择')}</option>
             {data.models.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -657,14 +661,17 @@ function AgentEditor({
             ))}
           </select>
         </Field>
-        <Field label="助手说明">
+        <Field label={t('助手说明')}>
           <textarea
             rows={7}
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
           />
         </Field>
-        <Field label="公开行为规则" hint="本机对话同时使用两部分规则；公开渠道接入尚未开放。">
+        <Field
+          label={t('公开行为规则')}
+          hint={t('本机对话同时使用两部分规则；公开渠道接入尚未开放。')}
+        >
           <textarea
             rows={3}
             value={publicInstructions}
@@ -672,7 +679,7 @@ function AgentEditor({
           />
         </Field>
         <fieldset>
-          <legend>允许的工具</legend>
+          <legend>{t('允许的工具')}</legend>
           <div className="checks">
             {[
               'read_file',
@@ -707,7 +714,7 @@ function AgentEditor({
             checked={memoryEnabled}
             onChange={(e) => setMemory(e.target.checked)}
           />
-          使用为此助手保存的记忆
+          {t('使用为此助手保存的记忆')}
         </label>
         <div className="form-actions">
           {initial && (
@@ -716,20 +723,20 @@ function AgentEditor({
               className="danger"
               disabled={data.agents.length <= 1}
               onClick={() => {
-                if (window.confirm('删除此助手？历史会话仍可阅读，继续对话时需要指定新助手。'))
+                if (window.confirm(t('删除此助手？历史会话仍可阅读，继续对话时需要指定新助手。')))
                   void attempt(async () => {
                     await api('/agents/' + initial.id, 'DELETE');
                     done();
                   });
               }}
             >
-              删除助手
+              {t('删除助手')}
             </button>
           )}
           <button type="button" onClick={done}>
-            取消
+            {t('取消')}
           </button>
-          <button className="primary">保存助手</button>
+          <button className="primary">{t('保存助手')}</button>
         </div>
       </form>
     </Modal>
@@ -744,11 +751,11 @@ function Appearance({
 }) {
   return (
     <>
-      <h2>界面外观</h2>
-      <p className="muted">安静的底色，适合长时间阅读。</p>
+      <h2>{t('界面外观')}</h2>
+      <p className="muted">{t('安静的底色，适合长时间阅读。')}</p>
       <div className="settings-card">
         <div className="setting-row">
-          <label htmlFor="theme-select">主题</label>
+          <label htmlFor="theme-select">{t('主题')}</label>
           <select
             id="theme-select"
             value={data.preferences.theme}
@@ -758,13 +765,13 @@ function Appearance({
               )
             }
           >
-            <option value="system">跟随系统</option>
-            <option value="light">暖纸</option>
-            <option value="dark">青夜</option>
+            <option value="system">{t('跟随系统')}</option>
+            <option value="light">{t('暖纸')}</option>
+            <option value="dark">{t('青夜')}</option>
           </select>
         </div>
         <div className="setting-row">
-          <label htmlFor="font-size">正文字号</label>
+          <label htmlFor="font-size">{t('正文字号')}</label>
           <input
             id="font-size"
             type="number"
@@ -783,7 +790,7 @@ function Appearance({
           />
         </div>
         <div className="setting-row">
-          <label htmlFor="reading-font">正文字体</label>
+          <label htmlFor="reading-font">{t('正文字体')}</label>
           <select
             id="reading-font"
             value={data.preferences.fontFamily ?? 'serif'}
@@ -793,13 +800,13 @@ function Appearance({
               )
             }
           >
-            <option value="serif">衬线</option>
-            <option value="sans">无衬线</option>
-            <option value="mono">等宽</option>
+            <option value="serif">{t('衬线')}</option>
+            <option value="sans">{t('无衬线')}</option>
+            <option value="mono">{t('等宽')}</option>
           </select>
         </div>
         <div className="setting-row">
-          <label htmlFor="editor-size">编辑器字号</label>
+          <label htmlFor="editor-size">{t('编辑器字号')}</label>
           <input
             id="editor-size"
             type="number"
@@ -817,7 +824,7 @@ function Appearance({
           />
         </div>
         <div className="setting-row">
-          <label htmlFor="editor-height">编辑器行高</label>
+          <label htmlFor="editor-height">{t('编辑器行高')}</label>
           <input
             id="editor-height"
             type="number"
@@ -836,7 +843,7 @@ function Appearance({
           />
         </div>
         <div className="setting-row">
-          <label htmlFor="timezone">显示时区</label>
+          <label htmlFor="timezone">{t('显示时区')}</label>
           <input
             id="timezone"
             defaultValue={data.preferences.timezone}
@@ -850,7 +857,8 @@ function Appearance({
         </div>
         <div className="setting-row">
           <label htmlFor="auto-compact">
-            自动压缩上下文<small>实验功能；接近上限时会额外调用当前模型，默认关闭。</small>
+            {t('自动压缩上下文')}
+            <small>{t('实验功能；接近上限时会额外调用当前模型，默认关闭。')}</small>
           </label>
           <input
             id="auto-compact"
@@ -864,7 +872,7 @@ function Appearance({
           />
         </div>
         <div className="setting-row">
-          <label htmlFor="tool-rounds">最大工具轮数</label>
+          <label htmlFor="tool-rounds">{t('最大工具轮数')}</label>
           <input
             id="tool-rounds"
             type="number"
@@ -883,7 +891,8 @@ function Appearance({
         </div>
         <div className="setting-row">
           <label htmlFor="network-retries">
-            网络自动重试次数<small>仅在回复开始前重试；0 表示关闭，最多 3 次。</small>
+            {t('网络自动重试次数')}
+            <small>{t('仅在回复开始前重试；0 表示关闭，最多 3 次。')}</small>
           </label>
           <input
             id="network-retries"
@@ -903,7 +912,7 @@ function Appearance({
           />
         </div>
         <div className="setting-row">
-          <label htmlFor="model-timeout">模型超时（毫秒）</label>
+          <label htmlFor="model-timeout">{t('模型超时（毫秒）')}</label>
           <input
             id="model-timeout"
             type="number"
@@ -921,8 +930,22 @@ function Appearance({
           />
         </div>
         <div className="setting-row">
-          <span>界面语言</span>
-          <span>简体中文</span>
+          <label htmlFor="interface-locale">{t('界面语言')}</label>
+          <select
+            id="interface-locale"
+            value={data.preferences.locale}
+            onChange={(e) =>
+              void attempt(() =>
+                api('/preferences', 'PUT', { ...data.preferences, locale: e.target.value }),
+              )
+            }
+          >
+            <option value="zh">简体中文</option>
+            <option value="zh-TW">繁體中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+          </select>
         </div>
       </div>
     </>
@@ -939,13 +962,13 @@ function DataSettings({
     [plan, setPlan] = useState<any>(null);
   return (
     <>
-      <h2>数据管理</h2>
-      <p className="muted">备份完整消息、附件字节、助手、模型配置和手工记忆。</p>
+      <h2>{t('数据管理')}</h2>
+      <p className="muted">{t('备份完整消息、附件字节、助手、模型配置和手工记忆。')}</p>
       <div className="settings-card">
         <div className="setting-row">
           <div>
-            <b>导出核心数据</b>
-            <small>含附件原文件；不含凭据、文件历史、用量账本；导入不授予工作区权限</small>
+            <b>{t('导出核心数据')}</b>
+            <small>{t('含附件原文件；不含凭据、文件历史、用量账本；导入不授予工作区权限')}</small>
           </div>
           <button
             onClick={() =>
@@ -954,16 +977,16 @@ function DataSettings({
               )
             }
           >
-            导出备份
+            {t('导出备份')}
           </button>
         </div>
         <div className="setting-row">
           <div>
-            <b>导入中立备份</b>
-            <small>先检查，再创建副本；不覆盖现有会话</small>
+            <b>{t('导入中立备份')}</b>
+            <small>{t('先检查，再创建副本；不覆盖现有会话')}</small>
           </div>
           <label className="button-file">
-            选择文件
+            {t('选择文件')}
             <input
               type="file"
               accept=".json"
@@ -985,9 +1008,9 @@ function DataSettings({
       </div>
       {plan && (
         <div className="import-plan">
-          <h3>导入预检</h3>
+          <h3>{t('导入预检')}</h3>
           <pre>{JSON.stringify(plan.counts, null, 2)}</pre>
-          <p>导入后需要重新设置凭据，并重新授权工作区。</p>
+          <p>{t('导入后需要重新设置凭据，并重新授权工作区。')}</p>
           <button
             className="primary"
             onClick={() =>
@@ -995,15 +1018,15 @@ function DataSettings({
                 await api('/backup/import', 'POST', { backup, confirm: plan.sha256 });
                 setPlan(null);
                 setBackup(null);
-                report('导入完成');
+                report(t('导入完成'));
               })
             }
           >
-            确认导入副本
+            {t('确认导入副本')}
           </button>
         </div>
       )}
-      <p className="muted">旧应用的数据不会自动迁入。旧格式迁移器尚未开放。</p>
+      <p className="muted">{t('旧应用的数据不会自动迁入。旧格式迁移器尚未开放。')}</p>
     </>
   );
 }

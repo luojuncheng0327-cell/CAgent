@@ -1,3 +1,4 @@
+import { t } from './i18n.ts';
 import React, { useEffect, useState } from 'react';
 import type { Session } from '../shared/contracts.ts';
 import { sessionDirectories } from '../shared/contracts.ts';
@@ -14,7 +15,7 @@ export async function uploadWorkspaceFiles(
   let uploaded = 0;
   for (const file of files) {
     try {
-      if (file.size > 16 * 1024 * 1024) throw new Error('每个文件最多 16 MiB');
+      if (file.size > 16 * 1024 * 1024) throw new Error(t('每个文件最多 16 MiB'));
       const target = (folder === '.' ? '' : folder + '/') + file.name;
       const response = await fetch(
         `/api/v1/sessions/${sessionId}/file-upload?workspace=${encodeURIComponent(workspace ?? '')}&path=${encodeURIComponent(target)}`,
@@ -78,7 +79,7 @@ export function WorkspaceActions({
     if (!info || dirty || readonly || busy) return;
     if (
       operation === 'trash' &&
-      !window.confirm(`将“${target}”移入系统回收站？可在系统回收站中恢复。`)
+      !window.confirm(t('将“{0}”移入系统回收站？可在系统回收站中恢复。', [target]))
     )
       return;
     setBusy(true);
@@ -103,7 +104,7 @@ export function WorkspaceActions({
   const disabled = !info || readonly || dirty || busy;
   return (
     <Modal
-      title="管理文件与目录"
+      title={t('管理文件与目录')}
       onClose={() => {
         if (!busy) onClose();
       }}
@@ -112,17 +113,21 @@ export function WorkspaceActions({
         <p className="managed-path">{target}</p>
         <p className="muted">
           {info
-            ? `${info.kind === 'directory' ? '目录' : '文件'} · ${info.bytes.toLocaleString()} 字节 · ${info.entries} 项`
-            : '正在检查内容和权限…'}
+            ? t('{0} · {1} 字节 · {2} 项', [
+                info.kind === 'directory' ? t('目录') : t('文件'),
+                info.bytes.toLocaleString(),
+                info.entries,
+              ])
+            : t('正在检查内容和权限…')}
         </p>
         {dirty && (
           <p role="alert" className="inline-error">
-            请先保存或关闭此项目的编辑草稿。
+            {t('请先保存或关闭此项目的编辑草稿。')}
           </p>
         )}
         {readonly && (
           <p role="alert" className="inline-error">
-            当前工作区为只读。
+            {t('当前工作区为只读。')}
           </p>
         )}
         {error && (
@@ -130,7 +135,7 @@ export function WorkspaceActions({
             {error}
           </p>
         )}
-        <Field label="目标工作区">
+        <Field label={t('目标工作区')}>
           <select
             value={destinationRoot}
             onChange={(event) => setDestinationRoot(event.target.value)}
@@ -139,12 +144,15 @@ export function WorkspaceActions({
             {sessionDirectories(session).map((grant) => (
               <option key={grant.path} value={grant.path} disabled={grant.access === 'read'}>
                 {grant.path}
-                {grant.access === 'read' ? '（只读）' : ''}
+                {grant.access === 'read' ? t('（只读）') : ''}
               </option>
             ))}
           </select>
         </Field>
-        <Field label="目标路径" hint="相对于所选工作区；同名目标不会覆盖。跨磁盘移动暂未提供。">
+        <Field
+          label={t('目标路径')}
+          hint={t('相对于所选工作区；同名目标不会覆盖。跨磁盘移动暂未提供。')}
+        >
           <input
             value={destination}
             onChange={(event) => setDestination(event.target.value)}
@@ -153,15 +161,15 @@ export function WorkspaceActions({
         </Field>
         <div className="form-actions">
           <button onClick={() => void change('rename')} disabled={disabled || !destination.trim()}>
-            确认移动
+            {t('确认移动')}
           </button>
           {info?.kind === 'file' && (
             <button onClick={() => void change('copy')} disabled={disabled || !destination.trim()}>
-              确认复制
+              {t('确认复制')}
             </button>
           )}
           <button className="danger" onClick={() => void change('trash')} disabled={disabled}>
-            移入系统回收站
+            {t('移入系统回收站')}
           </button>
         </div>
       </div>

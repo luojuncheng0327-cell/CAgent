@@ -8,8 +8,7 @@ export const setupLanguages = [
   ['en', 'English'],
 ] as const;
 
-// Only the first-run flow is localized in this phase. Main-window translations
-// remain a separate tracked capability; the first screen makes that clear.
+// Setup copy keeps its existing per-step wording; the saved language applies app-wide.
 const words = {
   empty: [
     '没有找到供应商',
@@ -34,11 +33,11 @@ const words = {
     '나만의 AI 작업 공간입니다.\n먼저 사용 환경을 설정해 주세요.',
   ],
   languageScope: [
-    '此语言用于首次引导；主界面翻译即将提供。',
-    '此語言用於首次引導；主介面翻譯即將提供。',
-    'This language applies to setup. Main-window translations are coming.',
-    'この言語は初期設定に適用されます。メイン画面の翻訳は準備中です。',
-    '이 언어는 초기 설정에 적용됩니다. 주 화면 번역은 준비 중입니다.',
+    '此语言同时用于首次引导和主界面。',
+    '此語言同時用於首次引導與主介面。',
+    'This language applies to setup and the main interface.',
+    'この言語は初期設定とメイン画面に適用されます。',
+    '이 언어는 초기 설정과 기본 화면에 적용됩니다.',
   ],
   start: ['开始设置', '開始設定', 'Begin setup', '設定を始める', '설정 시작'],
   next: ['下一步', '下一步', 'Continue', '次へ', '다음'],

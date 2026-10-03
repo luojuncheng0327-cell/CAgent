@@ -36,10 +36,11 @@ export interface SessionDetail {
   activity: Pick<RunEvent, 'kind' | 'payload'> | null;
   live: { text: string; reasoning: string };
 }
+import { localError } from './i18n.ts';
 export class ApiError extends Error {
   code: string;
   constructor(code: string, message: string) {
-    super(message);
+    super(localError(code, message));
     this.code = code;
   }
 }

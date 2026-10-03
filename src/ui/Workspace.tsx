@@ -1,3 +1,4 @@
+import { t, currentLocaleTag } from './i18n.ts';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Session, Preferences, Stored, Resource } from '../shared/contracts.ts';
 import { sessionDirectories } from '../shared/contracts.ts';
@@ -74,6 +75,7 @@ export function Workspace({
   const uploadInput = useRef<HTMLInputElement>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [draftStatus, setDraftStatus] = useState('正在恢复文件草稿…');
+  const [draftFailed, setDraftFailed] = useState(false);
   const [folder, setFolder] = useState('.'),
     [entries, setEntries] = useState<{ name: string; kind: string }[]>([]),
     [truncated, setTruncated] = useState(false),
@@ -82,7 +84,7 @@ export function Workspace({
   const [tabs, setTabs] = useState<FileTab[]>(() => drafts.get(key)?.tabs ?? []),
     [active, setActive] = useState<string | null>(() => drafts.get(key)?.active ?? null),
     [show, setShow] = useState(!!drafts.get(key)?.tabs.length),
-    [watchState, setWatchState] = useState('正在连接文件变化通知…');
+    [watchState, setWatchState] = useState(t('正在连接文件变化通知…'));
   const [operation, setOperation] = useState<'create-file' | 'create-directory' | null>(null),
     [name, setName] = useState(''),
     [busy, setBusy] = useState(false),
@@ -114,7 +116,9 @@ export function Workspace({
       if (!retained.length) setShow(false);
     }
     await load();
-    report(operation === 'trash' ? '已移入系统回收站，可在系统回收站中恢复' : '文件操作已完成');
+    report(
+      operation === 'trash' ? t('已移入系统回收站，可在系统回收站中恢复') : t('文件操作已完成'),
+    );
   }
   const markdownFile = /\.(md|markdown)$/i.test(file?.path ?? '');
   const document = useMemo(() => {
@@ -150,6 +154,7 @@ export function Workspace({
     if (draftReady && session.workspace) {
       rememberFileDraftView(session.id, session.workspace, { tabs, active }, (status, error) => {
         setDraftStatus(status);
+        setDraftFailed(!!error);
         if (error) report(error);
       });
     }
@@ -182,10 +187,12 @@ export function Workspace({
         draftsLoaded.current = true;
         setDraftReady(true);
         setDraftStatus('恢复草稿已保存');
+        setDraftFailed(false);
       })
       .catch((error) => {
         if (current) {
           setDraftStatus('恢复草稿读取失败，请重新打开工作区');
+          setDraftFailed(true);
           report(error);
         }
       });
@@ -197,14 +204,14 @@ export function Workspace({
     if (!session.workspace) return;
     let closed = false;
     const stream = new EventSource(`/api/v1${prefix}/workspace-events`);
-    stream.onopen = () => setWatchState('正在同步文件变化');
-    stream.onerror = () => setWatchState('变化通知断开，正在重连；可以手动刷新');
+    stream.onopen = () => setWatchState(t('正在同步文件变化'));
+    stream.onerror = () => setWatchState(t('变化通知断开，正在重连；可以手动刷新'));
     stream.onmessage = (event) => {
       if (closed) return;
       const data = JSON.parse(event.data);
       if (data.kind === 'reset') {
         stream.close();
-        setWatchState('工作区已失效，请重新选择');
+        setWatchState(t('工作区已失效，请重新选择'));
         return;
       }
       void load().catch(report);
@@ -269,7 +276,7 @@ export function Workspace({
       return;
     }
     if (!old && tabs.length >= 10) {
-      report('最多打开 10 个文件，请先关闭一个标签');
+      report(t('最多打开 10 个文件，请先关闭一个标签'));
       return;
     }
     const value = await api<{ path: string; text: string; sha256: string }>(
@@ -294,7 +301,7 @@ export function Workspace({
   }
   function closeTab(target: string) {
     const tab = tabs.find((t) => t.path === target);
-    if (tab && tab.text !== tab.saved && !window.confirm('放弃此文件未保存的修改？')) return;
+    if (tab && tab.text !== tab.saved && !window.confirm(t('放弃此文件未保存的修改？'))) return;
     const next = tabs.filter((t) => t.path !== target);
     setTabs(next);
     if (active === target) setActive(next.at(-1)?.path ?? null);
@@ -313,7 +320,7 @@ export function Workspace({
         expectedHash: file.sha256,
       });
       updateTab(target, { saved: text, sha256: r.sha256, changed: false });
-      report('文件已保存');
+      report(t('文件已保存'));
       await load();
     } catch (e) {
       report(e);
@@ -336,7 +343,7 @@ export function Workspace({
       setOperation(null);
       await load();
       if (operation === 'create-file') await openFile(target);
-      report('文件操作已完成');
+      report(t('文件操作已完成'));
     } catch (e) {
       report(e);
     } finally {
@@ -350,7 +357,7 @@ export function Workspace({
   return (
     <aside
       className={'workspace-panel' + (show && file ? ' editing' : '')}
-      aria-label="书桌文件区"
+      aria-label={t('书桌文件区')}
       onKeyDown={(event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && show && file) {
           event.preventDefault();
@@ -366,44 +373,45 @@ export function Workspace({
     >
       <div className="desk-card">
         <div className="desk-heading">
-          <h3 title={session.workspace ?? '工作台'}>
-            {session.workspace?.split(/[\\/]/).at(-1) ?? '工作台'}
+          <h3 title={session.workspace ?? t('工作台')}>
+            {session.workspace?.split(/[\\/]/).at(-1) ?? t('工作台')}
           </h3>
-          <Soon label="项目技能" icon="sparkle" />
+          <Soon label={t('项目技能')} icon="sparkle" />
         </div>
         {(grants.length > 1 || (!session.workspace && grants.length > 0)) && (
           <select
             className="desk-directory"
-            aria-label="当前工作台"
+            aria-label={t('当前工作台')}
             value={session.workspace ?? ''}
             disabled={!canSwitch || busy}
             onChange={(event) => void switchDirectory(event.target.value).catch(report)}
           >
-            {!session.workspace && <option value="">选择已授权目录</option>}
+            {!session.workspace && <option value="">{t('选择已授权目录')}</option>}
             {grants.map((grant) => (
               <option key={grant.path} value={grant.path}>
-                {grant.path.split(/[\\/]/).at(-1)} · {grant.access === 'read' ? '只读' : '读写'}
+                {grant.path.split(/[\\/]/).at(-1)} ·{' '}
+                {grant.access === 'read' ? t('只读') : t('读写')}
               </option>
             ))}
           </select>
         )}
-        <div className="desk-tabs" role="tablist" aria-label="书桌内容">
+        <div className="desk-tabs" role="tablist" aria-label={t('书桌内容')}>
           <button
             role="tab"
             aria-selected={area === 'resources'}
             onClick={() => setArea('resources')}
           >
-            对话文件
+            {t('对话文件')}
           </button>
           <button role="tab" aria-selected={area === 'files'} onClick={() => setArea('files')}>
-            工作台
+            {t('工作台')}
           </button>
         </div>
         <input
           className="desk-search"
           ref={searchInput}
-          aria-label="筛选当前目录"
-          placeholder="搜索工作台"
+          aria-label={t('筛选当前目录')}
+          placeholder={t('搜索工作台')}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           disabled={area !== 'files' || !session.workspace}
@@ -414,7 +422,7 @@ export function Workspace({
             multiple
             hidden
             ref={uploadInput}
-            aria-label="上传工作区文件"
+            aria-label={t('上传工作区文件')}
             disabled={!session.workspace || readonly || busy || !draftReady}
             onChange={(event) => {
               const files = Array.from(event.target.files ?? []);
@@ -423,23 +431,23 @@ export function Workspace({
               void uploadWorkspaceFiles(session.id, session.workspace, folder, files, report)
                 .then(async (count) => {
                   await load();
-                  if (count) report(`已上传 ${count} 个文件`);
+                  if (count) report(t('已上传 {0} 个文件', [count]));
                 })
                 .catch(report)
                 .finally(() => setBusy(false));
             }}
           />
           <button
-            aria-label="上传文件到工作区"
-            title="上传文件到工作区"
+            aria-label={t('上传文件到工作区')}
+            title={t('上传文件到工作区')}
             disabled={!session.workspace || readonly || busy || !draftReady}
             onClick={() => uploadInput.current?.click()}
           >
-            上传
+            {t('上传')}
           </button>
           <button
-            aria-label="新建文件"
-            title="新建文件"
+            aria-label={t('新建文件')}
+            title={t('新建文件')}
             disabled={!session.workspace || readonly || !draftReady}
             onClick={() => {
               setName('');
@@ -449,8 +457,8 @@ export function Workspace({
             <Icon name="filePlus" size={14} />
           </button>
           <button
-            aria-label="新建目录"
-            title="新建目录"
+            aria-label={t('新建目录')}
+            title={t('新建目录')}
             disabled={!session.workspace || readonly || !draftReady}
             onClick={() => {
               setName('');
@@ -459,29 +467,33 @@ export function Workspace({
           >
             <Icon name="folderPlus" size={14} />
           </button>
-          <button aria-label="更换工作区" title="选择工作台" onClick={() => void choose()}>
+          <button
+            aria-label={t('更换工作区')}
+            title={t('选择工作台')}
+            onClick={() => void choose()}
+          >
             <Icon name="folder" size={14} />
           </button>
-          <button aria-label="目录授权" title="管理目录授权" onClick={authorize}>
+          <button aria-label={t('目录授权')} title={t('管理目录授权')} onClick={authorize}>
             <Icon name="shield" size={14} />
           </button>
           <button
-            aria-label="刷新文件"
-            title="刷新文件"
+            aria-label={t('刷新文件')}
+            title={t('刷新文件')}
             disabled={!session.workspace}
             onClick={() => void load().catch(report)}
           >
             <Icon name="refresh" size={13} />
           </button>
           <button
-            aria-label="过滤文件"
-            title="过滤文件"
+            aria-label={t('过滤文件')}
+            title={t('过滤文件')}
             onClick={() => searchInput.current?.focus()}
           >
             <Icon name="filter" size={13} />
-            过滤
+            {t('过滤')}
           </button>
-          <Soon label="时间" icon="sort" />
+          <Soon label={t('时间')} icon="sort" />
         </div>
         <span className="sr-only" role="status">
           {watchState}
@@ -495,18 +507,18 @@ export function Workspace({
                 sessionId={session.id}
               />
             ) : (
-              <div className="panel-empty">暂无对话文件</div>
+              <div className="panel-empty">{t('暂无对话文件')}</div>
             )
           ) : !session.workspace ? (
             <div className="panel-empty">
-              <p>为这个会话选择一个文件夹</p>
-              <button onClick={() => void choose()}>选择工作区</button>
+              <p>{t('为这个会话选择一个文件夹')}</p>
+              <button onClick={() => void choose()}>{t('选择工作区')}</button>
             </div>
           ) : (
             <>
               {folder !== '.' && (
                 <div className="file-crumb">
-                  <button onClick={() => setFolder('.')}>根目录</button>
+                  <button onClick={() => setFolder('.')}>{t('根目录')}</button>
                   <button
                     onClick={() =>
                       setFolder(
@@ -514,13 +526,13 @@ export function Workspace({
                       )
                     }
                   >
-                    上一级
+                    {t('上一级')}
                   </button>
                   <span>{folder}</span>
                 </div>
               )}
               {loading ? (
-                <div className="panel-empty">正在读取…</div>
+                <div className="panel-empty">{t('正在读取…')}</div>
               ) : entries.length ? (
                 <div className="file-list">
                   {entries
@@ -532,7 +544,7 @@ export function Workspace({
                           aria-label={
                             entry.kind === 'link' ||
                             (entry.kind === 'file' && futurePreview(entry.name))
-                              ? `${entry.name} · 即将提供`
+                              ? t('{0} · 即将提供', [entry.name])
                               : entry.name
                           }
                           disabled={
@@ -543,7 +555,7 @@ export function Workspace({
                           title={
                             entry.kind === 'link' ||
                             (entry.kind === 'file' && futurePreview(entry.name))
-                              ? entry.name + ' · 即将提供'
+                              ? entry.name + t(' · 即将提供')
                               : entry.name
                           }
                           onClick={() => {
@@ -556,13 +568,13 @@ export function Workspace({
                           <span>{entry.name}</span>
                           {(entry.kind === 'link' ||
                             (entry.kind === 'file' && futurePreview(entry.name))) && (
-                            <small>即将提供</small>
+                            <small>{t('即将提供')}</small>
                           )}
                         </button>
                         <button
                           className="file-manage"
-                          aria-label={'管理 ' + entry.name}
-                          title={'管理 ' + entry.name}
+                          aria-label={t('管理 ') + entry.name}
+                          title={t('管理 ') + entry.name}
                           disabled={entry.kind === 'link' || !draftReady || busy}
                           onClick={() =>
                             setManaged((folder === '.' ? '' : folder + '/') + entry.name)
@@ -573,17 +585,20 @@ export function Workspace({
                       </div>
                     ))}
                   {!entries.some((e) => e.name.toLowerCase().includes(filter.toLowerCase())) && (
-                    <p className="panel-empty">没有匹配的文件</p>
+                    <p className="panel-empty">{t('没有匹配的文件')}</p>
                   )}
-                  {truncated && <p className="inline-error">目录超过 500 项，只显示前 500 项。</p>}
+                  {truncated && (
+                    <p className="inline-error">{t('目录超过 500 项，只显示前 500 项。')}</p>
+                  )}
                 </div>
               ) : (
-                <div className="panel-empty">暂无文件</div>
+                <div className="panel-empty">{t('暂无文件')}</div>
               )}
               {!!tabs.length && (
                 <button className="reopen-files" onClick={() => setShow(true)}>
-                  已打开 {tabs.length} 个文件
-                  {tabs.some((t) => t.text !== t.saved) ? ' · 有未保存修改' : ''}
+                  {t('已打开')}
+                  {tabs.length} {t('个文件')}
+                  {tabs.some((t) => t.text !== t.saved) ? t(' · 有未保存修改') : ''}
                 </button>
               )}
             </>
@@ -591,38 +606,39 @@ export function Workspace({
         </div>
         <div className="desk-note">
           <span>
-            笺<small>即将提供</small>
+            {t('笺')}
+            <small>{t('即将提供')}</small>
           </span>
-          <Soon label="展开笺" icon="up" compact />
+          <Soon label={t('展开笺')} icon="up" compact />
         </div>
       </div>
       {hasMessages && (
         <details className="desk-session" open>
-          <summary>本次对话</summary>
+          <summary>{t('本次对话')}</summary>
           <dl>
-            <dt>工作目录</dt>
+            <dt>{t('工作目录')}</dt>
             <dd title={session.workspace ?? ''}>
-              {session.workspace?.split(/[\\/]/).at(-1) ?? '未选择'}
+              {session.workspace?.split(/[\\/]/).at(-1) ?? t('未选择')}
             </dd>
-            <dt>执行权限</dt>
+            <dt>{t('执行权限')}</dt>
             <dd>
               {session.permission === 'read'
-                ? '只读'
+                ? t('只读')
                 : session.permission === 'ask'
-                  ? '操作前询问'
-                  : '工作区可写'}
+                  ? t('操作前询问')
+                  : t('工作区可写')}
             </dd>
-            <dt>模型</dt>
+            <dt>{t('模型')}</dt>
             <dd title={modelName}>{modelName}</dd>
-            <dt>文件</dt>
+            <dt>{t('文件')}</dt>
             <dd>{resources.length}</dd>
           </dl>
         </details>
       )}
       {show && file && (
-        <section className="desk-editor" aria-label="文件预览与编辑">
+        <section className="desk-editor" aria-label={t('文件预览与编辑')}>
           <div className="desk-editor-heading">
-            <div className="file-tabs" role="tablist" aria-label="打开的文件">
+            <div className="file-tabs" role="tablist" aria-label={t('打开的文件')}>
               {tabs.map((tab) => (
                 <div key={tab.path}>
                   <button
@@ -634,7 +650,7 @@ export function Workspace({
                     <span className="file-tab-name">{tab.path}</span>
                     {tab.text !== tab.saved ? ' *' : ''}
                   </button>
-                  <button aria-label={'关闭文件 ' + tab.path} onClick={() => closeTab(tab.path)}>
+                  <button aria-label={t('关闭文件 ') + tab.path} onClick={() => closeTab(tab.path)}>
                     ×
                   </button>
                 </div>
@@ -642,8 +658,8 @@ export function Workspace({
             </div>
             <button
               className="icon-button"
-              aria-label="关闭文件预览"
-              title="收起文件面板，保留草稿"
+              aria-label={t('关闭文件预览')}
+              title={t('收起文件面板，保留草稿')}
               onClick={() => setShow(false)}
             >
               <Icon name="arrow" size={15} />
@@ -656,24 +672,24 @@ export function Workspace({
               lineHeight: preferences.editorLineHeight ?? 1.5,
             }}
           >
-            <div className="file-toolbar" role="toolbar" aria-label="文件工具">
+            <div className="file-toolbar" role="toolbar" aria-label={t('文件工具')}>
               <button
-                aria-label="复制文件内容"
-                title="复制当前草稿"
+                aria-label={t('复制文件内容')}
+                title={t('复制当前草稿')}
                 onClick={() =>
                   void navigator.clipboard
                     .writeText(file.text)
-                    .then(() => report('文件内容已复制'))
+                    .then(() => report(t('文件内容已复制')))
                     .catch(report)
                 }
               >
                 <Icon name="copy" size={13} />
-                复制
+                {t('复制')}
               </button>
-              <Soon label="添加封面" icon="palette" compact />
+              <Soon label={t('添加封面')} icon="palette" compact />
               <button
-                aria-label="文件历史"
-                title="文件历史"
+                aria-label={t('文件历史')}
+                title={t('文件历史')}
                 onClick={() =>
                   void api<Version[]>(
                     `${prefix}/file-history?path=${encodeURIComponent(file.path)}`,
@@ -685,19 +701,19 @@ export function Workspace({
                 <Icon name="clock" size={14} />
               </button>
               <button
-                aria-label="预览"
+                aria-label={t('预览')}
                 aria-pressed={file.mode === 'preview'}
-                title={file.mode === 'preview' ? '返回编辑' : '预览当前草稿'}
+                title={file.mode === 'preview' ? t('返回编辑') : t('预览当前草稿')}
                 onClick={togglePreview}
               >
                 <Icon name="eye" size={15} />
               </button>
-              <Soon label="文件截图" icon="camera" compact />
+              <Soon label={t('文件截图')} icon="camera" compact />
               <button
                 ref={fileActions}
-                aria-label="文件操作"
+                aria-label={t('文件操作')}
                 aria-expanded={fileMenu}
-                title="文件操作"
+                title={t('文件操作')}
                 onClick={() => setFileMenu((open) => !open)}
               >
                 <Icon name="more" size={14} />
@@ -705,34 +721,35 @@ export function Workspace({
             </div>
             {document?.reason && (
               <p className="document-limit" role="status">
-                {document.reason}
+                {t(document.reason)}
               </p>
             )}
             {readonly && (
               <p className="document-limit" role="status">
-                {session.permission === 'read' ? '当前会话' : '当前目录'}为只读，文件内容不能修改。
+                {session.permission === 'read' ? t('当前会话') : t('当前目录')}
+                {t('为只读，文件内容不能修改。')}
               </p>
             )}
             {file.changed && (
               <p role="alert" className="inline-error">
-                磁盘文件已变化。编辑草稿保留；保存会校验原版本。
+                {t('磁盘文件已变化。编辑草稿保留；保存会校验原版本。')}
                 <button
                   onClick={() => {
                     if (
                       file.text === file.saved ||
-                      window.confirm('放弃编辑草稿并重新读取磁盘版本？')
+                      window.confirm(t('放弃编辑草稿并重新读取磁盘版本？'))
                     )
                       void openFile(file.path, true).catch(report);
                   }}
                 >
-                  重新读取
+                  {t('重新读取')}
                 </button>
               </p>
             )}
             <textarea
               hidden={file.mode !== 'source' && !(file.mode === 'document' && !document?.source)}
               ref={editor}
-              aria-label="文件内容"
+              aria-label={t('文件内容')}
               readOnly={readonly}
               value={file.text}
               onChange={(e) =>
@@ -750,7 +767,7 @@ export function Workspace({
               spellCheck={false}
             />
             {file.mode === 'document' && document?.source && (
-              <Suspense fallback={<p className="document-limit">正在打开文档编辑器…</p>}>
+              <Suspense fallback={<p className="document-limit">{t('正在打开文档编辑器…')}</p>}>
                 <DocumentEditor
                   key={file.path + ':' + file.generation}
                   source={document.source}
@@ -765,7 +782,7 @@ export function Workspace({
               <div
                 className="file-preview"
                 role="region"
-                aria-label="文件预览"
+                aria-label={t('文件预览')}
                 style={{
                   fontSize: preferences.editorFontSize ?? 16,
                   lineHeight: preferences.editorLineHeight ?? 1.5,
@@ -779,25 +796,26 @@ export function Workspace({
                 ref={operations}
                 className="file-operations"
                 role="group"
-                aria-label="文件显示与操作"
+                aria-label={t('文件显示与操作')}
               >
-                <div className="file-view-modes" role="group" aria-label="文件显示方式">
+                <div className="file-view-modes" role="group" aria-label={t('文件显示方式')}>
                   {markdownFile && (
                     <button
-                      aria-label={document?.source ? '文档' : '文档 · 即将提供'}
+                      aria-label={document?.source ? t('文档') : t('文档 · 即将提供')}
                       aria-pressed={file.mode === 'document'}
                       disabled={!document?.source}
-                      title={document?.reason ?? '直接编辑排版后的文档'}
+                      title={document?.reason ?? t('直接编辑排版后的文档')}
                       onClick={() => chooseFileMode('document')}
                     >
-                      文档{!document?.source && <small>即将提供</small>}
+                      {t('文档')}
+                      {!document?.source && <small>{t('即将提供')}</small>}
                     </button>
                   )}
                   <button
                     aria-pressed={file.mode === 'source'}
                     onClick={() => chooseFileMode('source')}
                   >
-                    源码
+                    {t('源码')}
                   </button>
                 </div>
                 <button
@@ -807,7 +825,7 @@ export function Workspace({
                     setFileMenu(false);
                   }}
                 >
-                  移动 / 复制 / 回收
+                  {t('移动 / 复制 / 回收')}
                 </button>
                 <button
                   onClick={() => {
@@ -815,7 +833,7 @@ export function Workspace({
                     fileActions.current?.focus();
                   }}
                 >
-                  收起操作
+                  {t('收起操作')}
                 </button>
               </div>
             )}
@@ -823,28 +841,28 @@ export function Workspace({
               <div className="file-history">
                 <button
                   className="history-close"
-                  aria-label="关闭文件历史"
+                  aria-label={t('关闭文件历史')}
                   onClick={() => setHistory(null)}
                 >
                   <Icon name="close" size={13} />
                 </button>
-                <h3>已保存的旧版本</h3>
+                <h3>{t('已保存的旧版本')}</h3>
                 {history.length ? (
                   history.map((v) => (
                     <div key={v.id}>
                       <span>
-                        {new Date(v.createdAt).toLocaleString('zh-CN', {
+                        {new Date(v.createdAt).toLocaleString(currentLocaleTag(), {
                           timeZone: preferences.timezone,
                         })}
                         {' · '}
-                        {v.bytes} 字节
+                        {v.bytes} {t('字节')}
                       </span>
                       <button
                         disabled={readonly || busy}
                         onClick={() => {
                           if (
                             file.text !== file.saved &&
-                            !window.confirm('恢复将放弃未保存的编辑草稿，是否继续？')
+                            !window.confirm(t('恢复将放弃未保存的编辑草稿，是否继续？'))
                           )
                             return;
                           setBusy(true);
@@ -856,38 +874,43 @@ export function Workspace({
                             .then(async () => {
                               await openFile(file.path, true);
                               setHistory(null);
-                              report('已恢复；恢复前版本也已保留');
+                              report(t('已恢复；恢复前版本也已保留'));
                             })
                             .catch(report)
                             .finally(() => setBusy(false));
                         }}
                       >
-                        恢复到此版本
+                        {t('恢复到此版本')}
                       </button>
                     </div>
                   ))
                 ) : (
-                  <p>暂时没有旧版本；覆盖保存时会保留当前磁盘内容。</p>
+                  <p>{t('暂时没有旧版本；覆盖保存时会保留当前磁盘内容。')}</p>
                 )}
               </div>
             )}
             <div className="form-actions">
               <span className="muted">
-                {file.text === file.saved ? '已保存' : '有未保存的修改'} · 隐藏查看器后草稿仍保留
+                {file.text === file.saved ? t('已保存') : t('有未保存的修改')}{' '}
+                {t('· 隐藏查看器后草稿仍保留')}
               </span>
               <button
                 className="primary"
                 disabled={readonly || busy || file.text === file.saved}
                 onClick={() => void save()}
-                title="保存文件 · Ctrl+S"
+                title={t('保存文件 · Ctrl+S')}
               >
-                保存文件
+                {t('保存文件')}
               </button>
             </div>
             <div className="file-draft-status" role="status">
-              <span>{draftStatus} · 源文件仍需手动保存</span>
-              {draftStatus.includes('失败') && (
-                <button onClick={() => void flushFileDrafts().catch(report)}>重试保存草稿</button>
+              <span>
+                {t(draftStatus)} {t('· 源文件仍需手动保存')}
+              </span>
+              {draftFailed && (
+                <button onClick={() => void flushFileDrafts().catch(report)}>
+                  {t('重试保存草稿')}
+                </button>
               )}
             </div>
           </div>
@@ -907,8 +930,8 @@ export function Workspace({
         <Modal
           title={
             {
-              'create-file': '新建文件',
-              'create-directory': '新建目录',
+              'create-file': t('新建文件'),
+              'create-directory': t('新建目录'),
             }[operation]
           }
           onClose={() => setOperation(null)}
@@ -920,15 +943,15 @@ export function Workspace({
               void applyOperation();
             }}
           >
-            <Field label="文件路径" hint="相对于当前目录，已有目标不会覆盖">
+            <Field label={t('文件路径')} hint={t('相对于当前目录，已有目标不会覆盖')}>
               <input required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
             </Field>
             <div className="form-actions">
               <button type="button" onClick={() => setOperation(null)}>
-                取消
+                {t('取消')}
               </button>
               <button className="primary" disabled={busy}>
-                确认文件操作
+                {t('确认文件操作')}
               </button>
             </div>
           </form>

@@ -7,6 +7,7 @@ import { Field, Icon, Portrait, assistantPortrait, protocolLabels } from './comp
 import { setupCopy, setupLanguages, setupProviders } from './setup-copy.ts';
 import './setup.css';
 import { SetupMenu } from './SetupMenu.tsx';
+import { setLanguage } from './i18n.ts';
 
 export function Setup({
   data,
@@ -62,7 +63,7 @@ export function Setup({
     'readyHint',
   ] as const;
   useEffect(() => {
-    document.documentElement.lang = locale === 'zh' ? 'zh-CN' : locale;
+    setLanguage(locale);
   }, [locale]);
   useEffect(() => {
     body.current?.scrollTo(0, 0);

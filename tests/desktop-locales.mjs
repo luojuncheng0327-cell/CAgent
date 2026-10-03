@@ -45,7 +45,7 @@ try {
     await page.locator('#interface-locale').selectOption(locale);
     await page.waitForFunction((lang) => document.documentElement.lang === lang, lang);
     await page.getByRole('heading', { name: title, exact: true }).waitFor();
-    const buttons = page.locator('nav[aria-label] > button');
+    const buttons = page.locator('.settings-layout > nav > button');
     assert.equal(await buttons.count(), 6);
     for (let tab = 0; tab < 6; tab++) {
       await buttons.nth(tab).click();
@@ -55,7 +55,11 @@ try {
         .evaluate((el) => el.scrollWidth > el.clientWidth + 2);
       assert.equal(overflow, false, locale + ' settings tab ' + tab);
       if (locale === 'en') {
-        const text = await page.locator('.settings-body').innerText();
+        const text = await page.locator('.settings-body').evaluate((el) => {
+          const clone = el.cloneNode(true);
+          clone.querySelector('#interface-locale')?.remove();
+          return clone.textContent;
+        });
         assert.doesNotMatch(
           text.replaceAll('呈平安', ''),
           /[\u3400-\u9fff]/,
@@ -67,7 +71,7 @@ try {
     const input = page.getByLabel(message, { exact: true });
     assert.equal(await input.inputValue(), '用户消息原文 🙂');
     await page.getByRole('button', { name: settings, exact: true }).click();
-    await page.locator('nav[aria-label] > button').nth(3).click();
+    await page.locator('.settings-layout > nav > button').nth(3).click();
     await fs.mkdir('.artifacts/locales', { recursive: true });
     await page.screenshot({ path: '.artifacts/locales/' + locale + '.png' });
     checks.push(
