@@ -84,7 +84,7 @@ export function Workspace({
   const [tabs, setTabs] = useState<FileTab[]>(() => drafts.get(key)?.tabs ?? []),
     [active, setActive] = useState<string | null>(() => drafts.get(key)?.active ?? null),
     [show, setShow] = useState(!!drafts.get(key)?.tabs.length),
-    [watchState, setWatchState] = useState(t('正在连接文件变化通知…'));
+    [watchState, setWatchState] = useState('正在连接文件变化通知…');
   const [operation, setOperation] = useState<'create-file' | 'create-directory' | null>(null),
     [name, setName] = useState(''),
     [busy, setBusy] = useState(false),
@@ -204,14 +204,14 @@ export function Workspace({
     if (!session.workspace) return;
     let closed = false;
     const stream = new EventSource(`/api/v1${prefix}/workspace-events`);
-    stream.onopen = () => setWatchState(t('正在同步文件变化'));
-    stream.onerror = () => setWatchState(t('变化通知断开，正在重连；可以手动刷新'));
+    stream.onopen = () => setWatchState('正在同步文件变化');
+    stream.onerror = () => setWatchState('变化通知断开，正在重连；可以手动刷新');
     stream.onmessage = (event) => {
       if (closed) return;
       const data = JSON.parse(event.data);
       if (data.kind === 'reset') {
         stream.close();
-        setWatchState(t('工作区已失效，请重新选择'));
+        setWatchState('工作区已失效，请重新选择');
         return;
       }
       void load().catch(report);
@@ -496,7 +496,7 @@ export function Workspace({
           <Soon label={t('时间')} icon="sort" />
         </div>
         <span className="sr-only" role="status">
-          {watchState}
+          {t(watchState)}
         </span>
         <div className="desk-files" role="tabpanel">
           {area === 'resources' ? (
