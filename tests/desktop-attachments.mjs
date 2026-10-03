@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fixture, response, setup, removeTemporary } from './helpers.ts';
+import { pdfFile, docxFile } from './fixtures/attachment-files.ts';
 
 const require = createRequire(import.meta.url);
 const requests = [];
@@ -152,6 +153,61 @@ try {
   await page.getByRole('alert').filter({ hasText: '每条消息最多 8 个附件' }).waitFor();
   assert.equal(await page.locator('.draft-attachments button').count(), 8);
   checks.push('clipboard and file picker share the eight attachment budget');
+  while (await page.locator('.draft-attachments button').count())
+    await page.locator('.draft-attachments button').first().click();
+  await page.getByLabel('添加附件', { exact: true }).setInputFiles([
+    {
+      name: '损坏图片.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('89504e470d0a1a0a0000000d494844520000000100000001', 'hex'),
+    },
+    { name: '文档证据.pdf', mimeType: 'application/pdf', buffer: pdfFile() },
+    {
+      name: '中文文档.docx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      buffer: docxFile(),
+    },
+  ]);
+  await page.getByLabel('移除附件 中文文档.docx', { exact: true }).waitFor();
+  await page.getByRole('alert').filter({ hasText: '损坏图片.png：图片无法完整解码' }).waitFor();
+  await page.getByText('PDF · 1 页 · 已提取文字', { exact: true }).waitFor();
+  await page.getByText('DOCX · 已提取文字', { exact: true }).waitFor();
+  await page
+    .getByText('文档仅发送提取的文字，不含图片和完整排版；扫描件请先进行 OCR。', { exact: true })
+    .waitFor();
+  checks.push(
+    'valid PDF and Word files show their extraction status while a broken image stays rejected',
+  );
+  await button('发送消息').click();
+  await page.waitForFunction(
+    () => document.querySelectorAll('article.message.assistant').length === 2,
+  );
+  await button('发送消息').waitFor();
+  assert.equal(requests.length, 2);
+  assert.match(JSON.stringify(requests[1]), /PDF attachment evidence/);
+  assert.match(JSON.stringify(requests[1]), /中文 Word 附件证据/);
+  checks.push('desktop PDF and Word text reaches the model without binary document payloads');
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setContentSize(1280, 800),
+  );
+  await page.getByRole('link', { name: '中文文档.docx', exact: true }).waitFor();
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].webContents.invalidate(),
+  );
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  const screenshot = await app.evaluate(async ({ BrowserWindow }) =>
+    (
+      await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, {
+        stayHidden: true,
+        stayAwake: true,
+      })
+    )
+      .toPNG()
+      .toString('base64'),
+  );
+  await fs.writeFile('.artifacts/p2-attachments.png', Buffer.from(screenshot, 'base64'));
   assert.deepEqual(errors, []);
   const result = { passed: true, checks, pageErrors: errors };
   await fs.mkdir('.artifacts', { recursive: true });
