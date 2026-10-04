@@ -332,7 +332,7 @@ export async function runTool(
   invariant(tool, 'UNKNOWN_TOOL', '工具不存在', 404);
   const parsed = tool.schema.parse(args) as Record<string, any>;
   let current = c.store.need<Session>('session', c.session.id);
-  const transferSession = current;
+  const transferSession = c.session;
   invariant(
     !c.store.need<any>('agent', current.agentId).disabledTools?.includes(name),
     'TOOL_DISABLED',
@@ -347,6 +347,13 @@ export async function runTool(
   );
   if (tool.write) {
     invariant(current.permission !== 'read', 'READ_ONLY', '当前会话为只读，不能执行此工具', 403);
+    if (name === 'copy_file' || name === 'materialize_attachment')
+      invariant(
+        current.workspace === transferSession.workspace,
+        'WORKSPACE_CHANGED',
+        '当前工作台已切换，请重新打开文件操作',
+        409,
+      );
     if (name === 'write_file' || name === 'edit_file')
       await workspacePath(c.store, current, parsed.path, name === 'write_file', true);
     if (name === 'copy_file') {
