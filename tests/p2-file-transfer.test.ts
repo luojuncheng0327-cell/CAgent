@@ -6,6 +6,7 @@ import { setup, temporary, removeTemporary } from './helpers.ts';
 import { runTool, hash, toolDefinitions } from '../src/server/tools.ts';
 import { createResource, hydrateMessages } from '../src/server/resources.ts';
 import { serve } from '../src/server/http.ts';
+import { materializeAttachment } from '../src/server/file-transfer.ts';
 import type { Run, Session, Message } from '../src/shared/contracts.ts';
 
 async function files() {
@@ -387,6 +388,74 @@ test('P2 HTTP 附件保存绑定原工作台，原始字节落盘且同名、只
     assert.equal((await request(args, 'https://untrusted.example')).status, 403);
   } finally {
     await app.close();
+    await f.cleanup();
+  }
+});
+
+test('P2 解析目标路径期间删除附件，物化不得写入之前缓存的字节', async (context) => {
+  const f = await files();
+  try {
+    const resource = await createResource(
+      f.rt.store,
+      f.session.id,
+      'file.txt',
+      Buffer.from('original'),
+    );
+    const lstat = fs.lstat;
+    context.mock.method(fs, 'lstat', async (...args: Parameters<typeof fs.lstat>) => {
+      if (args[0] === path.join(f.root, 'deleted.txt')) f.rt.store.remove('resource', resource.id);
+      return lstat(...args);
+    });
+    await assert.rejects(materializeAttachment(f.rt.store, f.session, resource.id, 'deleted.txt'), {
+      code: 'NOT_FOUND',
+    });
+    await assert.rejects(fs.stat(path.join(f.root, 'deleted.txt')));
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('P2 批准后解析目标路径期间取消复制或物化，不留下目标文件', async (context) => {
+  const f = await files();
+  try {
+    const bytes = Buffer.from('original');
+    await fs.writeFile(path.join(f.root, 'source.txt'), bytes);
+    const resource = await createResource(f.rt.store, f.session.id, 'file.txt', bytes);
+    await f.update({ permission: 'ask' });
+    const lstat = fs.lstat;
+    for (const [name, args] of [
+      [
+        'copy_file',
+        { path: 'source.txt', destination: 'cancelled.txt', expectedHash: hash(bytes) },
+      ],
+      ['materialize_attachment', { attachmentId: resource.id, path: 'cancelled.txt' }],
+    ] as const) {
+      const abort = new AbortController();
+      let mocked: ReturnType<typeof context.mock.method> | undefined;
+      await assert.rejects(
+        f.tool(
+          name,
+          args,
+          async () => {
+            mocked = context.mock.method(
+              fs,
+              'lstat',
+              async (...input: Parameters<typeof fs.lstat>) => {
+                if (input[0] === path.join(f.root, 'cancelled.txt')) abort.abort();
+                return lstat(...input);
+              },
+            );
+            return true;
+          },
+          {} as Run,
+          abort.signal,
+        ),
+        { name: 'AbortError' },
+      );
+      mocked!.mock.restore();
+      await assert.rejects(fs.stat(path.join(f.root, 'cancelled.txt')));
+    }
+  } finally {
     await f.cleanup();
   }
 });
