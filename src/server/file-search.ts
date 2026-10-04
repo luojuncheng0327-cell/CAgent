@@ -207,7 +207,21 @@ export async function searchWorkspaceFiles(
               (input.caseSensitive ? relative : relative.toLowerCase()).includes(needle)
             )
               add({ path: relative });
-          } else await content(target, relative);
+          } else {
+            try {
+              await content(target, relative);
+            } catch (error) {
+              check();
+              if (
+                !['ENOENT', 'EACCES', 'EPERM', 'ENOTDIR'].includes(
+                  (error as NodeJS.ErrnoException).code ?? '',
+                )
+              )
+                throw error;
+              result.skipped.unreadable++;
+              incomplete('unreadable');
+            }
+          }
         }
       }
     } catch (error) {
