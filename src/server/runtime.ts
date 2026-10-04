@@ -36,7 +36,7 @@ import type { SecretCodec } from './vault.ts';
 import { AppError, invariant, publicError, stamp } from './errors.ts';
 import { infer, parseArguments } from './models.ts';
 import type { Fetcher, Inference } from './models.ts';
-import { runTool, toolDefinitions, hash } from './tools.ts';
+import { runTool, toolDefinitions, hash, isWriteTool } from './tools.ts';
 import { acquireHome } from './home-lock.ts';
 import { validateAttachments, cloneResources, hydrateMessages } from './resources.ts';
 import { getSessionOrder } from './session-navigation.ts';
@@ -934,17 +934,18 @@ export class Runtime {
           (t) =>
             !currentAgent.disabledTools?.includes(t.name) &&
             !(t.name.startsWith('memory_') && !currentAgent.memoryEnabled) &&
-            !(sessionDirectories(session).length === 0 && !t.name.startsWith('memory_')) &&
+            !(
+              sessionDirectories(session).length === 0 &&
+              !t.name.startsWith('memory_') &&
+              t.name !== 'list_attachments'
+            ) &&
             !(
               t.name === 'run_command' &&
               (!session.workspace ||
                 sessionDirectories(session).find((g) => g.path === session.workspace)?.access ===
                   'read')
             ) &&
-            !(
-              (session.permission === 'read' || run.preventWrites) &&
-              ['write_file', 'edit_file', 'run_command', 'memory_save'].includes(t.name)
-            ),
+            !((session.permission === 'read' || run.preventWrites) && isWriteTool(t.name)),
         );
         const result = await this.inferTracked(run, {
           provider: actualProvider,

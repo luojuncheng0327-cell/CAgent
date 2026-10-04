@@ -149,6 +149,8 @@ export const toolDefinitions: ToolDefinition[] = definitions.map((d) => ({
   description: d.description,
   parameters: z.toJSONSchema(d.schema) as Record<string, unknown>,
 }));
+export const isWriteTool = (name: string) =>
+  definitions.some((tool) => tool.name === name && tool.write);
 export const hash = (bytes: Uint8Array | string) =>
   createHash('sha256').update(bytes).digest('hex');
 export async function workspacePath(
