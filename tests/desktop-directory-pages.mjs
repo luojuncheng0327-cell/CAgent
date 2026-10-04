@@ -82,6 +82,13 @@ try {
     await desk.getByRole('button', { name: '上一页文件', exact: true }).isDisabled(),
     true,
   );
+  const pagerBox = await desk
+    .getByRole('button', { name: '下一页文件', exact: true })
+    .boundingBox();
+  assert.ok(
+    pagerBox && pagerBox.y >= 0 && pagerBox.y + pagerBox.height <= 800,
+    'Pagination controls must be visible without scrolling through 100 entries',
+  );
   checks.push('large directories show a bounded first page and their complete entry count');
   for (let i = 1; i <= 5; i++) {
     await desk.getByRole('button', { name: '下一页文件', exact: true }).click();
@@ -189,6 +196,32 @@ try {
   await filter.fill('');
   await desk.getByText('显示 1–100 项，共 512 项', { exact: true }).waitFor();
   checks.push('a delayed page cannot overwrite a newer filename filter');
+  await Promise.all(
+    Array.from({ length: 30 }, (_, i) =>
+      fs.mkdir(path.join(workspace, 'A-dir/child-' + String(i).padStart(2, '0'))),
+    ),
+  );
+  await tree.getByRole('button', { name: '展开目录 A-dir', exact: true }).click();
+  await tree.getByRole('button', { name: '浏览目录 A-dir/child-00', exact: true }).waitFor();
+  await tree.getByRole('button', { name: '下一页目录', exact: true }).click();
+  await tree.getByRole('button', { name: '浏览目录 A-dir/child-29', exact: true }).waitFor();
+  assert.equal(
+    await tree.getByRole('button', { name: '浏览目录 A-dir/child-00', exact: true }).count(),
+    0,
+  );
+  await tree.getByRole('button', { name: '上一页目录', exact: true }).click();
+  await tree.getByRole('button', { name: '浏览目录 A-dir/child-00', exact: true }).waitFor();
+  checks.push(
+    'tree branches page through more than 25 subfolders without growing the rendered list',
+  );
+  const rootButton = crumbs.getByRole('button', { name: '根目录', exact: true });
+  await rootButton.focus();
+  await page.keyboard.press('Enter');
+  await desk.getByText('显示 1–100 项，共 512 项', { exact: true }).waitFor();
+  checks.push('directory breadcrumbs are operable with the keyboard');
+  await tree.getByRole('button', { name: '展开目录 资料 空格😀', exact: true }).click();
+  await tree.getByRole('button', { name: '展开目录 资料 空格😀/二层', exact: true }).click();
+  await tree.getByRole('button', { name: '浏览目录 资料 空格😀/二层/三层', exact: true }).waitFor();
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].webContents.invalidate(),
   );
