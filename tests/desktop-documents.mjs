@@ -21,7 +21,7 @@ try {
   await fs.writeFile(richPath, sample);
   await fs.writeFile(path.join(workspace, 'second.md'), '# 第二份文件\n\n独立草稿。\n');
   await fs.writeFile(path.join(workspace, 'table.md'), tableSource);
-  await fs.writeFile(path.join(workspace, 'unavailable.pdf'), '%PDF-test-placeholder');
+  await fs.writeFile(path.join(workspace, 'unavailable.xlsx'), 'spreadsheet-test-placeholder');
   await fs.writeFile(path.join(workspace, 'plain.txt'), '<script>只是文字</script>\n纯文本');
   await fs.writeFile(
     path.join(workspace, 'image.md'),
@@ -336,7 +336,7 @@ try {
   assert.equal(
     await page
       .locator('.file-list')
-      .getByRole('button', { name: 'unavailable.pdf · 即将提供', exact: true })
+      .getByRole('button', { name: 'unavailable.xlsx · 即将提供', exact: true })
       .isDisabled(),
     true,
   );
