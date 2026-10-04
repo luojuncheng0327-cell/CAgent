@@ -358,3 +358,122 @@ test('P2 文件列表 HTTP 鉴权、分页筛选、工作台绑定与输入校�
     await f.cleanup();
   }
 });
+
+test('P2 目录无法读取与已消失的 HTTP 结果明确区分，诊断不暴露内部路径', async (t) => {
+  const f = await directory();
+  const app = await serve(f.rt);
+  try {
+    await fs.mkdir(path.join(f.root, 'unreadable'));
+    const open = fs.opendir;
+    t.mock.method(fs, 'opendir', async (...args: Parameters<typeof fs.opendir>) => {
+      if (String(args[0]).endsWith('unreadable'))
+        throw Object.assign(new Error('PRIVATE-DIAGNOSTIC-PATH'), { code: 'EACCES' });
+      return open(...args);
+    });
+    const get = async (target: string) => {
+      const response = await fetch(
+        app.origin + '/api/v1/sessions/' + f.session.id + '/files?path=' + target,
+        {
+          headers: { Authorization: 'Bearer ' + app.token },
+        },
+      );
+      return { status: response.status, ...(await response.json()) };
+    };
+    const denied = await get('unreadable');
+    assert.equal(denied.status, 403);
+    assert.equal(denied.error.code, 'DIRECTORY_DENIED');
+    assert.ok(!JSON.stringify(denied).includes('PRIVATE-DIAGNOSTIC-PATH'));
+    const missing = await get('gone');
+    assert.equal(missing.status, 404);
+    assert.equal(missing.error.code, 'DIRECTORY_MISSING');
+  } finally {
+    t.mock.restoreAll();
+    await app.close();
+    await f.cleanup();
+  }
+});
+
+test('P2 文件名预算耗尽与迭代故障都关闭句柄，不返回看似完整的页面', async (t) => {
+  const f = await directory();
+  try {
+    for (const mode of ['bytes', 'error']) {
+      let closed = false;
+      t.mock.method(
+        fs,
+        'opendir',
+        async () =>
+          ({
+            close: async () => {
+              closed = true;
+            },
+            async *[Symbol.asyncIterator]() {
+              if (mode === 'error') throw new Error('fixture iteration failure');
+              for (let i = 0; i < 12000; i++)
+                yield {
+                  name: '中'.repeat(255),
+                  isDirectory: () => false,
+                  isFile: () => true,
+                  isSymbolicLink: () => false,
+                };
+            },
+          }) as any,
+      );
+      await assert.rejects(f.list(), (e: any) =>
+        mode === 'bytes' ? e.code === 'DIRECTORY_LIMIT' : e.message === 'fixture iteration failure',
+      );
+      assert.equal(closed, true);
+      t.mock.restoreAll();
+    }
+  } finally {
+    t.mock.restoreAll();
+    await f.cleanup();
+  }
+});
+
+test('P2 目录读取途中被替换、游标越界和非普通项目都明确处理', async (t) => {
+  const f = await directory();
+  try {
+    await Promise.all(['a.txt', 'b.txt'].map(f.write));
+    const first = await f.list({ limit: 1 });
+    const cursor = JSON.parse(Buffer.from(first.nextCursor, 'base64url').toString('utf8'));
+    cursor.offset = 100;
+    await assert.rejects(
+      f.list({ cursor: Buffer.from(JSON.stringify(cursor)).toString('base64url') }),
+      (e: any) => e.code === 'INVALID_DIRECTORY_CURSOR',
+    );
+    const stat = fs.stat;
+    let count = 0;
+    t.mock.method(fs, 'stat', async (...args: Parameters<typeof fs.stat>) => {
+      const result = await stat(...args);
+      count++;
+      if (count === 2)
+        return new Proxy(result, {
+          get: (target, name) =>
+            name === 'mtimeMs' ? Number(target.mtimeMs) + 1000 : Reflect.get(target, name),
+        });
+      return result;
+    });
+    await assert.rejects(f.list(), (e: any) => e.code === 'DIRECTORY_CHANGED');
+    t.mock.restoreAll();
+    t.mock.method(
+      fs,
+      'opendir',
+      async () =>
+        ({
+          close: async () => {},
+          async *[Symbol.asyncIterator]() {
+            yield {
+              name: 'special',
+              isDirectory: () => false,
+              isFile: () => false,
+              isSymbolicLink: () => false,
+            };
+          },
+        }) as any,
+    );
+    assert.deepEqual((await f.list()).entries, [{ name: 'special', kind: 'other' }]);
+  } finally {
+    t.mock.restoreAll();
+    await f.cleanup();
+  }
+});
