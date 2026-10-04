@@ -212,6 +212,59 @@
 .desk-editor .file-editor > textarea:focus-visible {
   outline-offset: -3px;
 }
+.workspace-file-preview {
+  padding: 18px 22px 24px;
+  max-height: 76vh;
+  overflow: auto;
+}
+.preview-heading,
+.preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.preview-heading strong {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.preview-controls small {
+  color: var(--text-soft);
+}
+.workspace-image-preview {
+  max-height: 55vh;
+  overflow: auto;
+  background: var(--canvas-tone);
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+}
+.workspace-image-preview img {
+  display: block;
+  max-width: none;
+}
+.workspace-document-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 48vh;
+  overflow: auto;
+  padding: 16px;
+  background: var(--sheet-tone);
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  font: 15px/1.75 var(--face-editor);
+}
+.attachment-card > button {
+  font-size: 11px;
+  justify-self: start;
+}
+.attachment-save-form {
+  padding: 18px 24px 24px;
+}
+.attachment-save-form .muted {
+  overflow-wrap: anywhere;
+}
 .desk-editor .file-preview {
   padding: 26px 24px 30px;
   overflow: visible;

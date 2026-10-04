@@ -981,9 +981,13 @@ export function App() {
                         <h3>
                           {a.tool === 'run_command'
                             ? t('运行本机命令')
-                            : ['write_file', 'edit_file'].includes(a.tool)
-                              ? t('写入工作区文件')
-                              : t('保存记忆')}
+                            : a.tool === 'copy_file'
+                              ? t('复制工作区文件')
+                              : a.tool === 'materialize_attachment'
+                                ? t('保存附件到工作区')
+                                : ['write_file', 'edit_file'].includes(a.tool)
+                                  ? t('写入工作区文件')
+                                  : t('保存记忆')}
                         </h3>
                         {a.tool === 'run_command' && (
                           <p>{t('此命令在本机执行，没有操作系统沙盒隔离。')}</p>

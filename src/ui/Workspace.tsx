@@ -17,6 +17,8 @@ import {
   WorkspaceDirectories,
 } from './WorkspaceDirectories.tsx';
 import { lineStarts } from '../shared/file-lines.ts';
+import { canPreviewFile, FilePreview } from './FilePreview.tsx';
+import { AttachmentSave } from './AttachmentSave.tsx';
 import {
   loadFileDraftView,
   rememberFileDraftView,
@@ -28,7 +30,7 @@ const DocumentEditor = lazy(() =>
   import('./DocumentEditor.tsx').then((module) => ({ default: module.DocumentEditor })),
 );
 const futurePreview = (name: string) =>
-  /\.(pdf|docx?|xlsx?|pptx?|png|jpe?g|gif|webp|bmp|svg|mp[34]|wav|mov|avi|zip|7z)$/i.test(name);
+  !canPreviewFile(name) && /\.(doc|xlsx?|pptx?|bmp|svg|mp[34]|wav|mov|avi|zip|7z)$/i.test(name);
 
 interface FileTab {
   path: string;
@@ -80,6 +82,12 @@ export function Workspace({
   const draftScope = JSON.stringify([session.directoryGrants, session.blockedDirectories]);
   const [area, setArea] = useState<'files' | 'resources'>('files');
   const [managed, setManaged] = useState<string | null>(null);
+  const [previewPath, setPreviewPath] = useState<string | null>(null);
+  const [savingAttachment, setSavingAttachment] = useState<Resource | null>(null);
+  useEffect(() => {
+    setPreviewPath(null);
+    setSavingAttachment(null);
+  }, [key, draftScope]);
   const uploadInput = useRef<HTMLInputElement>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [draftStatus, setDraftStatus] = useState('正在恢复文件草稿…');
@@ -298,6 +306,10 @@ export function Workspace({
   }
   async function openFile(target: string, refresh = false, line?: number) {
     if (!draftReady) return;
+    if (canPreviewFile(target)) {
+      setPreviewPath(target);
+      return;
+    }
     const old = tabRef.current.find((t) => t.path === target);
     if (old && !refresh) {
       if (line) {
@@ -551,6 +563,12 @@ export function Workspace({
                 ids={resources.map((r) => r.id)}
                 resources={resources}
                 sessionId={session.id}
+                onSave={setSavingAttachment}
+                saveDisabled={
+                  !session.workspace ||
+                  session.permission === 'read' ||
+                  grants.find((grant) => grant.path === session.workspace)?.access !== 'write'
+                }
               />
             ) : (
               <div className="panel-empty">{t('暂无对话文件')}</div>
@@ -705,6 +723,27 @@ export function Workspace({
             <dd>{resources.length}</dd>
           </dl>
         </details>
+      )}
+      {previewPath && (
+        <FilePreview
+          key={key + '|' + previewPath + '|' + draftScope}
+          session={session}
+          path={previewPath}
+          onClose={() => setPreviewPath(null)}
+        />
+      )}
+      {savingAttachment && (
+        <AttachmentSave
+          key={key + '|' + savingAttachment.id + '|' + draftScope}
+          session={session}
+          resource={savingAttachment}
+          onClose={() => setSavingAttachment(null)}
+          onSaved={() => {
+            setSavingAttachment(null);
+            void load().catch(report);
+            report(t('附件已保存到工作区'));
+          }}
+        />
       )}
       {show && file && (
         <section className="desk-editor" aria-label={t('文件预览与编辑')}>

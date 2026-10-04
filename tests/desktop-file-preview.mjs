@@ -45,29 +45,6 @@ const f = await setup(mock.url),
   workspace = await temporary(),
   other = await temporary();
 let app, page;
-async function api(route, method = 'GET', body) {
-  return page.evaluate(
-    async ({ route, method, body }) => {
-      const response = await fetch('/api/v1' + route, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message ?? 'Fixture failed');
-      return result.data;
-    },
-    { route, method, body },
-  );
-}
-async function update(values) {
-  const { session } = await api(`/sessions/${f.session.id}`);
-  return api(`/sessions/${f.session.id}`, 'PATCH', {
-    ...session,
-    ...values,
-    revision: session.revision,
-  });
-}
 async function screenshot(file) {
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].webContents.invalidate(),
@@ -112,6 +89,8 @@ try {
   await fs.writeFile(path.join(other, 'second.txt'), 'other');
   const resource = await createResource(f.rt.store, f.session.id, '原图.png', bytes);
   attachmentId = resource.id;
+  // Local fake-model fixture does not use a key; desktop uses a different OS vault codec.
+  f.rt.vault.remove(f.provider.id);
   await f.rt.updateSession(f.session.id, {
     workspace,
     permission: 'operate',
@@ -161,6 +140,25 @@ try {
   assert.ok((await image.evaluate((img) => img.getBoundingClientRect().width)) > width);
   await button('原始大小').click();
   await screenshot('.artifacts/p2-file-preview-image.png');
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setContentSize(940, 800),
+  );
+  assert.equal(
+    await dialog().evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return (
+        box.left >= 0 &&
+        box.right <= window.innerWidth &&
+        box.top >= 0 &&
+        box.bottom <= window.innerHeight
+      );
+    }),
+    true,
+  );
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setContentSize(1280, 800),
+  );
+  checks.push('image viewer stays within a 940px window');
   await page.keyboard.press('Escape');
   checks.push('image zoom, reset and Escape close work at 1280x800');
   await open('保留.txt');
@@ -179,7 +177,8 @@ try {
   checks.push('PDF extracted-text preview labels its scope and incomplete-page warning');
   await open('资料.docx');
   await dialog()
-    .getByText('中文原文 <script>window.previewExecuted=true</script>', { exact: true })
+    .getByLabel('文档提取文字', { exact: true })
+    .filter({ hasText: '中文原文 <script>window.previewExecuted=true</script>' })
     .waitFor();
   assert.equal(await page.evaluate(() => window.previewExecuted), undefined);
   await page.keyboard.press('Escape');
@@ -199,13 +198,18 @@ try {
   await page.getByLabel('目标路径', { exact: true }).fill('保存.png');
   await button('保存原文件').click();
   await dialog().getByRole('alert').filter({ hasText: '目标已存在' }).waitFor();
+  await screenshot('.artifacts/p2-attachment-save.png');
   assert.deepEqual(await fs.readFile(path.join(workspace, '保存.png')), bytes);
   await page.getByLabel('目标路径', { exact: true }).fill('取消.png');
   await page.keyboard.press('Escape');
   await assert.rejects(fs.stat(path.join(workspace, '取消.png')));
   checks.push('save collision stays visible and cancelled saves do not create files');
-  await update({ permission: 'read' });
-  await button('保存到工作区 原图.png').waitFor();
+  await button('执行权限').click();
+  await page
+    .getByRole('listbox', { name: '执行权限', exact: true })
+    .getByRole('option', { name: '只读模式', exact: true })
+    .click();
+  await page.locator('button[aria-label="保存到工作区 原图.png"]:disabled').waitFor();
   assert.equal(await button('保存到工作区 原图.png').isDisabled(), true);
   await page.getByRole('tab', { name: '工作台', exact: true }).click();
   await open('原图.png');
@@ -223,22 +227,36 @@ try {
   });
   await open('原图.png');
   await pending;
-  await update({ workspace: other });
+  await page.keyboard.press('Escape');
+  await page.getByLabel('当前工作台', { exact: true }).selectOption(other);
+  await page
+    .locator('.file-list')
+    .getByRole('button', { name: 'second.txt', exact: true })
+    .waitFor();
   release();
   await dialog().waitFor({ state: 'detached' });
   await page.waitForTimeout(100);
   assert.equal(await page.getByRole('img', { name: '原图.png', exact: true }).count(), 0);
   await page.unroute('**/file-preview?**');
   checks.push('late preview response cannot reopen the old workspace after switching roots');
-  await update({ workspace, permission: 'ask' });
+  await page.getByLabel('当前工作台', { exact: true }).selectOption(workspace);
+  await button('关闭文件预览').waitFor();
+  await button('关闭文件预览').click();
+  await page.locator('.file-list').getByRole('button', { name: '原图.png', exact: true }).waitFor();
+  await button('执行权限').click();
+  await page
+    .getByRole('listbox', { name: '执行权限', exact: true })
+    .getByRole('option', { name: '操作前询问', exact: true })
+    .click();
+  await page.locator('button[aria-label="执行权限"][title="执行权限：操作前询问"]').waitFor();
   await page.getByLabel('消息', { exact: true }).fill('复制文件并保存附件');
   await button('发送消息').click();
   await page.getByRole('heading', { name: '复制工作区文件', exact: true }).waitFor();
   await assert.rejects(fs.stat(path.join(workspace, 'tool-copy.png')));
-  await button('批准一次').click();
+  await button('允许这一次').click();
   await page.getByRole('heading', { name: '保存附件到工作区', exact: true }).waitFor();
   await assert.rejects(fs.stat(path.join(workspace, 'tool-attachment.png')));
-  await button('批准一次').click();
+  await button('允许这一次').click();
   await page.getByText('复制和附件保存完成', { exact: true }).waitFor();
   assert.deepEqual(await fs.readFile(path.join(workspace, 'tool-copy.png')), bytes);
   assert.deepEqual(await fs.readFile(path.join(workspace, 'tool-attachment.png')), bytes);
@@ -251,6 +269,17 @@ try {
     JSON.stringify(result, null, 2),
   );
   console.log(JSON.stringify(result));
+} catch (error) {
+  console.error(
+    JSON.stringify({
+      passed: false,
+      completedChecks: checks,
+      pageErrors: errors,
+      error: String(error),
+    }),
+  );
+  if (page) console.error(await page.locator('body').innerText());
+  throw error;
 } finally {
   if (app) await app.close();
   await f.rt.close();

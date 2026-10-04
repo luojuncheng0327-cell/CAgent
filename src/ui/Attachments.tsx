@@ -23,10 +23,14 @@ export function ResourceLinks({
   ids,
   resources,
   sessionId,
+  onSave,
+  saveDisabled = false,
 }: {
   ids: string[];
   resources: Resource[];
   sessionId: string;
+  onSave?: (resource: Resource) => void;
+  saveDisabled?: boolean;
 }) {
   return (
     <div className="attachment-list">
@@ -45,6 +49,15 @@ export function ResourceLinks({
                 {' · '}
                 {resourceDescription(r)}
               </small>
+            )}
+            {r && onSave && (
+              <button
+                aria-label={t('保存到工作区 {0}', [r.name])}
+                disabled={saveDisabled}
+                onClick={() => onSave(r)}
+              >
+                {t('保存到工作区')}
+              </button>
             )}
           </div>
         );
