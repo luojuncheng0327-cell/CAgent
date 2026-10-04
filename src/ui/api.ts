@@ -44,10 +44,16 @@ export class ApiError extends Error {
     this.code = code;
   }
 }
-export async function api<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+export async function api<T>(
+  path: string,
+  method = 'GET',
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   const result = await fetch('/api/v1' + path, {
     method,
     credentials: 'same-origin',
+    signal,
     headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   });

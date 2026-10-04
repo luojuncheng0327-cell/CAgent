@@ -325,7 +325,12 @@ export async function runTool(
     const file = await readWorkspaceFile(c.store, current, parsed.path);
     return {
       ...file,
-      ...fileRange(file.text, parsed),
+      ...fileRange(file.text, {
+        offset: parsed.offset,
+        limit: parsed.limit,
+        startLine: parsed.startLine,
+        endLine: parsed.endLine,
+      }),
     };
   }
   if (name === 'list_files') {

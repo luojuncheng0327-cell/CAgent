@@ -9,6 +9,8 @@ import { ResourceLinks } from './Attachments.tsx';
 import type { DocumentMemory } from './DocumentEditor.tsx';
 import { inspectDocument } from './document-markdown.ts';
 import { WorkspaceActions, uploadWorkspaceFiles } from './WorkspaceActions.tsx';
+import { WorkspaceSearch } from './WorkspaceSearch.tsx';
+import { lineStarts } from '../shared/file-lines.ts';
 import {
   loadFileDraftView,
   rememberFileDraftView,
@@ -81,6 +83,9 @@ export function Workspace({
     [truncated, setTruncated] = useState(false),
     [loading, setLoading] = useState(false),
     [filter, setFilter] = useState('');
+  const [searchMode, setSearchMode] = useState<'current' | 'filename' | 'content'>('current');
+  const [searchRefresh, setSearchRefresh] = useState(0);
+  const [lineTarget, setLineTarget] = useState<{ path: string; line: number } | null>(null);
   const [tabs, setTabs] = useState<FileTab[]>(() => drafts.get(key)?.tabs ?? []),
     [active, setActive] = useState<string | null>(() => drafts.get(key)?.active ?? null),
     [show, setShow] = useState(!!drafts.get(key)?.tabs.length),
@@ -136,6 +141,7 @@ export function Workspace({
     if (request !== listRequest.current) return;
     setEntries(data.entries);
     setTruncated(data.truncated);
+    setSearchRefresh((value) => value + 1);
   }, [session.workspace, prefix, folder]);
   useEffect(() => {
     let current = true;
@@ -237,6 +243,37 @@ export function Workspace({
     setFileMenu(false);
   }, [active, show, file?.mode]);
   useEffect(() => {
+    if (
+      !lineTarget ||
+      !show ||
+      file?.path !== lineTarget.path ||
+      file.mode !== 'source' ||
+      !editor.current
+    )
+      return;
+    const value = editor.current.value;
+    const starts = lineStarts(value);
+    const start = starts[lineTarget.line - 1] ?? value.length;
+    const end = starts[lineTarget.line] ?? value.length;
+    editor.current.focus();
+    editor.current.setSelectionRange(start, end);
+    editor.current.scrollTop = Math.max(
+      0,
+      (lineTarget.line - 3) *
+        (preferences.editorFontSize ?? 16) *
+        (preferences.editorLineHeight ?? 1.5),
+    );
+    setLineTarget(null);
+  }, [
+    lineTarget,
+    show,
+    file?.path,
+    file?.mode,
+    file?.text,
+    preferences.editorFontSize,
+    preferences.editorLineHeight,
+  ]);
+  useEffect(() => {
     if (!fileMenu) return;
     operations.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus();
     const outside = (event: PointerEvent) => {
@@ -267,10 +304,14 @@ export function Workspace({
       mode: previous === 'document' && !document?.source ? 'source' : previous,
     });
   }
-  async function openFile(target: string, refresh = false) {
+  async function openFile(target: string, refresh = false, line?: number) {
     if (!draftReady) return;
     const old = tabRef.current.find((t) => t.path === target);
     if (old && !refresh) {
+      if (line) {
+        updateTab(target, { mode: 'source', editMode: 'source' });
+        setLineTarget({ path: target, line });
+      }
       setActive(target);
       setShow(true);
       return;
@@ -290,7 +331,7 @@ export function Workspace({
       scroll: old?.scroll ?? 0,
       changed: false,
       mode:
-        old?.mode === 'document' && !canEditDocument
+        line || (old?.mode === 'document' && !canEditDocument)
           ? 'source'
           : (old?.mode ?? (canEditDocument ? 'document' : 'source')),
       generation: (old?.generation ?? -1) + 1,
@@ -298,6 +339,7 @@ export function Workspace({
     setTabs((t) => (old ? t.map((x) => (x.path === target ? tab : x)) : [...t, tab]));
     setActive(target);
     setShow(true);
+    if (line) setLineTarget({ path: target, line });
   }
   function closeTab(target: string) {
     const tab = tabs.find((t) => t.path === target);
@@ -407,15 +449,27 @@ export function Workspace({
             {t('工作台')}
           </button>
         </div>
-        <input
-          className="desk-search"
-          ref={searchInput}
-          aria-label={t('筛选当前目录')}
-          placeholder={t('搜索工作台')}
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          disabled={area !== 'files' || !session.workspace}
-        />
+        <div className="desk-search-row">
+          <select
+            aria-label={t('文件搜索范围')}
+            value={searchMode}
+            disabled={area !== 'files' || !session.workspace}
+            onChange={(e) => setSearchMode(e.target.value as typeof searchMode)}
+          >
+            <option value="current">{t('当前目录')}</option>
+            <option value="filename">{t('全部文件名')}</option>
+            <option value="content">{t('全部正文')}</option>
+          </select>
+          <input
+            className="desk-search"
+            ref={searchInput}
+            aria-label={searchMode === 'current' ? t('筛选当前目录') : t('搜索工作区')}
+            placeholder={t('搜索工作台')}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            disabled={area !== 'files' || !session.workspace}
+          />
+        </div>
         <div className="desk-tools">
           <input
             type="file"
@@ -516,83 +570,100 @@ export function Workspace({
             </div>
           ) : (
             <>
-              {folder !== '.' && (
-                <div className="file-crumb">
-                  <button onClick={() => setFolder('.')}>{t('根目录')}</button>
-                  <button
-                    onClick={() =>
-                      setFolder(
-                        folder.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : '.',
-                      )
-                    }
-                  >
-                    {t('上一级')}
-                  </button>
-                  <span>{folder}</span>
-                </div>
-              )}
-              {loading ? (
-                <div className="panel-empty">{t('正在读取…')}</div>
-              ) : entries.length ? (
-                <div className="file-list">
-                  {entries
-                    .filter((e) => e.name.toLowerCase().includes(filter.toLowerCase()))
-                    .map((entry) => (
-                      <div className="file-list-row" key={entry.name}>
-                        <button
-                          key={entry.name}
-                          aria-label={
-                            entry.kind === 'link' ||
-                            (entry.kind === 'file' && futurePreview(entry.name))
-                              ? t('{0} · 即将提供', [entry.name])
-                              : entry.name
-                          }
-                          disabled={
-                            !draftReady ||
-                            entry.kind === 'link' ||
-                            (entry.kind === 'file' && futurePreview(entry.name))
-                          }
-                          title={
-                            entry.kind === 'link' ||
-                            (entry.kind === 'file' && futurePreview(entry.name))
-                              ? entry.name + t(' · 即将提供')
-                              : entry.name
-                          }
-                          onClick={() => {
-                            const target = (folder === '.' ? '' : folder + '/') + entry.name;
-                            if (entry.kind === 'directory') setFolder(target);
-                            else void openFile(target).catch(report);
-                          }}
-                        >
-                          <Icon name={entry.kind === 'directory' ? 'folder' : 'file'} size={14} />
-                          <span>{entry.name}</span>
-                          {(entry.kind === 'link' ||
-                            (entry.kind === 'file' && futurePreview(entry.name))) && (
-                            <small>{t('即将提供')}</small>
-                          )}
-                        </button>
-                        <button
-                          className="file-manage"
-                          aria-label={t('管理 ') + entry.name}
-                          title={t('管理 ') + entry.name}
-                          disabled={entry.kind === 'link' || !draftReady || busy}
-                          onClick={() =>
-                            setManaged((folder === '.' ? '' : folder + '/') + entry.name)
-                          }
-                        >
-                          ⋯
-                        </button>
-                      </div>
-                    ))}
-                  {!entries.some((e) => e.name.toLowerCase().includes(filter.toLowerCase())) && (
-                    <p className="panel-empty">{t('没有匹配的文件')}</p>
-                  )}
-                  {truncated && (
-                    <p className="inline-error">{t('目录超过 500 项，只显示前 500 项。')}</p>
-                  )}
-                </div>
+              {searchMode !== 'current' && filter.trim() ? (
+                <WorkspaceSearch
+                  session={session}
+                  query={filter}
+                  mode={searchMode}
+                  refresh={searchRefresh}
+                  disabled={!draftReady}
+                  futurePreview={futurePreview}
+                  open={(path, line) => openFile(path, false, line)}
+                />
               ) : (
-                <div className="panel-empty">{t('暂无文件')}</div>
+                <>
+                  {folder !== '.' && (
+                    <div className="file-crumb">
+                      <button onClick={() => setFolder('.')}>{t('根目录')}</button>
+                      <button
+                        onClick={() =>
+                          setFolder(
+                            folder.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : '.',
+                          )
+                        }
+                      >
+                        {t('上一级')}
+                      </button>
+                      <span>{folder}</span>
+                    </div>
+                  )}
+                  {loading ? (
+                    <div className="panel-empty">{t('正在读取…')}</div>
+                  ) : entries.length ? (
+                    <div className="file-list">
+                      {entries
+                        .filter((e) => e.name.toLowerCase().includes(filter.toLowerCase()))
+                        .map((entry) => (
+                          <div className="file-list-row" key={entry.name}>
+                            <button
+                              key={entry.name}
+                              aria-label={
+                                entry.kind === 'link' ||
+                                (entry.kind === 'file' && futurePreview(entry.name))
+                                  ? t('{0} · 即将提供', [entry.name])
+                                  : entry.name
+                              }
+                              disabled={
+                                !draftReady ||
+                                entry.kind === 'link' ||
+                                (entry.kind === 'file' && futurePreview(entry.name))
+                              }
+                              title={
+                                entry.kind === 'link' ||
+                                (entry.kind === 'file' && futurePreview(entry.name))
+                                  ? entry.name + t(' · 即将提供')
+                                  : entry.name
+                              }
+                              onClick={() => {
+                                const target = (folder === '.' ? '' : folder + '/') + entry.name;
+                                if (entry.kind === 'directory') setFolder(target);
+                                else void openFile(target).catch(report);
+                              }}
+                            >
+                              <Icon
+                                name={entry.kind === 'directory' ? 'folder' : 'file'}
+                                size={14}
+                              />
+                              <span>{entry.name}</span>
+                              {(entry.kind === 'link' ||
+                                (entry.kind === 'file' && futurePreview(entry.name))) && (
+                                <small>{t('即将提供')}</small>
+                              )}
+                            </button>
+                            <button
+                              className="file-manage"
+                              aria-label={t('管理 ') + entry.name}
+                              title={t('管理 ') + entry.name}
+                              disabled={entry.kind === 'link' || !draftReady || busy}
+                              onClick={() =>
+                                setManaged((folder === '.' ? '' : folder + '/') + entry.name)
+                              }
+                            >
+                              ⋯
+                            </button>
+                          </div>
+                        ))}
+                      {!entries.some((e) =>
+                        e.name.toLowerCase().includes(filter.toLowerCase()),
+                      ) && <p className="panel-empty">{t('没有匹配的文件')}</p>}
+                      {truncated && (
+                        <p className="inline-error">{t('目录超过 500 项，只显示前 500 项。')}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="panel-empty">{t('暂无文件')}</div>
+                  )}
+                </>
               )}
               {!!tabs.length && (
                 <button className="reopen-files" onClick={() => setShow(true)}>
