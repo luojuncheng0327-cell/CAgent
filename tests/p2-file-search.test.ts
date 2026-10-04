@@ -321,3 +321,107 @@ test('P2 书桌检索接口鉴权、名称与正文两种模式、工作台绑�
     await f.cleanup();
   }
 });
+
+test('P2 搜索读取过程中撤销目录或取消，已累积的结果不会返回', async (t) => {
+  const f = await files();
+  try {
+    await f.write('held.txt', 'needle');
+    for (const cancel of [false, true]) {
+      let entered!: () => void, release!: () => void;
+      const reading = new Promise<void>((resolve) => {
+        entered = resolve;
+      });
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const open = fs.open;
+      t.mock.method(fs, 'open', async (...args: Parameters<typeof fs.open>) => {
+        const handle = await open(...args);
+        const read = handle.read;
+        t.mock.method(handle, 'read', async (...args: any[]) => {
+          entered();
+          await gate;
+          return (read as (...args: any[]) => Promise<unknown>).apply(handle, args);
+        });
+        return handle;
+      });
+      const abort = new AbortController();
+      const pending = f.tool('search_files', { query: 'needle' }, abort.signal);
+      await reading;
+      const latest = f.rt.store.need<Session>('session', f.session.id);
+      if (cancel) abort.abort();
+      else
+        f.rt.store.put(
+          'session',
+          latest.id,
+          { ...latest, blockedDirectories: [f.work] },
+          latest.revision,
+        );
+      release();
+      await assert.rejects(pending, (e: any) =>
+        cancel ? e.name === 'AbortError' : e.code === 'SEARCH_CHANGED',
+      );
+      t.mock.restoreAll();
+      if (!cancel) {
+        const blocked = f.rt.store.need<Session>('session', f.session.id);
+        f.rt.store.put(
+          'session',
+          blocked.id,
+          { ...blocked, blockedDirectories: [] },
+          blocked.revision,
+        );
+      }
+    }
+  } finally {
+    t.mock.restoreAll();
+    await f.cleanup();
+  }
+});
+
+test('P2 搜索时间预算耗尽时返回部分状态，文件消失时继续其他项目', async (t) => {
+  const f = await files();
+  try {
+    await f.write('a-missing.txt', 'needle');
+    await f.write('z-kept.txt', 'needle');
+    let tick = 0;
+    t.mock.method(performance, 'now', () => (tick++ === 0 ? 0 : 6000));
+    const timed = await f.tool('find_files', { glob: '**/*' });
+    assert.equal(timed.matches.length, 0);
+    assert.ok(timed.reasons.includes('time-limit'));
+    t.mock.restoreAll();
+    const open = fs.open;
+    t.mock.method(fs, 'open', async (...args: Parameters<typeof fs.open>) => {
+      if (String(args[0]).endsWith('a-missing.txt'))
+        throw Object.assign(new Error('removed'), { code: 'ENOENT' });
+      return open(...args);
+    });
+    const partial = await f.tool('search_files', { query: 'needle' });
+    assert.deepEqual(
+      partial.matches.map((m: any) => m.path),
+      ['z-kept.txt'],
+    );
+    assert.ok(partial.reasons.includes('unreadable'));
+  } finally {
+    t.mock.restoreAll();
+    await f.cleanup();
+  }
+});
+
+test('P2 助手禁用文件查找后强制调用也拒绝，目录参数不能改为普通文件', async () => {
+  const f = await files();
+  try {
+    await f.write('file.txt', 'needle');
+    await assert.rejects(
+      f.tool('find_files', { path: 'file.txt' }),
+      (e: any) => e.code === 'SEARCH_DIRECTORY',
+    );
+    const agent = f.rt.store.need<any>('agent', f.session.agentId);
+    f.rt.store.put('agent', agent.id, { ...agent, disabledTools: ['find_files'] }, agent.revision);
+    await assert.rejects(
+      f.tool('find_files', { glob: '**/*' }),
+      (e: any) => e.code === 'TOOL_DISABLED',
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
