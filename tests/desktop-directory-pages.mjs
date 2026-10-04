@@ -219,8 +219,10 @@ try {
   await page.keyboard.press('Enter');
   await desk.getByText('显示 1–100 项，共 512 项', { exact: true }).waitFor();
   checks.push('directory breadcrumbs are operable with the keyboard');
-  await tree.getByRole('button', { name: '展开目录 资料 空格😀', exact: true }).click();
-  await tree.getByRole('button', { name: '展开目录 资料 空格😀/二层', exact: true }).click();
+  const expand = tree.getByRole('button', { name: '展开目录 资料 空格😀', exact: true });
+  if (await expand.count()) await expand.click();
+  const expandChild = tree.getByRole('button', { name: '展开目录 资料 空格😀/二层', exact: true });
+  if (await expandChild.count()) await expandChild.click();
   await tree.getByRole('button', { name: '浏览目录 资料 空格😀/二层/三层', exact: true }).waitFor();
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].webContents.invalidate(),

@@ -463,15 +463,6 @@ export function Workspace({
           />
         </div>
         <div className="desk-tools">
-          <button
-            aria-label={t(showTree ? '隐藏目录树' : '显示目录树')}
-            title={t('目录树')}
-            aria-expanded={showTree}
-            disabled={!session.workspace}
-            onClick={() => setShowTree((value) => !value)}
-          >
-            <Icon name="folder" size={14} />
-          </button>
           <input
             type="file"
             multiple
@@ -583,6 +574,18 @@ export function Workspace({
                 />
               ) : (
                 <>
+                  <div className="file-navigation">
+                    <DirectoryBreadcrumbs folder={folder} select={setFolder} />
+                    <button
+                      aria-label={t(showTree ? '隐藏目录树' : '显示目录树')}
+                      title={t('目录树')}
+                      aria-expanded={showTree}
+                      onClick={() => setShowTree((value) => !value)}
+                    >
+                      <Icon name="folder" size={14} />
+                    </button>
+                  </div>
+                  <DirectoryPager navigation={directory} />
                   {showTree && (
                     <WorkspaceDirectories
                       session={session}
@@ -591,7 +594,6 @@ export function Workspace({
                       refresh={searchRefresh}
                     />
                   )}
-                  <DirectoryBreadcrumbs folder={folder} select={setFolder} />
                   {loading ? (
                     <div className="panel-empty">{t('正在读取…')}</div>
                   ) : directory.error ? (
@@ -657,7 +659,6 @@ export function Workspace({
                   ) : (
                     <div className="panel-empty">{t(filter ? '没有匹配的文件' : '暂无文件')}</div>
                   )}
-                  <DirectoryPager navigation={directory} />
                   {directory.notice && (
                     <p className="directory-note" role="status">
                       {t(directory.notice)}
