@@ -11,7 +11,7 @@
 export const asOf = '2026-10-04';
 
 export const milestone =
-  'P2 五语主界面、时区与用户 / 助手资料和本机头像裁剪完成本机验证；保留附件提取、文件与执行链能力，其余缺口按交接继续推进';
+  'P2 补齐跨子目录文件名 / 正文检索、通配符查找和按行读取；本机检索权限、截断、取消与桌面定位已验证，保留五语、资料、附件和执行链能力';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -582,9 +582,17 @@ item(
 item(
   'CA-WORK-002',
   'partial',
-  ['src/server/workspace.ts', 'src/ui/Workspace.tsx', 'tests/boundaries.test.ts'],
-  '书桌列出当前文件夹（最多 500 项），可以按名字筛选当前文件夹；越出授权范围的路径会被拒。',
-  '跨子文件夹的文件搜索和按内容搜索还没有；超过 500 项只显示前 500 项。',
+  [
+    'src/server/workspace.ts',
+    'src/server/file-search.ts',
+    'src/ui/Workspace.tsx',
+    'src/ui/WorkspaceSearch.tsx',
+    'tests/boundaries.test.ts',
+    'tests/p2-file-search.test.ts',
+    'tests/desktop-file-search.mjs',
+  ],
+  '书桌保留当前目录筛选，并可递归检索当前工作区的文件名或 UTF-8 正文；命中带完整相对路径 / 行号，点开正文命中会定位源码选区且不改文件。空结果、跳过与扫描上限可见；迟到请求不覆盖新查询，文件变化刷新检索，切工作台清空旧结果，授权撤销不返回已累积内容。',
+  '普通目录列表仍只显示前 500 项，完整目录树和大目录分页还没有。递归搜索不索引，最多 1000 个目录 / 文件项目、16 层、100 个结果、总读取 8 MiB、单文件 512 KiB、约 5 秒协作式检查；只搜索 UTF-8，链接、依赖与私有目录不参与，未覆盖网络盘阻塞与持续替换攻击。',
 );
 item(
   'CA-WORK-003',
@@ -651,16 +659,28 @@ item(
 item(
   'CA-FILE-001',
   'partial',
-  ['src/server/tools.ts', 'tests/p1-p2.test.ts'],
-  '写入要校验文件版本；精确替换只改唯一匹配，匹配多处时拒绝；文本历史可以恢复。',
-  '读取按字符位置分段，不能按行号范围读取；并发替换攻击还没有专项验证。',
+  [
+    'src/server/tools.ts',
+    'src/shared/file-lines.ts',
+    'tests/p1-p2.test.ts',
+    'tests/p2-file-search.test.ts',
+  ],
+  '读取可选从 1 开始的含末行范围或原有字符偏移；保留 CRLF / CR / LF、BOM 和原文件 SHA-256，返回总行数与续读位置，拒绝混用偏移和行范围。写入校验版本，精确替换只改唯一匹配，匹配多处拒绝；文本历史可以恢复。',
+  '仅限 2 MiB UTF-8 文件，单次工具文本最多 5 万字符；持续并发替换路径攻击还没有专项验证。',
 );
 item(
   'CA-FILE-002',
-  'partial',
-  ['src/server/tools.ts', 'tests/runtime.test.ts', 'tests/boundaries.test.ts'],
-  '可以列出目录（不跟随符号链接）和按字面搜索工作区里的文本（带路径和行号，结果有上限）；授权范围外查不到。',
-  '按通配符（glob）查找文件还没有；结果截断标记和 Unicode 文件名还没有专项验证。',
+  'verified_local',
+  [
+    'src/server/tools.ts',
+    'src/server/file-search.ts',
+    'tests/runtime.test.ts',
+    'tests/boundaries.test.ts',
+    'tests/p2-file-search.test.ts',
+    'tests/desktop-file-search.mjs',
+  ],
+  'list_files 有截断标记；find_files 按 glob 查找，search_files 按字面正文查找并可过滤 glob / 大小写，返回搜索根、可读取的 Unicode 相对路径、行号和命中附近片段。结果、项目、深度、字节和时间有界；超过结果上限才标截断，跳过二进制 / 非 UTF-8 / 超大 / 不可读文件有报告。链接、私有和撤销子目录不泄露结果，取消 / 授权变化拒绝返回；个别文件消失不会遮住后续结果。',
+  '本机 Windows 与目录联接夹具验证；真实模型账号、跨平台、网络盘及持续路径替换攻击未验。默认跳过 .git / node_modules / 私有目录；glob 使用标准 POSIX 分隔符且区分大小写，query 默认不区分大小写。时间限制在文件系统操作之间检查，操作系统阻塞读取不保证 5 秒内中断。',
 );
 item(
   'CA-FILE-003',
