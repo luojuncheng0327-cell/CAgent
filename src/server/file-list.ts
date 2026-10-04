@@ -42,6 +42,26 @@ export async function listWorkspaceDirectory(
   raw: unknown,
   signal?: AbortSignal,
 ): Promise<DirectoryPage> {
+  try {
+    return await readDirectoryPage(store, session, raw, signal);
+  } catch (error) {
+    if (!(error instanceof AppError)) {
+      const code = (error as NodeJS.ErrnoException)?.code;
+      if (code === 'EACCES' || code === 'EPERM')
+        throw new AppError('DIRECTORY_DENIED', '系统拒绝读取此目录，请检查目录权限', 403);
+      if (code === 'ENOENT')
+        throw new AppError('DIRECTORY_MISSING', '目录已不存在，请选择上一级或刷新', 404);
+    }
+    throw error;
+  }
+}
+
+async function readDirectoryPage(
+  store: Store,
+  session: Session,
+  raw: unknown,
+  signal?: AbortSignal,
+): Promise<DirectoryPage> {
   const input = directoryPageSchema.parse(raw);
   let current = store.need<Session>('session', session.id);
   invariant(
