@@ -144,7 +144,7 @@ try {
   );
   await trigger('聊天模型').click();
   await menu('聊天模型').waitFor();
-  const first = page.getByRole('option').first();
+  const first = menu('聊天模型').getByRole('option').first();
   const firstName = await first.getAttribute('aria-label');
   const firstValue = [model, other].find((value) => value.name === firstName);
   assert.ok(firstValue);
@@ -154,7 +154,7 @@ try {
   await savedModel(firstValue);
   await trigger('聊天模型').click();
   await menu('聊天模型').waitFor();
-  const last = page.getByRole('option').last();
+  const last = menu('聊天模型').getByRole('option').last();
   const lastName = await last.getAttribute('aria-label');
   const lastValue = [model, other].find((value) => value.name === lastName);
   assert.ok(lastValue);
