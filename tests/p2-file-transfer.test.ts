@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { setup, temporary, removeTemporary } from './helpers.ts';
+import { setup, temporary, removeTemporary, fixture, response } from './helpers.ts';
+import { randomUUID } from 'node:crypto';
 import { runTool, hash, toolDefinitions } from '../src/server/tools.ts';
 import { createResource, hydrateMessages } from '../src/server/resources.ts';
 import { serve } from '../src/server/http.ts';
@@ -457,5 +458,69 @@ test('P2 批准后解析目标路径期间取消复制或物化，不留下目�
     }
   } finally {
     await f.cleanup();
+  }
+});
+
+test('P2 只读与重试请求只向模型提供可用的读取工具，不公布复制或物化写工具', async () => {
+  const requests: any[] = [];
+  const mock = await fixture((_req, res, body) => {
+    requests.push(body);
+    response(res, 'readonly reply');
+  });
+  const f = await files();
+  try {
+    f.rt.saveProvider(
+      { ...f.provider, baseUrl: mock.url, revision: f.provider.revision },
+      f.provider.id,
+    );
+    await f.update({ permission: 'read' });
+    const first = await f.rt.start(f.session.id, { text: '只读核对', requestId: randomUUID() });
+    assert.equal((await f.rt.wait(first.id)).status, 'succeeded');
+    await f.update({ permission: 'operate' });
+    const retry = await f.rt.start(f.session.id, { retry: true, requestId: randomUUID() });
+    assert.equal((await f.rt.wait(retry.id)).status, 'succeeded');
+    assert.equal(requests.length, 2);
+    for (const request of requests) {
+      const names = request.tools.map((tool: any) => tool.name);
+      assert.ok(names.includes('file_info'));
+      assert.ok(names.includes('list_attachments'));
+      for (const name of [
+        'copy_file',
+        'materialize_attachment',
+        'write_file',
+        'edit_file',
+        'run_command',
+      ])
+        assert.equal(names.includes(name), false, name);
+    }
+  } finally {
+    await f.cleanup();
+    await mock.close();
+  }
+});
+
+test('P2 会话未选择工作区时仍可向模型提供附件元数据工具，不提供文件系统工具', async () => {
+  let body: any;
+  const mock = await fixture((_req, res, value) => {
+    body = value;
+    response(res, 'attachment list available');
+  });
+  const f = await files();
+  try {
+    f.rt.saveProvider(
+      { ...f.provider, baseUrl: mock.url, revision: f.provider.revision },
+      f.provider.id,
+    );
+    await createResource(f.rt.store, f.session.id, 'file.txt', Buffer.from('original'));
+    await f.update({ workspace: null, directoryGrants: [] });
+    const run = await f.rt.start(f.session.id, { text: '列出本会话附件', requestId: randomUUID() });
+    assert.equal((await f.rt.wait(run.id)).status, 'succeeded');
+    const names = body.tools?.map((tool: any) => tool.name) ?? [];
+    assert.ok(names.includes('list_attachments'));
+    for (const name of ['file_info', 'copy_file', 'materialize_attachment', 'read_file'])
+      assert.equal(names.includes(name), false, name);
+  } finally {
+    await f.cleanup();
+    await mock.close();
   }
 });
