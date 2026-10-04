@@ -372,14 +372,25 @@ export async function runTool(
   }
   if (name === 'file_info') return inspectWorkspaceItem(c.store, current, parsed.path);
   if (name === 'copy_file')
-    return changeWorkspaceItem(c.store, transferSession, {
-      operation: 'copy',
-      path: parsed.path,
-      destination: parsed.destination,
-      expectedHash: parsed.expectedHash,
-    });
+    return changeWorkspaceItem(
+      c.store,
+      transferSession,
+      {
+        operation: 'copy',
+        path: parsed.path,
+        destination: parsed.destination,
+        expectedHash: parsed.expectedHash,
+      },
+      { signal: c.signal },
+    );
   if (name === 'materialize_attachment')
-    return materializeAttachment(c.store, transferSession, parsed.attachmentId, parsed.path);
+    return materializeAttachment(
+      c.store,
+      transferSession,
+      parsed.attachmentId,
+      parsed.path,
+      c.signal,
+    );
   if (name === 'list_attachments') {
     const all = c.store
       .list<Resource>('resource')

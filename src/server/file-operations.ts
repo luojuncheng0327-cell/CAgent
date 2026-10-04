@@ -11,6 +11,7 @@ import { hash, workspacePath } from './tools.ts';
 export const workspaceUploadLimit = 16 * 1024 * 1024;
 export interface FileServices {
   trashItem?: (target: string) => Promise<void>;
+  signal?: AbortSignal;
 }
 interface NodeInfo {
   path: string;
@@ -171,12 +172,16 @@ export async function uploadWorkspaceFile(
   session: Session,
   input: string,
   bytes: Buffer,
+  options: { signal?: AbortSignal; validateSource?: () => void } = {},
 ) {
+  options.signal?.throwIfAborted();
   selectedWorkspace(store, session);
   invariant(bytes.length <= workspaceUploadLimit, 'FILE_SIZE', '上传文件不能超过 16 MiB', 413);
   const target = await workspacePath(store, session, input, true, true);
   selectedWorkspace(store, session);
   writableItem(store, session, target);
+  options.signal?.throwIfAborted();
+  options.validateSource?.();
   exclusiveBytes(store, session, target, bytes);
   store.audit('workspace.upload', session.id, 'ok');
   return { path: input, bytes: bytes.length, sha256: hash(bytes) };
@@ -194,6 +199,7 @@ export async function changeWorkspaceItem(
   },
   services: FileServices = {},
 ) {
+  services.signal?.throwIfAborted();
   selectedWorkspace(store, session);
   const target = await workspacePath(store, session, input.path, false, input.operation !== 'copy');
   if (input.operation !== 'copy') writableItem(store, session, target);
@@ -214,6 +220,7 @@ export async function changeWorkspaceItem(
   // No await between final permission/version/collision checks and the filesystem mutation.
   // This serializes app requests; it is not an OS sandbox against external path replacement.
   selectedWorkspace(store, session);
+  services.signal?.throwIfAborted();
   const source = snapshot(store, session, target, input.operation !== 'copy');
   invariant(
     source.sha256 === input.expectedHash,
