@@ -11,7 +11,7 @@
 export const asOf = '2026-10-04';
 
 export const milestone =
-  'P2 补齐普通目录分页、按需展开的目录树和路径导航；超过 500 项可完整浏览，筛选覆盖整个目录，授权变化与旧分页响应受保护，保留检索、五语、资料、附件和执行链能力';
+  'P2 补齐工具层二进制复制、对话附件原文件保存，以及工作区图片与 PDF/DOCX 文字预览；权限、原工作台、源版本和取消状态在落盘前重查，保留手动保存、目录导航与执行链能力';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -636,9 +636,18 @@ item(
 item(
   'CA-WORK-005',
   'partial',
-  [...continuation, 'src/ui/Workspace.tsx', 'src/ui/shell.css', 'tests/desktop-layout.mjs'],
-  '最多十个文件标签，切换时保留草稿和滚动位置；Markdown 和纯文本可以预览。',
-  '图片、音视频、PDF 的预览和独立查看窗口还没有（文件列表里显示为即将提供）。',
+  [
+    ...continuation,
+    'src/ui/Workspace.tsx',
+    'src/ui/FilePreview.tsx',
+    'src/server/file-preview.ts',
+    'src/ui/shell.css',
+    'tests/p2-file-preview.test.ts',
+    'tests/desktop-file-preview.mjs',
+    'tests/desktop-layout.mjs',
+  ],
+  '最多十个文本标签，切换时保留草稿和滚动位置；Markdown 和纯文本可以预览。工作区 PNG/JPEG/GIF/WebP 图片可完整解码后预览、缩放与重读，PDF/DOCX 提供本机提取文字预览并显示提取范围和警告；正文按纯文字呈现。预览不登记附件、不修改源文件或恢复草稿，解析后重查授权、原工作台与源 hash，关闭取消请求，迟到响应不重开旧查看器。',
+  'PDF/DOCX 是文字预览，尚不还原原页排版或图片；音视频、其他 Office、SVG、扫描 OCR、独立系统查看窗口、多媒体标签和移动端查看未完成。预览每文件最多 4 MiB，沿用已批准附件解析器的页数、像素、时间与工作线程预算；网络盘、跨平台与持续路径替换攻击未专项验证。',
 );
 item(
   'CA-WORK-008',
@@ -655,9 +664,13 @@ item(
     'src/server/resources.ts',
     'tests/p2-attachment-parsing.test.ts',
     'tests/p2-parser-bounds.test.ts',
+    'src/server/file-transfer.ts',
+    'src/ui/AttachmentSave.tsx',
+    'tests/p2-file-transfer.test.ts',
+    'tests/desktop-file-preview.mjs',
   ],
-  '附件有稳定编号并按会话隔离，下载核对原始字节；分支各有独立原文件与提取缓存，备份按原文件重建缓存；旧图片首次使用重新解码，解析期间归档或取消不落盘。删除资源 / 会话同步清理派生文字。',
-  '工具产出文件的自动登记、右侧产物列表和资源清理界面还没有。',
+  '附件有稳定编号并按会话隔离，下载核对原始字节；分支各有独立原文件与提取缓存，备份按原文件重建缓存；旧图片首次使用重新解码，解析期间归档或取消不落盘。删除资源 / 会话同步清理派生文字。右侧对话文件可将原附件保存到当前可写工作区；模型可以按稳定编号列出并物化本会话附件，其他会话或损坏 / 删除资源拒绝。',
+  '工具输出文件的自动登记、统一产物定位列表和资源清理界面还没有。附件保存不把工作区副本登记为新附件；原文件仍在会话资源集合中。',
 );
 
 // P2 · 文件、终端和网页工具
@@ -689,15 +702,21 @@ item(
 );
 item(
   'CA-FILE-003',
-  'partial',
+  'verified_local',
   [
     'src/server/workspace.ts',
     'src/server/file-operations.ts',
+    'src/server/file-transfer.ts',
+    'src/server/tools.ts',
+    'src/server/resources.ts',
+    'src/ui/AttachmentSave.tsx',
     'tests/p1-p2.test.ts',
     'tests/p2-file-operations.test.ts',
+    'tests/p2-file-transfer.test.ts',
+    'tests/desktop-file-preview.mjs',
   ],
-  '书桌可以复制和移动文本或任意字节文件；核对 BOM、换行、SHA-256 与字节内容，不覆盖已有目标。',
-  '工具调用层的二进制复制、把对话附件复制到工作区仍未提供。',
+  '书桌及 copy_file 工具按原始字节复制文件，file_info 获取当前 SHA-256；文本 BOM、换行、二进制和空文件保留，不覆盖同名目标。list_attachments 返回本会话附件稳定编号与元数据，materialize_attachment 和右侧保存入口把原文件物化到可写工作区。询问模式逐次批准，源读取与目标写入分别鉴权；批准后重查工具开关、权限、原工作台和源版本，真正落盘前重查附件存在 / 校验与取消状态；重试不能重放写入。',
+  '本机 Windows 临时目录与假模型协议验证，未联调真实账号、网络盘、其他系统或持续外部路径替换攻击。文件复制最多 16 MiB，附件物化沿用原资源最多 4 MiB；父目录须已存在，不复制目录，也没有覆盖同名的选项。',
 );
 item(
   'CA-FILE-005',
