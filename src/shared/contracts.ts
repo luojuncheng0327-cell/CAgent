@@ -224,6 +224,10 @@ export interface Resource extends Stored {
   image?: { width: number; height: number; frames: number };
   extraction?: { format: 'pdf' | 'docx'; pages?: number; characters: number; warnings: string[] };
 }
+export type WorkspacePreview = { path: string; mime: string; bytes: number; sha256: string } & (
+  | { kind: 'image'; image: NonNullable<Resource['image']>; imageUrl: string }
+  | { kind: 'document'; text: string; extraction: NonNullable<Resource['extraction']> }
+);
 export interface MessagePage {
   messages: Message[];
   before: number | null;

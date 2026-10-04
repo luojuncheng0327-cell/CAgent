@@ -27,6 +27,7 @@ import { usageReport } from './usage.ts';
 import { searchSessions, orderedSessions, saveSessionOrder } from './session-navigation.ts';
 import { loadFileDrafts, saveFileDrafts } from './file-drafts.ts';
 import { materializeAttachment } from './file-transfer.ts';
+import { previewWorkspaceFile } from './file-preview.ts';
 import {
   inspectWorkspaceItem,
   uploadWorkspaceFile,
@@ -597,6 +598,33 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           try {
             json(res, {
               data: await listWorkspaceDirectory(rt.store, session, input, abort.signal),
+            });
+          } finally {
+            res.off('close', disconnected);
+          }
+          return;
+        }
+        if (action === 'file-preview' && method === 'GET') {
+          const input = z
+            .object({
+              path: z.string().min(1).max(4096),
+              workspace: z.string().min(1).max(4096),
+            })
+            .parse(Object.fromEntries(url.searchParams));
+          invariant(
+            session.workspace === input.workspace,
+            'WORKSPACE_CHANGED',
+            '当前工作台已切换，请重新打开文件操作',
+            409,
+          );
+          const abort = new AbortController();
+          const disconnected = () => {
+            if (!res.writableEnded) abort.abort();
+          };
+          res.once('close', disconnected);
+          try {
+            json(res, {
+              data: await previewWorkspaceFile(rt.store, session, input.path, abort.signal),
             });
           } finally {
             res.off('close', disconnected);

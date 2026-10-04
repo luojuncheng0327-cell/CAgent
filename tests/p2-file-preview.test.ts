@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import syncFs from 'node:fs';
 import path from 'node:path';
 import { setup, temporary, removeTemporary } from './helpers.ts';
 import { serve } from '../src/server/http.ts';
 import { hash } from '../src/server/tools.ts';
+import { previewWorkspaceFile } from '../src/server/file-preview.ts';
 import { pdfFile, mappedPdfFile, docxFile } from './fixtures/attachment-files.ts';
 import type { Session } from '../src/shared/contracts.ts';
 
@@ -174,7 +176,53 @@ test('P2 重新预览读出最新文件，目录和未鉴权请求不会返回�
     assert.match(second.data.text, /second/);
     assert.notEqual(second.data.sha256, first.data.sha256);
     assert.equal((await f.get('.')).error.code, 'FILE_TYPE');
-    assert.equal((await f.get('test.pdf', f.root, 'wrong')).status, 403);
+    assert.equal((await f.get('test.pdf', f.root, 'wrong')).status, 401);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('P2 解析期间取消、撤销授权或源文件变化，不返回已读取的旧预览', async (context) => {
+  const f = await preview();
+  try {
+    for (const mode of ['cancel', 'revoke', 'change'] as const) {
+      const target = path.join(f.root, 'race.pdf');
+      await f.update({ workspace: f.root, directoryGrants: [{ path: f.root, access: 'read' }] });
+      await fs.writeFile(target, pdfFile('original'));
+      const session = f.rt.store.need<Session>('session', f.session.id);
+      const abort = new AbortController(),
+        realpath = fs.realpath;
+      let scheduled = false;
+      const mocked = context.mock.method(
+        fs,
+        'realpath',
+        async (...args: Parameters<typeof fs.realpath>) => {
+          const value = await realpath(...args);
+          if (!scheduled && args[0] === target) {
+            scheduled = true;
+            setImmediate(() => {
+              if (mode === 'cancel') abort.abort();
+              else if (mode === 'change') syncFs.writeFileSync(target, pdfFile('replacement'));
+              else
+                f.rt.store.put('session', session.id, {
+                  ...session,
+                  directoryGrants: [],
+                  workspace: null,
+                });
+            });
+          }
+          return value;
+        },
+      );
+      await assert.rejects(
+        previewWorkspaceFile(f.rt.store, session, 'race.pdf', abort.signal),
+        mode === 'cancel'
+          ? { name: 'AbortError' }
+          : { code: mode === 'change' ? 'FILE_CONFLICT' : 'WORKSPACE_CHANGED' },
+      );
+      mocked.mock.restore();
+      assert.equal(scheduled, true);
+    }
   } finally {
     await f.cleanup();
   }

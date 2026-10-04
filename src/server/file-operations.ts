@@ -150,6 +150,22 @@ export async function inspectWorkspaceItem(store: Store, session: Session, input
   return { path: input, kind, bytes, entries, sha256 };
 }
 
+export async function readWorkspaceBytes(
+  store: Store,
+  session: Session,
+  input: string,
+  limit: number,
+) {
+  selectedWorkspace(store, session);
+  const target = await workspacePath(store, session, input);
+  selectedWorkspace(store, session);
+  const stat = fs.lstatSync(target);
+  invariant(stat.isFile(), 'FILE_TYPE', '仅支持普通文件');
+  invariant(stat.size <= limit, 'FILE_SIZE', '预览文件不能超过 4 MiB', 413);
+  const value = snapshot(store, session, target);
+  return { content: value.fileBytes!, sha256: value.sha256, bytes: value.bytes };
+}
+
 export async function uploadWorkspaceFile(
   store: Store,
   session: Session,
