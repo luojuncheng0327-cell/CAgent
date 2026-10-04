@@ -62,6 +62,8 @@ try {
   await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
   await scope.selectOption('content');
   await query.fill('needle');
+  await desk.getByText(/搜索范围不完整：.*跳过二进制文件/).waitFor();
+  checks.push('skipped binary files are visibly reported as incomplete search');
   await desk.getByRole('button', { name: '资料 空格/中文😀.md:2', exact: true }).click();
   const editor = page.getByLabel('文件内容', { exact: true });
   await editor.waitFor();
@@ -71,7 +73,40 @@ try {
     /正文命中 needle/,
   );
   checks.push('content search shows line numbers and selects the hit in a read-only source editor');
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].webContents.invalidate(),
+  );
+  const frames = () =>
+    page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+  await frames();
+  const screenshot = () =>
+    app.evaluate(async ({ BrowserWindow }) =>
+      (
+        await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, {
+          stayHidden: true,
+          stayAwake: true,
+        })
+      )
+        .toPNG()
+        .toString('base64'),
+    );
+  await screenshot();
+  await frames();
+  await fs.writeFile(
+    '.artifacts/p2-file-search-line.png',
+    Buffer.from(await screenshot(), 'base64'),
+  );
   await page.getByRole('button', { name: '关闭文件预览', exact: true }).click();
+  await desk.getByRole('button', { name: '资料 空格/中文😀.md:2', exact: true }).waitFor();
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].webContents.invalidate(),
+  );
+  await frames();
+  await screenshot();
+  await frames();
+  await fs.writeFile('.artifacts/p2-file-search.png', Buffer.from(await screenshot(), 'base64'));
   await query.fill('no-such-content');
   await desk.getByText('没有匹配的文件', { exact: true }).waitFor();
   await query.fill('');
