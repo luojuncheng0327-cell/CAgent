@@ -130,6 +130,11 @@ try {
   await tree.getByRole('button', { name: '展开目录 资料 空格😀/二层', exact: true }).click();
   await tree.getByRole('button', { name: '浏览目录 资料 空格😀/二层/三层', exact: true }).click();
   await list.getByRole('button', { name: 'leaf.txt', exact: true }).waitFor();
+  const treeBox = await tree.boundingBox();
+  assert.ok(
+    treeBox && treeBox.height >= 120,
+    'An expanded tree must retain visible height beside a large file list',
+  );
   assert.equal(
     await tree
       .getByRole('button', { name: /浏览目录 .*blocked|浏览目录 .*link|浏览目录 .*CAGENT/ })
@@ -146,6 +151,11 @@ try {
   await desk.getByText('显示 1–100 项，共 511 项', { exact: true }).waitFor();
   checks.push(
     'breadcrumbs and parent navigation return to any visible ancestor without leaving the authorized root',
+  );
+  const largeTreeBox = await tree.boundingBox();
+  assert.ok(
+    largeTreeBox && largeTreeBox.height >= 120,
+    'A long file page must not collapse the expanded folder tree',
   );
   await desk.getByRole('button', { name: '下一页文件', exact: true }).click();
   await desk.getByText('显示 101–200 项，共 511 项', { exact: true }).waitFor();
