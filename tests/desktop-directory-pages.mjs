@@ -10,6 +10,8 @@ const f = await setup('http://127.0.0.1:9/v1');
 const workspace = await temporary(),
   other = await temporary();
 let app;
+let diagnosticPage;
+const requests = [];
 const checks = [],
   errors = [];
 try {
@@ -58,6 +60,12 @@ try {
     env: { ...process.env, CAGENT_HOME: f.home, CAGENT_SMOKE: '1' },
   });
   const page = await app.firstWindow();
+  diagnosticPage = page;
+  page.on('response', (response) => {
+    const url = new URL(response.url());
+    if (url.pathname.endsWith('/files') || url.pathname.endsWith('/workspace-events'))
+      requests.push({ path: url.pathname, query: url.search, status: response.status() });
+  });
   if (process.env.CAGENT_DIRECTORY_TEST_EXE)
     assert.equal(await app.evaluate(({ app }) => app.isPackaged), true);
   page.setDefaultTimeout(7000);
@@ -230,6 +238,25 @@ try {
     JSON.stringify(result, null, 2),
   );
   console.log(JSON.stringify(result));
+} catch (error) {
+  await fs.writeFile(
+    '.artifacts/logs/p2-directory-desktop-diagnostic-20261004.json',
+    JSON.stringify(
+      {
+        requests,
+        text: diagnosticPage
+          ? await diagnosticPage
+              .locator('body')
+              .innerText()
+              .catch(() => '')
+          : '',
+        error: String(error),
+      },
+      null,
+      2,
+    ),
+  );
+  throw error;
 } finally {
   if (app) await app.close();
   await f.rt.close();

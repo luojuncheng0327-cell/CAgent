@@ -10,6 +10,12 @@ import type { DocumentMemory } from './DocumentEditor.tsx';
 import { inspectDocument } from './document-markdown.ts';
 import { WorkspaceActions, uploadWorkspaceFiles } from './WorkspaceActions.tsx';
 import { WorkspaceSearch } from './WorkspaceSearch.tsx';
+import { useDirectoryPage } from './use-directory-page.ts';
+import {
+  DirectoryBreadcrumbs,
+  DirectoryPager,
+  WorkspaceDirectories,
+} from './WorkspaceDirectories.tsx';
 import { lineStarts } from '../shared/file-lines.ts';
 import {
   loadFileDraftView,
@@ -79,12 +85,19 @@ export function Workspace({
   const [draftStatus, setDraftStatus] = useState('正在恢复文件草稿…');
   const [draftFailed, setDraftFailed] = useState(false);
   const [folder, setFolder] = useState('.'),
-    [entries, setEntries] = useState<{ name: string; kind: string }[]>([]),
-    [truncated, setTruncated] = useState(false),
-    [loading, setLoading] = useState(false),
     [filter, setFilter] = useState('');
+  const [showTree, setShowTree] = useState(false);
   const [searchMode, setSearchMode] = useState<'current' | 'filename' | 'content'>('current');
   const [searchRefresh, setSearchRefresh] = useState(0);
+  const directory = useDirectoryPage({
+    session,
+    folder,
+    query: searchMode === 'current' ? filter : '',
+    refresh: searchRefresh,
+    enabled: area === 'files' && !!session.workspace,
+  });
+  const entries = directory.page.entries,
+    loading = directory.loading;
   const [lineTarget, setLineTarget] = useState<{ path: string; line: number } | null>(null);
   const [tabs, setTabs] = useState<FileTab[]>(() => drafts.get(key)?.tabs ?? []),
     [active, setActive] = useState<string | null>(() => drafts.get(key)?.active ?? null),
@@ -100,7 +113,6 @@ export function Workspace({
     operations = useRef<HTMLDivElement>(null),
     searchInput = useRef<HTMLInputElement>(null),
     tabRef = useRef(tabs),
-    listRequest = useRef(0),
     file = tabs.find((t) => t.path === active);
   const savePending = useRef(false);
   const draftsLoaded = useRef(false);
@@ -133,28 +145,8 @@ export function Workspace({
   }, [file?.text, file?.document, markdownFile]);
   tabRef.current = tabs;
   const load = useCallback(async () => {
-    if (!session.workspace) return;
-    const request = ++listRequest.current;
-    const data = await api<{ entries: typeof entries; truncated: boolean }>(
-      `${prefix}/files?path=${encodeURIComponent(folder)}`,
-    );
-    if (request !== listRequest.current) return;
-    setEntries(data.entries);
-    setTruncated(data.truncated);
     setSearchRefresh((value) => value + 1);
-  }, [session.workspace, prefix, folder]);
-  useEffect(() => {
-    let current = true;
-    setLoading(true);
-    void load()
-      .catch(report)
-      .finally(() => {
-        if (current) setLoading(false);
-      });
-    return () => {
-      current = false;
-    };
-  }, [load, report]);
+  }, []);
   useEffect(() => {
     drafts.set(key, { tabs, active });
     if (draftReady && session.workspace) {
@@ -471,6 +463,15 @@ export function Workspace({
           />
         </div>
         <div className="desk-tools">
+          <button
+            aria-label={t(showTree ? '隐藏目录树' : '显示目录树')}
+            title={t('目录树')}
+            aria-expanded={showTree}
+            disabled={!session.workspace}
+            onClick={() => setShowTree((value) => !value)}
+          >
+            <Icon name="folder" size={14} />
+          </button>
           <input
             type="file"
             multiple
@@ -582,86 +583,85 @@ export function Workspace({
                 />
               ) : (
                 <>
-                  {folder !== '.' && (
-                    <div className="file-crumb">
-                      <button onClick={() => setFolder('.')}>{t('根目录')}</button>
-                      <button
-                        onClick={() =>
-                          setFolder(
-                            folder.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : '.',
-                          )
-                        }
-                      >
-                        {t('上一级')}
-                      </button>
-                      <span>{folder}</span>
-                    </div>
+                  {showTree && (
+                    <WorkspaceDirectories
+                      session={session}
+                      folder={folder}
+                      select={setFolder}
+                      refresh={searchRefresh}
+                    />
                   )}
+                  <DirectoryBreadcrumbs folder={folder} select={setFolder} />
                   {loading ? (
                     <div className="panel-empty">{t('正在读取…')}</div>
+                  ) : directory.error ? (
+                    <p className="inline-error" role="alert">
+                      {directory.error.message}
+                    </p>
                   ) : entries.length ? (
                     <div className="file-list">
-                      {entries
-                        .filter((e) => e.name.toLowerCase().includes(filter.toLowerCase()))
-                        .map((entry) => (
-                          <div className="file-list-row" key={entry.name}>
-                            <button
-                              key={entry.name}
-                              aria-label={
-                                entry.kind === 'link' ||
-                                (entry.kind === 'file' && futurePreview(entry.name))
-                                  ? t('{0} · 即将提供', [entry.name])
-                                  : entry.name
-                              }
-                              disabled={
-                                !draftReady ||
-                                entry.kind === 'link' ||
-                                (entry.kind === 'file' && futurePreview(entry.name))
-                              }
-                              title={
-                                entry.kind === 'link' ||
-                                (entry.kind === 'file' && futurePreview(entry.name))
-                                  ? entry.name + t(' · 即将提供')
-                                  : entry.name
-                              }
-                              onClick={() => {
-                                const target = (folder === '.' ? '' : folder + '/') + entry.name;
-                                if (entry.kind === 'directory') setFolder(target);
-                                else void openFile(target).catch(report);
-                              }}
-                            >
-                              <Icon
-                                name={entry.kind === 'directory' ? 'folder' : 'file'}
-                                size={14}
-                              />
-                              <span>{entry.name}</span>
-                              {(entry.kind === 'link' ||
-                                (entry.kind === 'file' && futurePreview(entry.name))) && (
-                                <small>{t('即将提供')}</small>
-                              )}
-                            </button>
-                            <button
-                              className="file-manage"
-                              aria-label={t('管理 ') + entry.name}
-                              title={t('管理 ') + entry.name}
-                              disabled={entry.kind === 'link' || !draftReady || busy}
-                              onClick={() =>
-                                setManaged((folder === '.' ? '' : folder + '/') + entry.name)
-                              }
-                            >
-                              ⋯
-                            </button>
-                          </div>
-                        ))}
-                      {!entries.some((e) =>
-                        e.name.toLowerCase().includes(filter.toLowerCase()),
-                      ) && <p className="panel-empty">{t('没有匹配的文件')}</p>}
-                      {truncated && (
-                        <p className="inline-error">{t('目录超过 500 项，只显示前 500 项。')}</p>
-                      )}
+                      {entries.map((entry) => (
+                        <div className="file-list-row" key={entry.name}>
+                          <button
+                            key={entry.name}
+                            aria-label={
+                              entry.kind === 'link' ||
+                              entry.kind === 'other' ||
+                              (entry.kind === 'file' && futurePreview(entry.name))
+                                ? t('{0} · 即将提供', [entry.name])
+                                : entry.name
+                            }
+                            disabled={
+                              !draftReady ||
+                              entry.kind === 'link' ||
+                              entry.kind === 'other' ||
+                              (entry.kind === 'file' && futurePreview(entry.name))
+                            }
+                            title={
+                              entry.kind === 'link' ||
+                              entry.kind === 'other' ||
+                              (entry.kind === 'file' && futurePreview(entry.name))
+                                ? entry.name + t(' · 即将提供')
+                                : entry.name
+                            }
+                            onClick={() => {
+                              const target = (folder === '.' ? '' : folder + '/') + entry.name;
+                              if (entry.kind === 'directory') setFolder(target);
+                              else void openFile(target).catch(report);
+                            }}
+                          >
+                            <Icon name={entry.kind === 'directory' ? 'folder' : 'file'} size={14} />
+                            <span>{entry.name}</span>
+                            {(entry.kind === 'link' ||
+                              entry.kind === 'other' ||
+                              (entry.kind === 'file' && futurePreview(entry.name))) && (
+                              <small>{t('即将提供')}</small>
+                            )}
+                          </button>
+                          <button
+                            className="file-manage"
+                            aria-label={t('管理 ') + entry.name}
+                            title={t('管理 ') + entry.name}
+                            disabled={
+                              entry.kind === 'link' || entry.kind === 'other' || !draftReady || busy
+                            }
+                            onClick={() =>
+                              setManaged((folder === '.' ? '' : folder + '/') + entry.name)
+                            }
+                          >
+                            ⋯
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   ) : (
-                    <div className="panel-empty">{t('暂无文件')}</div>
+                    <div className="panel-empty">{t(filter ? '没有匹配的文件' : '暂无文件')}</div>
+                  )}
+                  <DirectoryPager navigation={directory} />
+                  {directory.notice && (
+                    <p className="directory-note" role="status">
+                      {t(directory.notice)}
+                    </p>
                   )}
                 </>
               )}

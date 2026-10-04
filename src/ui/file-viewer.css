@@ -16,6 +16,70 @@
   align-items: center;
   min-width: 0;
 }
+.directory-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 5px 3px;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+.directory-pager > div {
+  display: flex;
+  gap: 2px;
+}
+.directory-pager button,
+.directory-tree button {
+  padding: 2px 5px;
+  min-height: 24px;
+  border: 0;
+  background: none;
+  font-size: 11px;
+}
+.directory-tree {
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  max-height: 250px;
+  overflow: auto;
+}
+.directory-tree ul {
+  list-style: none;
+  padding: 0 0 0 9px;
+  margin: 0;
+}
+.directory-tree-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.directory-tree-row > button:first-child {
+  flex-shrink: 0;
+  width: 20px;
+}
+.directory-tree-row > button:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 40px;
+}
+.directory-tree button[aria-current='location'] {
+  color: var(--tint-main);
+  background: var(--bubble-tone);
+}
+.directory-note {
+  color: var(--text-faint);
+  font-size: 10px;
+  padding: 3px;
+  margin: 0;
+}
+.file-crumb {
+  flex-wrap: wrap;
+}
+.file-crumb button {
+  overflow-wrap: anywhere;
+}
 .file-list-row > button:first-child {
   flex: 1;
   overflow: hidden;
