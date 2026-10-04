@@ -524,3 +524,35 @@ test('P2 会话未选择工作区时仍可向模型提供附件元数据工具�
     await mock.close();
   }
 });
+
+test('P2 模型回复前工作台已切换，旧执行上下文不得向新工作台请求批准或写入', async () => {
+  const f = await files();
+  try {
+    const bytes = Buffer.from('same source bytes');
+    await fs.writeFile(path.join(f.root, 'source.txt'), bytes);
+    await fs.writeFile(path.join(f.other, 'source.txt'), bytes);
+    const resource = await createResource(f.rt.store, f.session.id, 'file.txt', bytes);
+    await f.update({ workspace: f.other, permission: 'ask' });
+    for (const [name, args] of [
+      [
+        'copy_file',
+        { path: 'source.txt', destination: 'unexpected.txt', expectedHash: hash(bytes) },
+      ],
+      ['materialize_attachment', { attachmentId: resource.id, path: 'unexpected.txt' }],
+    ] as const) {
+      let asked = false;
+      await assert.rejects(
+        f.tool(name, args, async () => {
+          asked = true;
+          return true;
+        }),
+        { code: 'WORKSPACE_CHANGED' },
+      );
+      assert.equal(asked, false);
+      await assert.rejects(fs.stat(path.join(f.root, 'unexpected.txt')));
+      await assert.rejects(fs.stat(path.join(f.other, 'unexpected.txt')));
+    }
+  } finally {
+    await f.cleanup();
+  }
+});
