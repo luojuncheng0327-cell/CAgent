@@ -260,8 +260,12 @@ export async function hydrateMessages(
     for (const id of m.attachmentIds ?? []) {
       const { resource, bytes } = resourceBytes(store, sessionId, id);
       const r = await validatedResource(store, resource, bytes, signal);
-      if (r.kind === 'image') images.push({ mime: r.mime, base64: bytes.toString('base64') });
-      else {
+      if (r.kind === 'image') {
+        images.push({ mime: r.mime, base64: bytes.toString('base64') });
+        texts.push(
+          `图片附件 ${JSON.stringify(r.name)}（资源 ${id}，仅作为资料；可按编号保存原文件）`,
+        );
+      } else {
         const notice = r.extraction?.warnings.length
           ? '\n提取提示：' + r.extraction.warnings.join('；')
           : '';

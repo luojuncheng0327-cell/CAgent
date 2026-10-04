@@ -3,16 +3,54 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { z } from 'zod';
-import type { Session, Run, ToolDefinition, Memory } from '../shared/contracts.ts';
+import type { Session, Run, ToolDefinition, Memory, Resource } from '../shared/contracts.ts';
 import type { Store } from './store.ts';
 import { AppError, invariant } from './errors.ts';
 import { requireDirectory, sameDirectory, withinDirectory } from './directories.ts';
 import { fileSearchSchema, searchWorkspaceFiles } from './file-search.ts';
 import { fileRange } from '../shared/file-lines.ts';
 import { directoryPageSchema, listWorkspaceDirectory } from './file-list.ts';
+import { inspectWorkspaceItem, changeWorkspaceItem } from './file-operations.ts';
+import { materializeAttachment } from './file-transfer.ts';
+import { resourceBytes } from './resources.ts';
 
 const pathValue = z.string().min(1).max(4096);
 const definitions = [
+  {
+    name: 'file_info',
+    description:
+      '查看授权文件或目录的字节数、类型与 SHA-256，不读取正文。复制前使用此 SHA-256；普通文件最多 16 MiB，目录清单有界。不跟随链接，不访问应用私有目录。',
+    schema: z.object({ path: pathValue }),
+    write: false,
+  },
+  {
+    name: 'copy_file',
+    description:
+      '按原始字节复制授权工作区中的普通文件，支持图片和二进制，最多 16 MiB。expectedHash 必须来自最近的 file_info；目标父目录须已存在，目标文件不得存在。检查源读取和目标写入权限；询问模式需要批准，不支持目录复制。',
+    schema: z.object({
+      path: pathValue,
+      destination: pathValue,
+      expectedHash: z.string().regex(/^[a-f0-9]{64}$/),
+    }),
+    write: true,
+  },
+  {
+    name: 'list_attachments',
+    description:
+      '分页列出本会话附件的稳定编号、名称、类型、原文件字节数和 SHA-256，可将编号交给 materialize_attachment。仅列元数据，不读取其他会话，不把附件内容当作授权。',
+    schema: z.object({
+      offset: z.number().int().nonnegative().default(0),
+      limit: z.number().int().min(1).max(100).default(50),
+    }),
+    write: false,
+  },
+  {
+    name: 'materialize_attachment',
+    description:
+      '将本会话指定 attachmentId 的附件原文件保存到授权工作区，不保存提取文字或转换图片。path 是用户要求的目标路径，父目录须存在，不覆盖同名文件；询问模式需要批准，批准后重新检查资源与写入权限。',
+    schema: z.object({ attachmentId: z.string().min(1).max(128), path: pathValue }),
+    write: true,
+  },
   {
     name: 'read_file',
     description:
@@ -292,6 +330,7 @@ export async function runTool(
   invariant(tool, 'UNKNOWN_TOOL', '工具不存在', 404);
   const parsed = tool.schema.parse(args) as Record<string, any>;
   let current = c.store.need<Session>('session', c.session.id);
+  const transferSession = current;
   invariant(
     !c.store.need<any>('agent', current.agentId).disabledTools?.includes(name),
     'TOOL_DISABLED',
@@ -308,6 +347,14 @@ export async function runTool(
     invariant(current.permission !== 'read', 'READ_ONLY', '当前会话为只读，不能执行此工具', 403);
     if (name === 'write_file' || name === 'edit_file')
       await workspacePath(c.store, current, parsed.path, name === 'write_file', true);
+    if (name === 'copy_file') {
+      await workspacePath(c.store, current, parsed.path);
+      await workspacePath(c.store, current, parsed.destination, true, true);
+    }
+    if (name === 'materialize_attachment') {
+      resourceBytes(c.store, current.id, parsed.attachmentId);
+      await workspacePath(c.store, current, parsed.path, true, true);
+    }
     if (name === 'run_command') await workspacePath(c.store, current, '.', false, true);
     if (current.permission === 'ask' || name === 'run_command' || name === 'memory_save') {
       const approved = await c.approve(callId, name, parsed);
@@ -322,6 +369,35 @@ export async function runTool(
       '此助手已禁用该工具',
       403,
     );
+  }
+  if (name === 'file_info') return inspectWorkspaceItem(c.store, current, parsed.path);
+  if (name === 'copy_file')
+    return changeWorkspaceItem(c.store, transferSession, {
+      operation: 'copy',
+      path: parsed.path,
+      destination: parsed.destination,
+      expectedHash: parsed.expectedHash,
+    });
+  if (name === 'materialize_attachment')
+    return materializeAttachment(c.store, transferSession, parsed.attachmentId, parsed.path);
+  if (name === 'list_attachments') {
+    const all = c.store
+      .list<Resource>('resource')
+      .filter((r) => r.sessionId === current.id)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+    const end = parsed.offset + parsed.limit;
+    return {
+      attachments: all.slice(parsed.offset, end).map(({ id, name, mime, kind, bytes, sha256 }) => ({
+        id,
+        name,
+        mime,
+        kind,
+        bytes,
+        sha256,
+      })),
+      total: all.length,
+      nextOffset: end < all.length ? end : null,
+    };
   }
   if (name === 'read_file') {
     const file = await readWorkspaceFile(c.store, current, parsed.path);

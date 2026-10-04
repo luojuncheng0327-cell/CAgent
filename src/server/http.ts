@@ -26,6 +26,7 @@ import { fileHistory, restoreFile, manageFile, watchWorkspace } from './workspac
 import { usageReport } from './usage.ts';
 import { searchSessions, orderedSessions, saveSessionOrder } from './session-navigation.ts';
 import { loadFileDrafts, saveFileDrafts } from './file-drafts.ts';
+import { materializeAttachment } from './file-transfer.ts';
 import {
   inspectWorkspaceItem,
   uploadWorkspaceFile,
@@ -391,6 +392,25 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           } finally {
             res.off('close', disconnected);
           }
+          return;
+        }
+        if (action === 'materialize-attachment' && method === 'POST') {
+          const b = z
+            .object({
+              attachmentId: z.string().min(1).max(128),
+              path: z.string().min(1).max(4096),
+              workspace: z.string().min(1).max(4096),
+            })
+            .parse(await body(req));
+          invariant(
+            session.workspace === b.workspace,
+            'WORKSPACE_CHANGED',
+            '当前工作台已切换，请重新打开文件操作',
+            409,
+          );
+          json(res, {
+            data: await materializeAttachment(rt.store, session, b.attachmentId, b.path),
+          });
           return;
         }
         const resource = action?.match(/^resources\/([^/]+)(\/body)?$/);

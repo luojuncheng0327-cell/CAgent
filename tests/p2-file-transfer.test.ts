@@ -190,7 +190,10 @@ test('P2 批准期间源内容变化、工作台切换、目录撤销或工具�
     await assert.rejects(
       f.tool('copy_file', args, async () => {
         const agent = f.rt.store.need<any>('agent', f.agent.id);
-        f.rt.saveAgent({ ...agent, disabledTools: ['copy_file'], revision: agent.revision });
+        f.rt.saveAgent(
+          { ...agent, disabledTools: ['copy_file'], revision: agent.revision },
+          agent.id,
+        );
         return true;
       }),
       { code: 'TOOL_DISABLED' },
