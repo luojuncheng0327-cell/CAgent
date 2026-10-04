@@ -1,11 +1,11 @@
 {
   "schema": 2,
   "asOf": "2026-10-04",
-  "milestone": "P2 补齐跨子目录文件名 / 正文检索、通配符查找和按行读取；本机检索权限、截断、取消与桌面定位已验证，保留五语、资料、附件和执行链能力",
+  "milestone": "P2 补齐普通目录分页、按需展开的目录树和路径导航；超过 500 项可完整浏览，筛选覆盖整个目录，授权变化与旧分页响应受保护，保留检索、五语、资料、附件和执行链能力",
   "counts": {
     "verified_full": 0,
-    "verified_local": 30,
-    "partial": 49,
+    "verified_local": 31,
+    "partial": 48,
     "not_started": 129,
     "planned": 1,
     "external_decision": 1
@@ -890,18 +890,23 @@
       "title": "目录树与检索",
       "phase": 2,
       "scope": "required",
-      "status": "partial",
+      "status": "verified_local",
       "evidence": [
         "src/server/workspace.ts",
+        "src/server/file-list.ts",
         "src/server/file-search.ts",
         "src/ui/Workspace.tsx",
+        "src/ui/WorkspaceDirectories.tsx",
+        "src/ui/use-directory-page.ts",
         "src/ui/WorkspaceSearch.tsx",
         "tests/boundaries.test.ts",
+        "tests/p2-directory-pages.test.ts",
         "tests/p2-file-search.test.ts",
-        "tests/desktop-file-search.mjs"
+        "tests/desktop-file-search.mjs",
+        "tests/desktop-directory-pages.mjs"
       ],
-      "done": "书桌保留当前目录筛选，并可递归检索当前工作区的文件名或 UTF-8 正文；命中带完整相对路径 / 行号，点开正文命中会定位源码选区且不改文件。空结果、跳过与扫描上限可见；迟到请求不覆盖新查询，文件变化刷新检索，切工作台清空旧结果，授权撤销不返回已累积内容。",
-      "todo": "普通目录列表仍只显示前 500 项，完整目录树和大目录分页还没有。递归搜索不索引，最多 1000 个目录 / 文件项目、16 层、100 个结果、总读取 8 MiB、单文件 512 KiB、约 5 秒协作式检查；只搜索 UTF-8，链接、依赖与私有目录不参与，未覆盖网络盘阻塞与持续替换攻击。"
+      "done": "书桌与 list_files 共用稳定目录分页（目录在前），超过 500 项能逐页读完；当前目录名称筛选覆盖全部页。按需展开的单根目录树每层分页，路径按钮可返回任意祖先；源文件仍手动保存。目录变更使旧游标失效并明确回到第一页，迟到页不覆盖新筛选；私有 / 撤销目录隐藏，链接与特殊项目禁用，读取途中取消或授权变化不返回已积累内容，系统访问拒绝与目录消失有明确提示。保留跨子目录名称 / UTF-8 正文检索、命中行定位、跳过和截断提示。",
+      "todo": "仅本机 Windows 和临时夹具验证，网络盘、跨平台与持续路径替换攻击未验。每次目录页最多扫描 20000 项或 8 MiB 文件名，约 5 秒协作式检查；书桌每页 100 项，目录树每页 25 项、最多展开 64 个目录和 16 层。多根同时展开属于 CA-WORK-001 的未完成范围。递归搜索仍为有界扫描：最多 1000 项、16 层、100 个结果、8 MiB 总读取 / 512 KiB 每文件，不做完整磁盘索引，系统阻塞读取没有硬中断保证。"
     },
     {
       "id": "CA-WORK-003",
