@@ -252,6 +252,14 @@ try {
         .toPNG()
         .toString('base64'),
     );
+  const collapseSample = tree.getByRole('button', { name: '收起目录 A-dir', exact: true });
+  if (await collapseSample.count()) await collapseSample.click();
+  await tree.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await desk.locator('.desk-files').evaluate((element) => {
+    element.scrollTop = 0;
+  });
   await frames();
   await shot();
   await frames();

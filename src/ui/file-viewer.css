@@ -49,6 +49,11 @@
   padding: 0 0 0 9px;
   margin: 0;
 }
+.desk-files > .directory-tree,
+.desk-files > .directory-pager,
+.file-navigation {
+  flex-shrink: 0;
+}
 .directory-tree-row {
   display: flex;
   align-items: center;
