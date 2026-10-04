@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { Runtime } from './runtime.ts';
 import { completeSetup, prepareSetupWorkspace } from './setup.ts';
 import { saveProfile } from './profiles.ts';
+import { fileSearchSchema, searchWorkspaceFiles } from './file-search.ts';
 import type {
   Session,
   Run,
@@ -540,6 +541,25 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         }
         if (action === 'file-drafts' && method === 'PUT') {
           json(res, { data: await saveFileDrafts(rt.store, session, await body(req)) });
+          return;
+        }
+        if (action === 'file-search' && method === 'GET') {
+          const input = fileSearchSchema
+            .extend({
+              query: z.string().min(1).max(500),
+              limit: z.coerce.number().int().min(1).max(100).default(100),
+            })
+            .parse(Object.fromEntries(url.searchParams));
+          const abort = new AbortController();
+          const disconnected = () => {
+            if (!res.writableEnded) abort.abort();
+          };
+          res.once('close', disconnected);
+          try {
+            json(res, { data: await searchWorkspaceFiles(rt.store, session, input, abort.signal) });
+          } finally {
+            res.off('close', disconnected);
+          }
           return;
         }
         if (action === 'files' && method === 'GET') {
