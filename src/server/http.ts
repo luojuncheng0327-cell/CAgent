@@ -7,6 +7,7 @@ import type { Runtime } from './runtime.ts';
 import { completeSetup, prepareSetupWorkspace } from './setup.ts';
 import { saveProfile } from './profiles.ts';
 import { fileSearchSchema, searchWorkspaceFiles } from './file-search.ts';
+import { directoryPageSchema, listWorkspaceDirectory } from './file-list.ts';
 import type {
   Session,
   Run,
@@ -563,21 +564,23 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           return;
         }
         if (action === 'files' && method === 'GET') {
-          const target = await workspacePath(
-            rt.store,
-            session,
-            url.searchParams.get('path') ?? '.',
-          );
-          const entries = await fs.readdir(target, { withFileTypes: true });
-          json(res, {
-            data: {
-              entries: entries.slice(0, 500).map((e) => ({
-                name: e.name,
-                kind: e.isSymbolicLink() ? 'link' : e.isDirectory() ? 'directory' : 'file',
-              })),
-              truncated: entries.length > 500,
-            },
-          });
+          const input = directoryPageSchema
+            .extend({
+              limit: z.coerce.number().int().min(1).max(500).default(200),
+            })
+            .parse(Object.fromEntries(url.searchParams));
+          const abort = new AbortController();
+          const disconnected = () => {
+            if (!res.writableEnded) abort.abort();
+          };
+          res.once('close', disconnected);
+          try {
+            json(res, {
+              data: await listWorkspaceDirectory(rt.store, session, input, abort.signal),
+            });
+          } finally {
+            res.off('close', disconnected);
+          }
           return;
         }
         if (action === 'file' && method === 'GET') {

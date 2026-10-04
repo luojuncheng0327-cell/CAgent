@@ -9,6 +9,7 @@ import { AppError, invariant } from './errors.ts';
 import { requireDirectory, sameDirectory, withinDirectory } from './directories.ts';
 import { fileSearchSchema, searchWorkspaceFiles } from './file-search.ts';
 import { fileRange } from '../shared/file-lines.ts';
+import { directoryPageSchema, listWorkspaceDirectory } from './file-list.ts';
 
 const pathValue = z.string().min(1).max(4096);
 const definitions = [
@@ -36,8 +37,9 @@ const definitions = [
   },
   {
     name: 'list_files',
-    description: '列出当前工作区的一个目录，不跟随符号链接。',
-    schema: z.object({ path: z.string().max(4096).default('.') }),
+    description:
+      '分页列出授权目录，目录在前、名称稳定排序。query 筛选整个目录的名称，kind=directories 只列目录。nextCursor 非空时使用相同 path/query/kind 和 cursor 继续；目录或授权变化后游标失效，须从第一页重读。链接只标记、不跟随；读取预算有界。',
+    schema: directoryPageSchema.omit({ workspace: true }),
     write: false,
   },
   {
@@ -334,15 +336,7 @@ export async function runTool(
     };
   }
   if (name === 'list_files') {
-    const dir = await workspacePath(c.store, current, parsed.path);
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    return {
-      entries: entries.slice(0, 500).map((e) => ({
-        name: e.name,
-        kind: e.isSymbolicLink() ? 'link' : e.isDirectory() ? 'directory' : 'file',
-      })),
-      truncated: entries.length > 500,
-    };
+    return listWorkspaceDirectory(c.store, current, parsed, c.signal);
   }
   if (name === 'search_files' || name === 'find_files')
     return searchWorkspaceFiles(
