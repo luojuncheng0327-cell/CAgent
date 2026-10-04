@@ -70,6 +70,20 @@ try {
   const page = await app.firstWindow();
   page.setDefaultTimeout(12000);
   const errors = [];
+  const responseFailures = [];
+  page.on('response', (response) => {
+    if (response.status() < 400) return;
+    void response
+      .json()
+      .then((body) =>
+        responseFailures.push({
+          path: new URL(response.url()).pathname,
+          status: response.status(),
+          error: body.error,
+        }),
+      )
+      .catch(() => {});
+  });
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
@@ -242,7 +256,7 @@ try {
     small.x >= 0 && small.y >= 0 && small.x + small.width <= 940 && small.y + small.height <= 700,
   );
   await page.keyboard.press('Escape');
-  assert.deepEqual(errors, []);
+  assert.deepEqual(errors, [], JSON.stringify(responseFailures));
   console.log(
     JSON.stringify({
       passed: true,
