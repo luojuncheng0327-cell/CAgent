@@ -144,7 +144,31 @@ try {
     win.setContentSize(1280, 800);
     win.webContents.invalidate();
   });
-  await page.screenshot({ path: '.artifacts/p2-profiles.png' });
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  await app.evaluate(async ({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, {
+      stayHidden: true,
+      stayAwake: true,
+    }),
+  );
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  const captured = await app.evaluate(async ({ BrowserWindow }) =>
+    (
+      await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, {
+        stayHidden: true,
+        stayAwake: true,
+      })
+    )
+      .toPNG()
+      .toString('base64'),
+  );
+  const screenshot = Buffer.from(captured, 'base64');
+  assert.deepEqual([screenshot.readUInt32BE(16), screenshot.readUInt32BE(20)], [1280, 800]);
+  await fs.writeFile('.artifacts/p2-profiles.png', screenshot);
   assert.deepEqual(errors, []);
   checks.push('profile workflows have no renderer errors');
   console.log(
