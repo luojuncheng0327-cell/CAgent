@@ -10,7 +10,8 @@ import { createResource } from '../src/server/resources.ts';
 
 const require = createRequire(import.meta.url),
   checks = [],
-  errors = [];
+  errors = [],
+  patchResponses = [];
 let pending = [],
   live = false;
 const mock = await fixture((_req, res) => {
@@ -72,6 +73,15 @@ async function launch() {
   page = await app.firstWindow();
   page.setDefaultTimeout(12000);
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('response', async (response) => {
+    if (response.request().method() === 'PATCH' && response.url().includes('/api/v1/sessions/')) {
+      patchResponses.push({
+        status: response.status(),
+        revision: response.request().postDataJSON()?.revision,
+        response: await response.json().catch(() => ({})),
+      });
+    }
+  });
   await page.getByLabel('消息', { exact: true }).waitFor();
   await page.getByRole('button', { name: sessionTitle, exact: true }).click();
   await app.evaluate(({ BrowserWindow }) =>
@@ -158,6 +168,7 @@ try {
   await page.getByRole('tab', { name: '对话文件', exact: true }).click();
   await page.getByRole('heading', { name: '工具生成的文件', exact: true }).waitFor();
   await page.getByRole('link', { name: '上传附件.txt', exact: true }).waitFor();
+  await page.waitForFunction(() => document.querySelectorAll('.file-artifact').length === 20);
   assert.equal(await page.locator('.file-artifact').count(), 20);
   checks.push('successful tool outputs and uploaded attachments share the conversation file area');
   await button('加载更多工具文件').click();
@@ -190,19 +201,33 @@ try {
   await page.keyboard.press('Escape');
   checks.push('text outputs open in the manual editor and image outputs use the image viewer');
   const downloaded = path.join(other, 'downloaded.png');
-  await app.evaluate(
-    ({ BrowserWindow }, target) =>
-      BrowserWindow.getAllWindows()[0].webContents.session.on('will-download', (_event, item) =>
-        item.setSavePath(target),
-      ),
-    downloaded,
-  );
-  const download = page.waitForEvent('download');
+  await app.evaluate(({ BrowserWindow }, target) => {
+    globalThis.cagentArtifactDownload = 'waiting';
+    BrowserWindow.getAllWindows()[0].webContents.session.on('will-download', (_event, item) => {
+      globalThis.cagentArtifactDownload = 'started';
+      item.setSavePath(target);
+      item.once('done', (_event, state) => {
+        globalThis.cagentArtifactDownload = state;
+      });
+    });
+  }, downloaded);
   await artifact('图片.png')
     .getByRole('button', { name: '下载文件 图片.png', exact: true })
     .click();
-  await (await download).saveAs(path.join(other, 'verified-download.png'));
-  assert.deepEqual(await fs.readFile(path.join(other, 'verified-download.png')), imageBytes);
+  const downloadDeadline = Date.now() + 12000;
+  let downloadState;
+  do {
+    downloadState = await app.evaluate(() => globalThis.cagentArtifactDownload);
+    if (
+      downloadState === 'completed' ||
+      downloadState === 'cancelled' ||
+      downloadState === 'interrupted'
+    )
+      break;
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  } while (Date.now() < downloadDeadline);
+  assert.equal(downloadState, 'completed');
+  assert.deepEqual(await fs.readFile(downloaded), imageBytes);
   checks.push(
     'the download action returns the exact produced binary bytes into a temporary folder',
   );
@@ -247,20 +272,16 @@ try {
   checks.push(
     'workspace switching opens the original output path instead of a new same-named file',
   );
-  const current = (await request('')).data.session;
-  await page.evaluate(
-    async ({ id, root, revision }) =>
-      fetch('/api/v1/sessions/' + id, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          directoryGrants: [{ path: root, access: 'write' }],
-          workspace: root,
-          revision,
-        }),
-      }),
-    { id: f.session.id, root: other, revision: current.revision },
+  await page.locator('summary[aria-label="会话操作"]').click();
+  await button('管理目录授权').click();
+  const revokeResponse = page.waitForResponse(
+    (res) =>
+      res.request().method() === 'PATCH' && res.url().endsWith('/api/v1/sessions/' + f.session.id),
   );
+  await button('撤销目录 ' + workspace).click();
+  assert.equal((await revokeResponse).status(), 200, JSON.stringify(patchResponses));
+  await page.getByLabel(workspace + ' 的权限', { exact: true }).waitFor({ state: 'detached' });
+  await button('关闭对话框').click();
   await button('刷新工具文件').click();
   await artifact('跨根.txt').getByText('访问已受限', { exact: true }).waitFor();
   assert.equal(
@@ -336,9 +357,16 @@ try {
       completedChecks: checks,
       pageErrors: errors,
       error: String(error),
+      patchResponses,
     }),
   );
   if (page) console.error(await page.locator('body').innerText());
+  // Failure cleanup must not wait forever on a draft-error dialog in the isolated test app.
+  if (app) {
+    await app.evaluate(({ app }) => app.exit(1)).catch(() => {});
+    await app.close().catch(() => {});
+    app = null;
+  }
   throw error;
 } finally {
   if (app) await app.close();

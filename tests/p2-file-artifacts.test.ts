@@ -193,7 +193,10 @@ test('P2 文件引用重启保持；切换工作台后仍定位原目录且下�
     const current = (await f.page()).items[0];
     assert.equal(current.id, original.id);
     assert.equal(current.state, 'ready');
-    assert.equal((await f.page('/' + original.id + '/locate')).path, path.join(f.root, '相同.txt'));
+    const location = await f.page('/' + original.id + '/locate');
+    assert.equal(location.path, path.join(f.root, '相同.txt'));
+    assert.equal(location.workspace, f.root);
+    assert.equal(location.relativePath, '相同.txt');
     const body = await f.request('/' + original.id + '/body');
     assert.equal(body.status, 200);
     assert.match(body.headers.get('content-disposition')!, /attachment/);
