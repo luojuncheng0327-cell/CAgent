@@ -13,10 +13,11 @@ const require = createRequire(import.meta.url),
   errors = [],
   patchResponses = [];
 let pending = [],
-  live = false;
+  live = false,
+  liveName = '实时生成.txt';
 const mock = await fixture((_req, res) => {
   if (live && !pending.length) {
-    pending = [{ name: 'write_file', args: { path: '实时生成.txt', text: '实时内容' } }];
+    pending = [{ name: 'write_file', args: { path: liveName, text: '实时内容' } }];
     live = false;
   }
   if (!pending.length) return response(res, '工具文件已生成');
@@ -232,6 +233,52 @@ try {
     'the download action returns the exact produced binary bytes into a temporary folder',
   );
   const source = all.find((a) => a.name === '图片.png');
+  let releaseDownload, reachedDownload;
+  const downloadGate = new Promise((resolve) => {
+    releaseDownload = resolve;
+  });
+  const downloadStarted = new Promise((resolve) => {
+    reachedDownload = resolve;
+  });
+  const downloadRoute =
+    '**/api/v1/sessions/' + f.session.id + '/file-artifacts/' + source.id + '/body';
+  await page.route(downloadRoute, async (route) => {
+    const result = await route.fetch();
+    reachedDownload();
+    await downloadGate;
+    await route.fulfill({ response: result }).catch(() => {});
+  });
+  await fs.rename(downloaded, path.join(other, 'first-download.png'));
+  await app.evaluate(() => {
+    globalThis.cagentArtifactDownload = 'waiting';
+  });
+  await artifact('图片.png')
+    .getByRole('button', { name: '下载文件 图片.png', exact: true })
+    .click();
+  await downloadStarted;
+  liveName = '下载期间生成.txt';
+  live = true;
+  await page.getByLabel('消息', { exact: true }).fill('下载期间新建文件');
+  await button('发送消息').click();
+  await artifact(liveName)
+    .getByRole('button', { name: '打开文件 ' + liveName, exact: true })
+    .waitFor();
+  releaseDownload();
+  const overlappingDeadline = Date.now() + 12000;
+  do {
+    downloadState = await app.evaluate(() => globalThis.cagentArtifactDownload);
+    if (
+      downloadState === 'completed' ||
+      downloadState === 'cancelled' ||
+      downloadState === 'interrupted'
+    )
+      break;
+    await new Promise((resolve) => setTimeout(resolve, 30));
+  } while (Date.now() < overlappingDeadline);
+  assert.equal(downloadState, 'completed');
+  assert.deepEqual(await fs.readFile(downloaded), imageBytes);
+  await page.unroute(downloadRoute);
+  checks.push('new file arrivals keep an in-flight same-session download alive');
   await artifact('图片.png')
     .getByRole('button', { name: '定位工具消息 图片.png', exact: true })
     .click();
@@ -313,6 +360,7 @@ try {
   );
   assert.equal(await fs.readFile(path.join(workspace, '跨根.txt'), 'utf8'), '文件被外部修改');
   checks.push('explicit metadata removal keeps the source file on disk');
+  liveName = '实时生成.txt';
   live = true;
   await page.getByLabel('消息', { exact: true }).fill('新建实时文件');
   await button('发送消息').click();
@@ -350,7 +398,7 @@ try {
   await artifact('实时生成.txt')
     .getByRole('button', { name: '打开文件 实时生成.txt', exact: true })
     .waitFor();
-  assert.equal((await request('/file-artifacts')).data.total, 26);
+  assert.equal((await request('/file-artifacts')).data.total, 27);
   assert.equal(await artifact('跨根.txt').count(), 0);
   checks.push('restart retains new output IDs and keeps removed records removed');
   assert.deepEqual(errors, []);
