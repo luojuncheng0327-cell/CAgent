@@ -85,12 +85,16 @@ export function FileArtifacts({
     mounted.current = true;
     setRemoving(null);
     setBusy(false);
-    void load();
     return () => {
       mounted.current = false;
+      for (const controller of actions.current) controller.abort();
+    };
+  }, [scope]);
+  useEffect(() => {
+    void load();
+    return () => {
       pending.current?.abort();
       generation.current++;
-      for (const controller of actions.current) controller.abort();
     };
   }, [scope, refresh]);
 
