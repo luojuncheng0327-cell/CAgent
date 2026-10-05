@@ -29,6 +29,12 @@ import { loadFileDrafts, saveFileDrafts } from './file-drafts.ts';
 import { materializeAttachment } from './file-transfer.ts';
 import { previewWorkspaceFile } from './file-preview.ts';
 import {
+  listFileArtifacts,
+  readFileArtifact,
+  locateFileArtifact,
+  removeFileArtifact,
+} from './file-artifacts.ts';
+import {
   inspectWorkspaceItem,
   uploadWorkspaceFile,
   workspaceUploadLimit,
@@ -394,6 +400,55 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
             res.off('close', disconnected);
           }
           return;
+        }
+        if (action === 'file-artifacts' && method === 'GET') {
+          const abort = new AbortController();
+          const disconnected = () => {
+            if (!res.writableEnded) abort.abort();
+          };
+          res.once('close', disconnected);
+          try {
+            json(res, {
+              data: await listFileArtifacts(
+                rt.store,
+                session,
+                Object.fromEntries(url.searchParams),
+                abort.signal,
+              ),
+            });
+          } finally {
+            res.off('close', disconnected);
+          }
+          return;
+        }
+        const artifact = action?.match(/^file-artifacts\/([^/]+)(?:\/(body|locate))?$/);
+        if (artifact) {
+          if (method === 'DELETE' && !artifact[2]) {
+            removeFileArtifact(rt.store, session, artifact[1]);
+            json(res, { data: { removed: true } });
+            return;
+          }
+          if (method === 'GET' && artifact[2] === 'locate') {
+            json(res, { data: await locateFileArtifact(rt.store, session, artifact[1]) });
+            return;
+          }
+          if (method === 'GET' && artifact[2] === 'body') {
+            const data = await readFileArtifact(rt.store, session, artifact[1]).catch((error) => {
+              if (error.code === 'ENOENT' || error.code === 'ENOTDIR')
+                throw new AppError('FILE_ARTIFACT_MISSING', '文件已不存在，记录仍保留', 404);
+              throw error;
+            });
+            res.writeHead(200, {
+              'Content-Type': 'application/octet-stream',
+              'Content-Length': data.bytes,
+              'Content-Disposition':
+                'attachment; filename="file"; filename*=UTF-8\'\'' +
+                encodeURIComponent(data.artifact.name).replace(/'/g, '%27'),
+              'Cache-Control': 'no-store',
+            });
+            res.end(data.content);
+            return;
+          }
         }
         if (action === 'materialize-attachment' && method === 'POST') {
           const b = z

@@ -209,7 +209,11 @@ test('P2 会话隔离覆盖列表、定位、下载与移除，不能借用另�
   try {
     await f.write();
     const item = (await f.page()).items[0];
-    const otherSession = await f.rt.createSession({ ...f.session, workspace: f.root });
+    const otherSession = await f.rt.createSession({
+      ...f.session,
+      workspace: f.root,
+      directoryGrants: [{ path: f.root, access: 'read' }],
+    });
     assert.equal((await f.page('', otherSession.id)).total, 0);
     for (const [suffix, method] of [
       ['/locate', 'GET'],
@@ -362,6 +366,46 @@ test('P2 文件引用不作为中立备份中的工作区授权或磁盘文件�
     const backup = exportBackup(f.rt);
     assert.ok(!backup.data.records.some((r) => r.kind === 'file-artifact'));
     assert.equal((await f.page()).total, 1);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+test('P2 分页校验最多读取 32 MiB，余下引用待核对，下载仍独立验证', async () => {
+  const f = await artifacts();
+  try {
+    const bytes = Buffer.alloc(16 * 1024 * 1024, 97);
+    await fs.writeFile(path.join(f.root, 'source.bin'), bytes);
+    await f.tools(
+      [1, 2, 3].map((n) => ({
+        name: 'copy_file',
+        args: {
+          path: 'source.bin',
+          destination: `large-${n}.bin`,
+          expectedHash: hash(bytes),
+        },
+      })),
+    );
+    const page = await f.page();
+    assert.deepEqual(
+      page.items.map((a: any) => a.state),
+      ['ready', 'ready', 'unchecked'],
+    );
+    const result = await f.request('/' + page.items[2].id + '/body');
+    assert.equal(result.status, 200);
+    assert.deepEqual(Buffer.from(await result.arrayBuffer()), bytes);
+    const { listFileArtifacts } = await import('../src/server/file-artifacts.ts');
+    const controller = new AbortController();
+    controller.abort();
+    await assert.rejects(
+      listFileArtifacts(
+        f.rt.store,
+        f.rt.store.need<Session>('session', f.session.id),
+        {},
+        controller.signal,
+      ),
+      { name: 'AbortError' },
+    );
   } finally {
     await f.cleanup();
   }

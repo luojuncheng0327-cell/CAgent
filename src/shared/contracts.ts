@@ -175,6 +175,27 @@ export interface Message {
   providerProtocol?: Protocol;
   attachmentIds?: string[];
 }
+export interface FileArtifact extends Stored {
+  sessionId: string;
+  runId: string | null;
+  messageId: string;
+  position: number;
+  callId: string;
+  tool: string;
+  workspace: string | null;
+  path: string;
+  name: string;
+  bytes: number;
+  sha256: string;
+}
+export interface FileArtifactView extends FileArtifact {
+  state: 'ready' | 'changed' | 'missing' | 'denied' | 'unchecked';
+}
+export interface FileArtifactPage {
+  items: FileArtifactView[];
+  total: number;
+  nextBefore: number | null;
+}
 export interface RunEvent {
   id: number;
   runId: string;

@@ -44,6 +44,7 @@ import { normalizeDirectories, sameDirectory, directoryBlocks } from './director
 import { RunQueue } from './run-queue.ts';
 import { recoverInterruptedRuns, completeToolPairs } from './run-recovery.ts';
 import { estimateContext, summaryFragments, nextSummaryBatch } from './compaction.ts';
+import { recordToolArtifact, cloneFileArtifacts, countFileArtifacts } from './file-artifacts.ts';
 
 export class Runtime {
   store: Store;
@@ -370,16 +371,22 @@ export class Runtime {
         child.id,
         messages.flatMap((m) => m.attachmentIds ?? []),
       );
-      for (const m of messages)
-        this.store.addMessage(
-          {
-            ...m,
-            sessionId: child.id,
-            runId: null,
-            attachmentIds: m.attachmentIds?.map((id) => resources.get(id)!),
-          },
-          m.at,
+      const copiedMessages = new Map<string, Message>();
+      for (const m of messages) {
+        copiedMessages.set(
+          m.id,
+          this.store.addMessage(
+            {
+              ...m,
+              sessionId: child.id,
+              runId: null,
+              attachmentIds: m.attachmentIds?.map((id) => resources.get(id)!),
+            },
+            m.at,
+          ),
         );
+      }
+      cloneFileArtifacts(this.store, parent.id, child.id, copiedMessages);
       return child;
     });
   }
@@ -470,6 +477,11 @@ export class Runtime {
       this.store.remove('compaction', id);
       this.store.db
         .prepare(
+          "DELETE FROM records WHERE kind='file-artifact' AND json_extract(body,'$.sessionId')=?",
+        )
+        .run(id);
+      this.store.db
+        .prepare(
           "DELETE FROM records WHERE kind='file-drafts' AND json_extract(body,'$.sessionId')=?",
         )
         .run(id);
@@ -514,6 +526,7 @@ export class Runtime {
       messages: page.messages,
       pagination: { ...page, messages: undefined },
       resources: this.store.list<Resource>('resource').filter((r) => r.sessionId === sessionId),
+      fileArtifactCount: countFileArtifacts(this.store, sessionId),
       compaction: this.store.get<Compaction>('compaction', sessionId),
       runs,
       approvals: this.store
@@ -1018,15 +1031,18 @@ export class Runtime {
             output = { error: { code: error.code, message: error.message } };
           }
           const text = JSON.stringify(output);
-          this.store.addMessage({
-            sessionId: session.id,
-            runId: run.id,
-            role: 'tool',
-            callId: call.id,
-            text:
-              text.length > 50000
-                ? JSON.stringify({ truncated: true, text: text.slice(0, 49000) })
-                : text,
+          this.store.transaction(() => {
+            const toolMessage = this.store.addMessage({
+              sessionId: session.id,
+              runId: run.id,
+              role: 'tool',
+              callId: call.id,
+              text:
+                text.length > 50000
+                  ? JSON.stringify({ truncated: true, text: text.slice(0, 49000) })
+                  : text,
+            });
+            recordToolArtifact(this.store, session, call, toolMessage, output);
           });
           this.emit(run, 'tool.end', { id: call.id, name: call.name, result: output });
         }
