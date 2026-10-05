@@ -29,6 +29,7 @@ export interface SessionDetail {
   messages: Message[];
   pagination: Omit<MessagePage, 'messages'>;
   resources: Resource[];
+  fileArtifactCount: number;
   compaction: Compaction | null;
   runs: Run[];
   approvals: Approval[];

@@ -196,6 +196,12 @@ export interface FileArtifactPage {
   total: number;
   nextBefore: number | null;
 }
+export interface FileArtifactLocation {
+  path: string;
+  workspace: string;
+  relativePath: string;
+  messageId: string;
+}
 export interface RunEvent {
   id: number;
   runId: string;

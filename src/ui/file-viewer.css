@@ -355,3 +355,54 @@
   background: none;
   border: 0;
 }
+.file-artifacts {
+  flex-shrink: 0;
+  min-width: 0;
+}
+.artifact-heading,
+.artifact-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.artifact-heading {
+  justify-content: space-between;
+}
+.artifact-heading h3 {
+  font-size: 12px;
+  font-weight: 500;
+  margin: 8px 0;
+}
+.file-artifacts button {
+  padding: 3px 5px;
+  font-size: 10px;
+}
+.artifact-note {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin: 0 0 8px;
+}
+.file-artifact {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+  padding: 8px 3px;
+  border-bottom: 1px solid var(--hairline);
+}
+.file-artifact strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.file-artifact small {
+  font-size: 10px;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+.artifact-actions {
+  flex-wrap: wrap;
+}
+.artifact-more {
+  margin: 8px 0;
+}

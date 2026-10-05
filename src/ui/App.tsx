@@ -94,6 +94,12 @@ export function App() {
   const orderQueue = useRef<Promise<void>>(Promise.resolve());
   const findEditor = useRef<HTMLInputElement>(null);
   const [directoryPermissions, setDirectoryPermissions] = useState(false);
+  const [fileRequest, setFileRequest] = useState<{
+    sessionId: string;
+    workspace: string;
+    path: string;
+    requestId: string;
+  } | null>(null);
   const [attachmentIds, setAttachmentIds] = useState<string[]>([]),
     [uploading, setUploading] = useState(false),
     [historyBusy, setHistoryBusy] = useState(false),
@@ -259,6 +265,7 @@ export function App() {
       await persistDraft();
       await flushFileDrafts();
       selected.current = id;
+      setFileRequest(null);
       setDirectoryPermissions(false);
       searchJump.current++;
       setFinding(false);
@@ -447,6 +454,24 @@ export function App() {
     setDetail((d) => (d ? { ...d, session: saved } : d));
     await refresh();
   }
+  async function openArtifact(location: import('../shared/contracts.ts').FileArtifactLocation) {
+    const owner = detail?.session;
+    if (!owner || selected.current !== owner.id) return;
+    setNavigating(true);
+    try {
+      if (owner.workspace !== location.workspace) await patch({ workspace: location.workspace });
+      if (selected.current !== owner.id) return;
+      setRight(true);
+      setFileRequest({
+        sessionId: owner.id,
+        workspace: location.workspace,
+        path: location.relativePath,
+        requestId: crypto.randomUUID(),
+      });
+    } finally {
+      setNavigating(false);
+    }
+  }
   async function send(retry = false) {
     if (!detail || (!draft.trim() && !attachmentIds.length && !retry) || sending || uploading)
       return;
@@ -540,7 +565,7 @@ export function App() {
       setHistoryBusy(false);
     }
   }
-  async function locateMessage(hit: SearchHit) {
+  async function locateMessage(hit: Pick<SearchHit, 'sessionId' | 'messageId'>) {
     if (uploading) return;
     if (selected.current !== hit.sessionId) await selectSession(hit.sessionId);
     if (selected.current !== hit.sessionId) return;
@@ -1306,6 +1331,16 @@ export function App() {
                   report={report}
                   resources={detail.resources}
                   modelName={model?.model ?? t('未选择模型')}
+                  artifactCount={detail.fileArtifactCount ?? 0}
+                  artifactRevision={detail.eventCursor}
+                  openArtifact={openArtifact}
+                  fileRequest={fileRequest}
+                  fileOpened={(requestId) =>
+                    setFileRequest((request) => (request?.requestId === requestId ? null : request))
+                  }
+                  locateSource={(messageId) =>
+                    void locateMessage({ sessionId: current.id, messageId })
+                  }
                   hasMessages={!!detail.messages.length}
                 />
               )}

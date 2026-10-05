@@ -160,7 +160,13 @@ export async function locateFileArtifact(store: Store, session: Session, id: str
     const target = await workspacePath(store, session, artifact.path);
     invariant((await fs.stat(target)).isFile(), 'FILE_TYPE', '文件已被替换，无法打开');
     await workspacePath(store, session, target);
-    return { path: target, messageId: artifact.messageId };
+    const grant = requireDirectory(store, session, target);
+    return {
+      path: target,
+      workspace: grant.path,
+      relativePath: path.relative(grant.path, target),
+      messageId: artifact.messageId,
+    };
   } catch (error: any) {
     if (artifactState(error) === 'missing')
       throw new AppError('FILE_ARTIFACT_MISSING', '文件已不存在，记录仍保留', 404);

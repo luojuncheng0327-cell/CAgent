@@ -1,6 +1,12 @@
 import { t, currentLocaleTag } from './i18n.ts';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Session, Preferences, Stored, Resource } from '../shared/contracts.ts';
+import type {
+  Session,
+  Preferences,
+  Stored,
+  Resource,
+  FileArtifactLocation,
+} from '../shared/contracts.ts';
 import { sessionDirectories } from '../shared/contracts.ts';
 import { api } from './api.ts';
 import { Icon, Modal, Field, Markdown } from './components.tsx';
@@ -19,6 +25,7 @@ import {
 import { lineStarts } from '../shared/file-lines.ts';
 import { canPreviewFile, FilePreview } from './FilePreview.tsx';
 import { AttachmentSave } from './AttachmentSave.tsx';
+import { FileArtifacts } from './FileArtifacts.tsx';
 import {
   loadFileDraftView,
   rememberFileDraftView,
@@ -63,10 +70,22 @@ export function Workspace({
   canSwitch,
   report,
   resources,
+  artifactCount,
+  artifactRevision,
+  locateSource,
+  openArtifact,
+  fileRequest,
+  fileOpened,
   modelName,
   hasMessages,
 }: {
   resources: Resource[];
+  artifactCount: number;
+  artifactRevision: number;
+  locateSource: (messageId: string) => void;
+  openArtifact: (location: FileArtifactLocation) => Promise<void>;
+  fileRequest: { sessionId: string; workspace: string; path: string; requestId: string } | null;
+  fileOpened: (requestId: string) => void;
   modelName: string;
   hasMessages: boolean;
   session: Session;
@@ -81,6 +100,8 @@ export function Workspace({
     prefix = `/sessions/${session.id}`;
   const draftScope = JSON.stringify([session.directoryGrants, session.blockedDirectories]);
   const [area, setArea] = useState<'files' | 'resources'>('files');
+  const [fileCount, setFileCount] = useState(artifactCount);
+  useEffect(() => setFileCount(artifactCount), [artifactCount]);
   const [managed, setManaged] = useState<string | null>(null);
   const [previewPath, setPreviewPath] = useState<string | null>(null);
   const [savingAttachment, setSavingAttachment] = useState<Resource | null>(null);
@@ -304,7 +325,7 @@ export function Workspace({
       mode: previous === 'document' && !document?.source ? 'source' : previous,
     });
   }
-  async function openFile(target: string, refresh = false, line?: number) {
+  async function openFile(target: string, refresh = false, line?: number, signal?: AbortSignal) {
     if (!draftReady) return;
     if (canPreviewFile(target)) {
       setPreviewPath(target);
@@ -326,7 +347,11 @@ export function Workspace({
     }
     const value = await api<{ path: string; text: string; sha256: string }>(
       `${prefix}/file?path=${encodeURIComponent(target)}`,
+      'GET',
+      undefined,
+      signal,
     );
+    signal?.throwIfAborted();
     const canEditDocument =
       /\.(md|markdown)$/i.test(target) && !!inspectDocument(value.text).source;
     const tab: FileTab = {
@@ -345,6 +370,24 @@ export function Workspace({
     setShow(true);
     if (line) setLineTarget({ path: target, line });
   }
+  useEffect(() => {
+    if (
+      !fileRequest ||
+      !draftReady ||
+      fileRequest.sessionId !== session.id ||
+      fileRequest.workspace !== session.workspace
+    )
+      return;
+    const controller = new AbortController();
+    const tab = tabRef.current.find((tab) => tab.path === fileRequest.path);
+    // An explicit artifact open can refresh a clean tab, while preserving edited recovery drafts.
+    void openFile(fileRequest.path, !!tab && tab.text === tab.saved, undefined, controller.signal)
+      .catch((error) => {
+        if (!controller.signal.aborted) report(error);
+      })
+      .finally(() => fileOpened(fileRequest.requestId));
+    return () => controller.abort();
+  }, [fileRequest?.requestId, draftReady, key, draftScope]);
   function closeTab(target: string) {
     const tab = tabs.find((t) => t.path === target);
     if (tab && tab.text !== tab.saved && !window.confirm(t('放弃此文件未保存的修改？'))) return;
@@ -558,21 +601,32 @@ export function Workspace({
         </span>
         <div className="desk-files" role="tabpanel">
           {area === 'resources' ? (
-            resources.length ? (
-              <ResourceLinks
-                ids={resources.map((r) => r.id)}
-                resources={resources}
-                sessionId={session.id}
-                onSave={setSavingAttachment}
-                saveDisabled={
-                  !session.workspace ||
-                  session.permission === 'read' ||
-                  grants.find((grant) => grant.path === session.workspace)?.access !== 'write'
-                }
+            <>
+              {resources.length > 0 && (
+                <ResourceLinks
+                  ids={resources.map((r) => r.id)}
+                  resources={resources}
+                  sessionId={session.id}
+                  onSave={setSavingAttachment}
+                  saveDisabled={
+                    !session.workspace ||
+                    session.permission === 'read' ||
+                    grants.find((grant) => grant.path === session.workspace)?.access !== 'write'
+                  }
+                />
+              )}
+              <FileArtifacts
+                session={session}
+                refresh={artifactRevision}
+                onCount={setFileCount}
+                openFile={openArtifact}
+                locateSource={locateSource}
+                report={report}
               />
-            ) : (
-              <div className="panel-empty">{t('暂无对话文件')}</div>
-            )
+              {resources.length === 0 && fileCount === 0 && (
+                <div className="panel-empty">{t('暂无对话文件')}</div>
+              )}
+            </>
           ) : !session.workspace ? (
             <div className="panel-empty">
               <p>{t('为这个会话选择一个文件夹')}</p>
@@ -720,7 +774,7 @@ export function Workspace({
             <dt>{t('模型')}</dt>
             <dd title={modelName}>{modelName}</dd>
             <dt>{t('文件')}</dt>
-            <dd>{resources.length}</dd>
+            <dd>{resources.length + fileCount}</dd>
           </dl>
         </details>
       )}

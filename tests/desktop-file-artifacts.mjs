@@ -269,6 +269,14 @@ try {
   );
   await button('关闭文件预览').click();
   assert.equal(await fs.readFile(path.join(other, '跨根.txt'), 'utf8'), '新工作台同名文件');
+  assert.equal(await page.getByLabel('当前工作台', { exact: true }).inputValue(), workspace);
+  await page.locator('.file-list').getByRole('button', { name: '草稿.txt', exact: true }).click();
+  assert.equal(await page.getByLabel('文件内容', { exact: true }).inputValue(), '未保存草稿保留');
+  assert.equal(await fs.readFile(path.join(workspace, '草稿.txt'), 'utf8'), '源文件保持手动保存');
+  await button('关闭文件预览').click();
+  checks.push(
+    'cross-root opens restore edited drafts without autosaving or duplicating absolute-path tabs',
+  );
   checks.push(
     'workspace switching opens the original output path instead of a new same-named file',
   );
@@ -282,6 +290,8 @@ try {
   assert.equal((await revokeResponse).status(), 200, JSON.stringify(patchResponses));
   await page.getByLabel(workspace + ' 的权限', { exact: true }).waitFor({ state: 'detached' });
   await button('关闭对话框').click();
+  await page.getByLabel('当前工作台', { exact: true }).selectOption(other);
+  await page.getByRole('tab', { name: '对话文件', exact: true }).click();
   await button('刷新工具文件').click();
   await artifact('跨根.txt').getByText('访问已受限', { exact: true }).waitFor();
   assert.equal(

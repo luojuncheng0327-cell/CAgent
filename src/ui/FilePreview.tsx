@@ -15,6 +15,7 @@ export function FilePreview({
   path: string;
   onClose: () => void;
 }) {
+  const name = path.split(/[\\/]/).at(-1) || path;
   const [value, setValue] = useState<WorkspacePreview | null>(null),
     [error, setError] = useState(''),
     [zoom, setZoom] = useState(1),
@@ -42,7 +43,7 @@ export function FilePreview({
     <Modal title={t('文件预览')} wide onClose={onClose}>
       <div className="workspace-file-preview">
         <div className="preview-heading">
-          <strong title={path}>{path}</strong>
+          <strong title={path}>{name}</strong>
           <button onClick={() => setReload((n) => n + 1)}>{t('重新读取')}</button>
         </div>
         {error ? (
@@ -81,7 +82,7 @@ export function FilePreview({
             <div className="workspace-image-preview" tabIndex={0} aria-label={t('图片预览')}>
               <img
                 src={value.imageUrl}
-                alt={path}
+                alt={name}
                 style={{ width: value.image.width * zoom, height: 'auto' }}
               />
             </div>
