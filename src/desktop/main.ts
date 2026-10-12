@@ -11,6 +11,7 @@ import {
   globalShortcut,
   net,
   safeStorage,
+  autoUpdater as electronAutoUpdater,
 } from 'electron';
 import type { IpcMainInvokeEvent, IpcMainEvent } from 'electron';
 import os from 'node:os';
@@ -20,8 +21,15 @@ import { Runtime } from '../server/runtime.ts';
 import { serve } from '../server/http.ts';
 import type { SecretCodec } from '../server/vault.ts';
 import { translate } from '../shared/i18n.ts';
+import { autoUpdater } from 'electron-updater';
+import { Updates } from './updates.ts';
+import { terminalStatuses } from '../shared/contracts.ts';
+import type { Run } from '../shared/contracts.ts';
 
-const home = path.resolve(process.env.CAGENT_HOME ?? path.join(os.homedir(), '.cagent'));
+const home = path.resolve(
+  process.env.CAGENT_HOME ??
+    path.join(os.homedir(), process.platform === 'win32' ? '.CAgent' : '.cagent'),
+);
 if (home.split(/[\\/]/).some((p) => p.toLowerCase() === '.hanako'))
   throw new Error('独立版不能使用旧数据目录');
 if (
@@ -42,6 +50,13 @@ let window: BrowserWindow | null = null,
   tray: Tray | null = null,
   quitting = false,
   shutdownReady = false;
+let updates: Updates | null = null;
+let initialUpdateCheck: ReturnType<typeof setTimeout> | undefined;
+let periodicUpdateCheck: ReturnType<typeof setInterval> | undefined;
+let updateInstallReady = false;
+electronAutoUpdater.on('before-quit-for-update', () => {
+  updateInstallReady = true;
+});
 const t = (source: string) => translate(rt?.preferences().locale, source);
 async function flushRenderer() {
   if (!window || window.isDestroyed() || window.webContents.isLoadingMainFrame()) return true;
@@ -101,11 +116,6 @@ if (single)
         };
       rt = new Runtime(home, {
         ...(codec ? { codec } : {}),
-        suggestedWorkspace:
-          process.env.CAGENT_SMOKE === '1'
-            ? (process.env.CAGENT_SMOKE_WORKSPACE ??
-              path.join(os.tmpdir(), 'cagent-setup-workspace-' + crypto.randomUUID()))
-            : path.join(app.getPath('desktop'), 'CAgent-Workspace'),
         fetcher: (url, init) => net.fetch(String(url), init),
       });
       server = await serve(rt, {
@@ -161,6 +171,31 @@ if (single)
         const result = await dialog.showOpenDialog(window!, { properties: ['openDirectory'] });
         return result.canceled ? null : (result.filePaths[0] ?? null);
       });
+      const canUpdate =
+        app.isPackaged && process.platform === 'win32' && !process.env.PORTABLE_EXECUTABLE_FILE;
+      autoUpdater.autoDownload = false;
+      autoUpdater.autoInstallOnAppQuit = false;
+      autoUpdater.allowPrerelease = true;
+      autoUpdater.allowDowngrade = false;
+      updates = new Updates(app.getVersion(), canUpdate ? autoUpdater : null, async () => {
+        const busy = () =>
+          rt?.store.list<Run>('run').some((run) => !terminalStatuses.has(run.status));
+        if (busy()) throw new Error('请先停止正在运行的会话，再安装更新。');
+        if (!(await flushRenderer())) throw new Error('草稿尚未保存，请保存后再安装更新。');
+        if (busy()) throw new Error('请先停止正在运行的会话，再安装更新。');
+      });
+      updates.on('changed', (state) => window?.webContents.send('cagent:update-state', state));
+      for (const [channel, action] of [
+        ['status', () => updates!.snapshot()],
+        ['check', () => updates!.check()],
+        ['download', () => updates!.download()],
+        ['install', () => updates!.install()],
+      ] as const) {
+        ipcMain.handle('cagent:update-' + channel, (event) => {
+          allowed(event);
+          return action();
+        });
+      }
       ipcMain.on('cagent:window', (event, action) => {
         try {
           allowed(event);
@@ -226,6 +261,12 @@ if (single)
       }
       await window.loadURL(server.origin);
       if (process.env.CAGENT_SMOKE !== '1') window.show();
+      if (canUpdate && process.env.CAGENT_SMOKE !== '1') {
+        initialUpdateCheck = setTimeout(() => void updates?.check(), 10000);
+        periodicUpdateCheck = setInterval(() => void updates?.check(), 4 * 60 * 60 * 1000);
+        initialUpdateCheck.unref();
+        periodicUpdateCheck.unref();
+      }
     })
     .catch((error) => {
       console.error('CAgent startup failed:', error instanceof Error ? error.message : 'unknown');
@@ -241,13 +282,15 @@ app.on('before-quit', (event) => {
   if (quitting) return;
   quitting = true;
   void (async () => {
-    if (!(await flushRenderer())) {
+    if (!updateInstallReady && !(await flushRenderer())) {
       quitting = false;
       window?.show();
       dialog.showErrorBox(t('草稿尚未保存'), t('退出前保存未完成。请检查当前会话后再次退出。'));
       return;
     }
     globalShortcut.unregisterAll();
+    clearTimeout(initialUpdateCheck);
+    clearInterval(periodicUpdateCheck);
     tray?.destroy();
     await server?.close();
     await rt?.close();

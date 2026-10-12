@@ -14,10 +14,34 @@ export function withinDirectory(root: string, target: string) {
 }
 export const sameDirectory = (a: string, b: string) => path.relative(a, b) === '';
 export function privatePath(store: Store, target: string) {
+  const workspace = path.join(store.home, 'workspace');
+  // Only this managed child is public. Sibling databases, credentials, history
+  // and desktop state remain private, as do nested private application folders.
+  if (withinDirectory(workspace, target))
+    return path
+      .relative(workspace, target)
+      .split(/[\\/]/)
+      .some((part) => ['.hanako', '.cagent'].includes(part.toLowerCase()));
   return (
     withinDirectory(store.home, target) ||
     target.split(/[\\/]/).some((part) => ['.hanako', '.cagent'].includes(part.toLowerCase()))
   );
+}
+export async function prepareDefaultWorkspace(store: Store) {
+  const workspace = path.join(store.home, 'workspace');
+  let stat = await fs.lstat(workspace).catch((error) => {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  });
+  if (!stat) {
+    await fs.mkdir(workspace, { recursive: true, mode: 0o700 });
+    stat = await fs.lstat(workspace);
+  }
+  invariant(!stat.isSymbolicLink(), 'LINK_DENIED', '默认工作台不能是符号链接或目录联接', 403);
+  invariant(stat.isDirectory(), 'WORKSPACE_MISSING', '默认工作台路径已被文件占用，请移走该文件');
+  const canonical = await fs.realpath(workspace);
+  invariant(sameDirectory(workspace, canonical), 'WORKSPACE_CHANGED', '默认工作台路径已变化', 409);
+  return canonical;
 }
 export async function normalizeDirectories(
   store: Store,

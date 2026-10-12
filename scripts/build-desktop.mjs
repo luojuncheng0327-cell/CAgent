@@ -7,7 +7,7 @@ await build({
   platform: 'node',
   format: 'cjs',
   outExtension: { '.js': '.cjs' },
-  external: ['electron', 'node:*'],
+  external: ['electron', 'electron-updater', 'node:*'],
   target: 'node24',
   banner: { js: 'const cagentModuleUrl = require("node:url").pathToFileURL(__filename).href;' },
   define: { 'import.meta.url': 'cagentModuleUrl' },

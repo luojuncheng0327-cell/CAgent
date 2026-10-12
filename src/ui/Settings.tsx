@@ -2,6 +2,7 @@ import { t } from './i18n.ts';
 import { UsagePage } from './UsagePage.tsx';
 import { ProfileEditor } from './ProfileEditor.tsx';
 import { portraitSource } from './Marks.tsx';
+import { UpdatePanel } from './UpdatePanel.tsx';
 import React, { useState } from 'react';
 import type { Bootstrap } from './api.ts';
 import { api } from './api.ts';
@@ -80,7 +81,7 @@ export function Settings({
               <div className="brand-mark">C</div>
               <h1>CAgent</h1>
               <p>{t('你的个人 AI 工作空间')}</p>
-              <span className="version">{t('0.1.0 · 开发预览')}</span>
+              <UpdatePanel />
               <div className="settings-card">
                 <div className="setting-row">
                   <span>{t('维护者')}</span>
@@ -89,10 +90,6 @@ export function Settings({
                 <div className="setting-row">
                   <span>{t('运行方式')}</span>
                   <span>{t('独立本机应用')}</span>
-                </div>
-                <div className="setting-row">
-                  <span>{t('更新状态')}</span>
-                  <span>{t('尚无独立版发布')}</span>
                 </div>
               </div>
             </div>
@@ -112,6 +109,8 @@ function ModelSettings({
   report: (e: unknown) => void;
 }) {
   const [editing, setEditing] = useState<Provider | null>(null),
+    [deletingProvider, setDeletingProvider] = useState<Provider | null>(null),
+    [deleting, setDeleting] = useState(false),
     [showProvider, setShowProvider] = useState(false),
     [model, setModel] = useState<Model | null>(null),
     [showModel, setShowModel] = useState(false),
@@ -166,6 +165,14 @@ function ModelSettings({
             >
               {t('编辑')}
             </button>
+            <button
+              className="text-button danger"
+              aria-label={t('删除接口：{0}', [p.name])}
+              disabled={!!probe || deleting || data.runs.some((run) => run.providerId === p.id)}
+              onClick={() => setDeletingProvider(p)}
+            >
+              {t('删除接口')}
+            </button>
           </div>
           <div className="provider-url">{p.baseUrl}</div>
           {data.models
@@ -217,6 +224,50 @@ function ModelSettings({
       </button>
       {showProvider && (
         <ProviderEditor initial={editing} done={() => setShowProvider(false)} attempt={attempt} />
+      )}
+      {deletingProvider && (
+        <Modal
+          title={t('删除接口配置？')}
+          onClose={() => {
+            if (!deleting) setDeletingProvider(null);
+          }}
+        >
+          <div className="editor-form">
+            <p>
+              <strong>{deletingProvider.name}</strong>
+            </p>
+            <p>
+              {t(
+                '将删除此接口的 URL、已保存的 Key、自定义请求头及 {0} 个模型。聊天历史保留，关联会话需要重新选择模型。',
+                [
+                  String(
+                    data.models.filter((model) => model.providerId === deletingProvider.id).length,
+                  ),
+                ],
+              )}
+            </p>
+            <div className="form-actions">
+              <button disabled={deleting} onClick={() => setDeletingProvider(null)}>
+                {t('取消')}
+              </button>
+              <button
+                className="danger"
+                disabled={deleting}
+                onClick={() => {
+                  setDeleting(true);
+                  void attempt(async () => {
+                    await api('/providers/' + deletingProvider.id, 'DELETE');
+                    if (discovered?.providerId === deletingProvider.id) setDiscovered(null);
+                    setDeletingProvider(null);
+                    report(t('接口配置已删除'));
+                  }).finally(() => setDeleting(false));
+                }}
+              >
+                {deleting ? t('正在删除…') : t('确认删除')}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
       {showModel && (
         <ModelEditor

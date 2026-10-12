@@ -22,7 +22,9 @@ try {
     );
   else if (command === 'serve') await import('./server/main.ts');
   else {
-    const home = process.env.CAGENT_HOME ?? path.join(os.homedir(), '.cagent');
+    const home =
+      process.env.CAGENT_HOME ??
+      path.join(os.homedir(), process.platform === 'win32' ? '.CAgent' : '.cagent');
     let connection: { origin: string; token: string } | null = null;
     const originArg = option('--url'),
       tokenArg = option('--token'),

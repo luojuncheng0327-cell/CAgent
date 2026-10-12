@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const home = await fs.mkdtemp(path.join(os.tmpdir(), 'cagent-onboarding-home-'));
 const files = await fs.mkdtemp(path.join(os.tmpdir(), 'cagent-onboarding-files-'));
-const workspace = path.join(files, '默认工作台');
+const workspace = path.join(home, 'workspace');
 const chosen = path.join(files, '中文与 emoji 🧪');
 await fs.mkdir(chosen);
 const requests = [],
@@ -52,16 +52,21 @@ await fs.mkdir('.artifacts/ui-replica', { recursive: true });
 let app, page;
 async function launch() {
   app = await electron.launch({
-    executablePath: require('electron'),
-    args: ['.', '--force-device-scale-factor=1'],
+    executablePath: process.env.CAGENT_ONBOARDING_TEST_EXE ?? require('electron'),
+    args: process.env.CAGENT_ONBOARDING_TEST_EXE
+      ? ['--force-device-scale-factor=1']
+      : ['.', '--force-device-scale-factor=1'],
     env: {
       ...process.env,
       CAGENT_HOME: home,
       CAGENT_SMOKE: '1',
-      CAGENT_SMOKE_WORKSPACE: workspace,
     },
   });
   page = await app.firstWindow();
+  assert.equal(
+    await app.evaluate(({ app }) => app.isPackaged),
+    !!process.env.CAGENT_ONBOARDING_TEST_EXE,
+  );
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('request', (r) => {
     if (/^https?:/.test(r.url()) && !['127.0.0.1', 'localhost'].includes(new URL(r.url()).hostname))
@@ -275,30 +280,28 @@ try {
   assert.equal(await page.getByRole('radio', { checked: true }).inputValue(), selectedId);
   await next('安排工作空间');
   checks.push('back navigation restores selected model');
-  await app.evaluate(({ dialog }) => {
-    dialog.showOpenDialog = async () => ({ canceled: true, filePaths: [] });
-  });
-  await page.getByRole('button', { name: '选择文件夹', exact: true }).click();
   assert.equal(await page.locator('.first-run-workspace code').innerText(), workspace);
-  checks.push('cancelled folder dialog preserves default workspace');
+  assert.equal(await page.getByRole('button', { name: '选择文件夹', exact: true }).count(), 0);
+  checks.push('fixed workspace shown without custom default picker');
   await shot('onboarding-5-workspace-warm');
-  await app.evaluate(({ dialog }, invalid) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [invalid] });
-  }, home);
-  await page.getByRole('button', { name: '选择文件夹', exact: true }).click();
-  await page.locator('.first-run-workspace code').filter({ hasText: home }).waitFor();
-  await page.getByRole('button', { name: '下一步', exact: true }).click();
-  await page.getByRole('alert').filter({ hasText: '数据目录之外' }).waitFor();
+  for (const folder of [home, chosen]) {
+    const result = await page.evaluate(async (folder) => {
+      const response = await fetch('/api/v1/setup/workspace', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: folder }),
+      });
+      return { status: response.status, body: await response.json() };
+    }, folder);
+    assert.equal(result.status, 400);
+    assert.equal(result.body.error.code, 'WORKSPACE_FIXED');
+  }
   assert.equal((await state()).preferences.setupStep, 4);
-  checks.push('application data directory rejected as workspace');
-  await app.evaluate(({ dialog }, folder) => {
-    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] });
-  }, chosen);
-  await page.getByRole('button', { name: '选择文件夹', exact: true }).click();
-  await page.locator('.first-run-workspace code').filter({ hasText: chosen }).waitFor();
+  checks.push('application data root and custom defaults rejected');
   await next('可以开始了');
-  assert.equal((await state()).preferences.defaultWorkspace, await fs.realpath(chosen));
-  checks.push('Unicode workspace selection');
+  assert.equal((await state()).preferences.defaultWorkspace, await fs.realpath(workspace));
+  await fs.rmdir(workspace);
+  checks.push('workspace prepared and removed before final confirmation');
   await shot('onboarding-6-ready-warm');
   await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
   await shot('onboarding-6-ready-night');
@@ -321,7 +324,7 @@ try {
   await page.getByRole('button', { name: '进入工作空间', exact: true }).click();
   await page.getByLabel('消息', { exact: true }).waitFor();
   assert.equal((await state()).sessions.length, 1);
-  assert.equal((await state()).sessions[0].workspace, await fs.realpath(chosen));
+  assert.equal((await state()).sessions[0].workspace, await fs.realpath(workspace));
   checks.push('atomic completion creates one configured chat');
   await page.getByLabel('消息', { exact: true }).fill('检查称呼');
   await page.getByRole('button', { name: '发送消息', exact: true }).click();
@@ -341,7 +344,13 @@ try {
   assert.equal(database.includes(Buffer.from('onboarding-fixture-secret')), false);
   checks.push('credential absent from database plaintext');
   console.log(
-    JSON.stringify({ passed: true, checks, pageErrors: errors, externalRequests: outside.length }),
+    JSON.stringify({
+      passed: true,
+      packaged: !!process.env.CAGENT_ONBOARDING_TEST_EXE,
+      checks,
+      pageErrors: errors,
+      externalRequests: outside.length,
+    }),
   );
 } catch (error) {
   if (page && !page.isClosed()) {

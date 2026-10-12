@@ -19,6 +19,7 @@ const strokes: Record<string, React.ReactNode> = {
   selection: <rect x="4" y="4" width="16" height="16" rx="1.5" />,
   plus: <path d="M12 4.5v15M4.5 12h15" />,
   close: <path d="m6 6 12 12M18 6 6 18" />,
+  trash: <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7" />,
   minus: <path d="M5 12h14" />,
   maximize: <path d="M6 6h12v12H6Z" />,
   restore: <path d="M8 8V4h12v12h-4M4 8h12v12H4Z" />,

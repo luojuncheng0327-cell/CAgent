@@ -102,6 +102,7 @@ export function SessionRail({
   settings,
   collapse,
   choose,
+  remove,
   locate,
   sort,
   reorder,
@@ -119,6 +120,7 @@ export function SessionRail({
   settings: () => void;
   collapse: () => void;
   choose: (id: string) => void;
+  remove: (session: Session) => void;
   locate: (hit: SearchHit) => void;
   sort: (mode: 'updated' | 'manual') => void;
   reorder: (bucket: 'pinned' | 'active' | 'archived', ids: string[]) => void;
@@ -222,93 +224,109 @@ export function SessionRail({
                     )}
                   </div>
                   {items.map((session) => (
-                    <button
-                      key={session.id}
-                      aria-label={session.title}
-                      className={`session-item${selected === session.id ? ' selected' : ''}`}
-                      disabled={busy}
-                      onClick={() => choose(session.id)}
-                      draggable={
-                        !busy && (session.pinned || data.preferences.sessionSort === 'manual')
-                      }
-                      title={
-                        session.pinned || data.preferences.sessionSort === 'manual'
-                          ? t('拖动排序；也可按 Alt + ↑ / ↓')
-                          : session.title
-                      }
-                      onDragStart={(event) => {
-                        event.dataTransfer.setData('application/x-cagent-session', session.id);
-                        event.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragOver={(event) => {
-                        if (!busy && (session.pinned || data.preferences.sessionSort === 'manual'))
+                    <div className="session-row" key={session.id}>
+                      <button
+                        aria-label={session.title}
+                        className={`session-item${selected === session.id ? ' selected' : ''}`}
+                        disabled={busy}
+                        onClick={() => choose(session.id)}
+                        draggable={
+                          !busy && (session.pinned || data.preferences.sessionSort === 'manual')
+                        }
+                        title={
+                          session.pinned || data.preferences.sessionSort === 'manual'
+                            ? t('拖动排序；也可按 Alt + ↑ / ↓')
+                            : session.title
+                        }
+                        onDragStart={(event) => {
+                          event.dataTransfer.setData('application/x-cagent-session', session.id);
+                          event.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragOver={(event) => {
+                          if (
+                            !busy &&
+                            (session.pinned || data.preferences.sessionSort === 'manual')
+                          )
+                            event.preventDefault();
+                        }}
+                        onDrop={(event) => {
                           event.preventDefault();
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        if (busy || (!session.pinned && data.preferences.sessionSort !== 'manual'))
-                          return;
-                        const bucket = session.archived
-                          ? 'archived'
-                          : session.pinned
-                            ? 'pinned'
-                            : 'active';
-                        const ids = [...data.sessionOrder[bucket]],
-                          source = event.dataTransfer.getData('application/x-cagent-session');
-                        if (!ids.includes(source) || source === session.id) return;
-                        const target = ids.indexOf(session.id);
-                        ids.splice(ids.indexOf(source), 1);
-                        ids.splice(target, 0, source);
-                        reorder(bucket, ids);
-                      }}
-                      onKeyDown={(event) => {
-                        if (
-                          !event.altKey ||
-                          !['ArrowUp', 'ArrowDown'].includes(event.key) ||
-                          busy ||
-                          (!session.pinned && data.preferences.sessionSort !== 'manual')
-                        )
-                          return;
-                        event.preventDefault();
-                        const bucket = session.archived
-                          ? 'archived'
-                          : session.pinned
-                            ? 'pinned'
-                            : 'active';
-                        const ids = [...data.sessionOrder[bucket]],
-                          at = ids.indexOf(session.id),
-                          to = at + (event.key === 'ArrowUp' ? -1 : 1);
-                        if (to < 0 || to >= ids.length) return;
-                        [ids[at], ids[to]] = [ids[to], ids[at]];
-                        reorder(bucket, ids);
-                      }}
-                    >
-                      <span className="session-title">
-                        <Portrait
-                          src={portraitSource(
-                            data.agents.find((a) => a.id === session.agentId),
-                            data.preferences.primaryAgentId,
+                          if (
+                            busy ||
+                            (!session.pinned && data.preferences.sessionSort !== 'manual')
+                          )
+                            return;
+                          const bucket = session.archived
+                            ? 'archived'
+                            : session.pinned
+                              ? 'pinned'
+                              : 'active';
+                          const ids = [...data.sessionOrder[bucket]],
+                            source = event.dataTransfer.getData('application/x-cagent-session');
+                          if (!ids.includes(source) || source === session.id) return;
+                          const target = ids.indexOf(session.id);
+                          ids.splice(ids.indexOf(source), 1);
+                          ids.splice(target, 0, source);
+                          reorder(bucket, ids);
+                        }}
+                        onKeyDown={(event) => {
+                          if (
+                            !event.altKey ||
+                            !['ArrowUp', 'ArrowDown'].includes(event.key) ||
+                            busy ||
+                            (!session.pinned && data.preferences.sessionSort !== 'manual')
+                          )
+                            return;
+                          event.preventDefault();
+                          const bucket = session.archived
+                            ? 'archived'
+                            : session.pinned
+                              ? 'pinned'
+                              : 'active';
+                          const ids = [...data.sessionOrder[bucket]],
+                            at = ids.indexOf(session.id),
+                            to = at + (event.key === 'ArrowUp' ? -1 : 1);
+                          if (to < 0 || to >= ids.length) return;
+                          [ids[at], ids[to]] = [ids[to], ids[at]];
+                          reorder(bucket, ids);
+                        }}
+                      >
+                        <span className="session-title">
+                          <Portrait
+                            src={portraitSource(
+                              data.agents.find((a) => a.id === session.agentId),
+                              data.preferences.primaryAgentId,
+                            )}
+                            name={
+                              data.agents.find((a) => a.id === session.agentId)?.name ??
+                              session.agentName ??
+                              'CAgent'
+                            }
+                            size={16}
+                          />
+                          <span>{session.title}</span>
+                          {data.runs.some((r) => r.sessionId === session.id) && (
+                            <i className="running-dot" />
                           )}
-                          name={
-                            data.agents.find((a) => a.id === session.agentId)?.name ??
+                        </span>
+                        <small>
+                          {data.agents.find((a) => a.id === session.agentId)?.name ??
                             session.agentName ??
-                            'CAgent'
-                          }
-                          size={16}
-                        />
-                        <span>{session.title}</span>
-                        {data.runs.some((r) => r.sessionId === session.id) && (
-                          <i className="running-dot" />
-                        )}
-                      </span>
-                      <small>
-                        {data.agents.find((a) => a.id === session.agentId)?.name ??
-                          session.agentName ??
-                          t('助手')}{' '}
-                        · {session.workspace?.split(/[\\/]/).at(-1) ?? t('未选择工作台')} ·{' '}
-                        {date(session.updatedAt) === today ? t('今天') : date(session.updatedAt)}
-                      </small>
-                    </button>
+                            t('助手')}{' '}
+                          · {session.workspace?.split(/[\\/]/).at(-1) ?? t('未选择工作台')} ·{' '}
+                          {date(session.updatedAt) === today ? t('今天') : date(session.updatedAt)}
+                        </small>
+                      </button>
+                      <button
+                        className="icon-button session-delete"
+                        aria-label={t('删除会话：{0}', [session.title])}
+                        title={t('删除会话')}
+                        disabled={busy || data.runs.some((run) => run.sessionId === session.id)}
+                        onClick={() => remove(session)}
+                      >
+                        <Icon name="trash" size={14} />
+                      </button>
+                    </div>
                   ))}
                 </section>
               ),

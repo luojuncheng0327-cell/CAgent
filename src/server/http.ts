@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes, timingSafeEqual, randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import packageInfo from '../../package.json' with { type: 'json' };
 import type { Runtime } from './runtime.ts';
 import { completeSetup, prepareSetupWorkspace } from './setup.ts';
 import { saveProfile } from './profiles.ts';
@@ -176,7 +177,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         json(res, {
           data: {
             name: 'CAgent',
-            version: '0.1.0',
+            version: packageInfo.version,
             runtime: 'independent',
             platform: process.platform,
             keystore: rt.vault.available,
@@ -268,17 +269,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
               409,
             );
             rt.store.remove('model', id);
-          } else {
-            invariant(
-              !rt.store.list<Model>('model').some((m) => m.providerId === id),
-              'PROVIDER_IN_USE',
-              '请先移除此供应商下的模型',
-              409,
-            );
-            rt.store.remove('provider', id);
-            rt.vault.remove(id);
-            rt.vault.remove(id + ':headers');
-          }
+          } else rt.deleteProvider(id);
           json(res, { data: { deleted: true } });
           return;
         }

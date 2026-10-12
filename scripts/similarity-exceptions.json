@@ -2,6 +2,14 @@
   "note": "只登记公共约定（标准浏览器标识、协议规定的字段或字符串、通用写法等），不登记原版的独创代码、文案或样式。每条写明 kind（code / pair / prose / style）、ours（我们的文件）、max（审核时的最大尺寸：词元数 / 比例 / 单位数 / 声明条数）、reason 和 reviewed（YYYY-MM-DD）；可选 reference（参考文件）和 contains（文字必须包含的片段）。重合变大、换了文件或类别都会重新判为越线。",
   "exceptions": [
     {
+      "kind": "pair",
+      "ours": "src/desktop/preload.ts",
+      "reference": "desktop/preload.cjs",
+      "max": 0.4929078014184397,
+      "reason": "按维护者已批准的公共约定尺度登记：Electron contextBridge / ipcRenderer.invoke、send 与监听器注册、取消的通用薄封装。新增通道、更新状态和安装逻辑均独立编写；本次文件对仅含标准 IPC 结构累计重合，实测 139/282 词元。本例外不豁免单段代码、其他文件或更高重合比例。",
+      "reviewed": "2026-10-12"
+    },
+    {
       "kind": "prose",
       "ours": "scripts/fetch-fonts.mjs",
       "contains": "mozilla 5 0 windows nt 10 0 win64 x64 applewebkit 537 36 khtml like gecko chrome",

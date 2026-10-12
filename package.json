@@ -1,6 +1,6 @@
 {
   "name": "cagent-independent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Independently implemented personal AI workspace",
   "author": "呈平安",
@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test --test-concurrency=1 tests/*.test.ts",
     "build": "vite build && node scripts/build-desktop.mjs",
-    "package:win": "pnpm run build && electron-builder --win portable --x64 --publish never",
+    "package:win": "pnpm run build && electron-builder --win nsis --x64 --publish never",
     "dev": "node src/server/main.ts",
     "start": "electron .",
     "setup:desktop": "node node_modules/electron/install.js",
@@ -27,9 +27,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify": "pnpm run format:check && pnpm run check:status && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
-    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-onboarding.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs && node tests/desktop-layout.mjs && node tests/desktop-menus.mjs && node tests/desktop-documents.mjs && node tests/desktop-navigation.mjs && node tests/desktop-directories.mjs && node tests/desktop-runtime.mjs && node tests/desktop-file-drafts.mjs && node tests/desktop-file-operations.mjs && node tests/desktop-attachments.mjs && node tests/desktop-profiles.mjs && node tests/desktop-locales.mjs && node tests/desktop-file-search.mjs && node tests/desktop-directory-pages.mjs && node tests/desktop-file-preview.mjs && node tests/desktop-file-artifacts.mjs"
+    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-onboarding.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs && node tests/desktop-layout.mjs && node tests/desktop-menus.mjs && node tests/desktop-documents.mjs && node tests/desktop-navigation.mjs && node tests/desktop-directories.mjs && node tests/desktop-runtime.mjs && node tests/desktop-file-drafts.mjs && node tests/desktop-file-operations.mjs && node tests/desktop-attachments.mjs && node tests/desktop-profiles.mjs && node tests/desktop-locales.mjs && node tests/desktop-file-search.mjs && node tests/desktop-directory-pages.mjs && node tests/desktop-file-preview.mjs && node tests/desktop-file-artifacts.mjs && node tests/desktop-workspace-sessions.mjs && node tests/desktop-updates.mjs && node tests/desktop-provider-delete.mjs"
   },
   "dependencies": {
+    "electron-updater": "6.8.9",
     "mammoth": "1.13.0",
     "markdown-it": "14.1.1",
     "pdfjs-dist": "6.3.289",
@@ -66,7 +67,14 @@
     "appId": "com.chengpingan.cagent.independent",
     "productName": "CAgent",
     "asar": true,
-    "asarUnpack": ["node_modules/@img/**/*", "node_modules/sharp/**/*", "node_modules/@napi-rs/**/*", "**/*.node", "**/*.dll", "**/icudtl.dat"],
+    "asarUnpack": [
+      "node_modules/@img/**/*",
+      "node_modules/sharp/**/*",
+      "node_modules/@napi-rs/**/*",
+      "**/*.node",
+      "**/*.dll",
+      "**/icudtl.dat"
+    ],
     "npmRebuild": false,
     "electronDist": "node_modules/electron/dist",
     "directories": {
@@ -87,13 +95,26 @@
       }
     ],
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "icon": "src/ui/assets/assistant-portrait.png",
       "executableName": "CAgent",
-      "artifactName": "CAgent-${version}-Windows-${arch}.${ext}"
+      "artifactName": "CAgent-${version}-Windows-${arch}-Setup.${ext}"
     },
-    "portable": {
-      "requestExecutionLevel": "user"
-    }
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "luojuncheng0327-cell",
+        "repo": "CAgent",
+        "releaseType": "prerelease"
+      }
+    ]
   }
 }

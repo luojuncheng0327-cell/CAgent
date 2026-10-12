@@ -10,7 +10,7 @@ import type { Agent, Session } from '../src/shared/contracts.ts';
 async function draft() {
   const home = await temporary(),
     files = await temporary();
-  const rt = new Runtime(home, { codec: null, suggestedWorkspace: path.join(files, '工作台') });
+  const rt = new Runtime(home, { codec: null });
   const provider = rt.saveProvider({
     name: 'Fixture',
     baseUrl: 'http://127.0.0.1:9/v1',
@@ -100,7 +100,7 @@ test('CA-BOOT-001 写入首个会话失败时不提交完成标记，仍可重�
   }
 });
 
-test('CA-BOOT-001 旧版本页面、停用供应商和丢失工作台都不能完成初始化', async () => {
+test('CA-BOOT-001 旧页面和停用供应商不能完成初始化，丢失的默认工作台会重建', async () => {
   const f = await draft();
   try {
     await assert.rejects(completeSetup(f.rt, { revision: f.rt.preferences().revision - 1 }), {
@@ -113,11 +113,10 @@ test('CA-BOOT-001 旧版本页面、停用供应商和丢失工作台都不能�
     const p = f.rt.store.need<any>('provider', f.provider.id);
     f.rt.saveProvider({ ...p, enabled: true }, p.id);
     await fs.rmdir(f.workspace.path);
-    await assert.rejects(completeSetup(f.rt, { revision: f.rt.preferences().revision }), {
-      code: 'WORKSPACE_MISSING',
-    });
-    assert.equal(f.rt.preferences().setupComplete, false);
-    assert.equal(f.rt.store.list<Session>('session').length, 0);
+    await completeSetup(f.rt, { revision: f.rt.preferences().revision });
+    assert.ok((await fs.stat(f.workspace.path)).isDirectory());
+    assert.equal(f.rt.preferences().setupComplete, true);
+    assert.equal(f.rt.store.list<Session>('session').length, 1);
   } finally {
     await f.close();
   }
@@ -127,21 +126,21 @@ test('CA-BOOT-001 引导选择工作台不能写入应用数据目录或任意�
   const f = await draft();
   try {
     await assert.rejects(prepareSetupWorkspace(f.rt, { path: f.home }), {
-      code: 'WORKSPACE_DATA_DIRECTORY',
+      code: 'WORKSPACE_FIXED',
     });
     await assert.rejects(
       prepareSetupWorkspace(f.rt, { path: path.join(f.files, 'other'), create: true }),
-      { code: 'WORKSPACE_CREATE_DENIED' },
+      { code: 'WORKSPACE_FIXED' },
     );
     const nested = path.join(f.home, 'nested');
     await fs.mkdir(nested);
     await assert.rejects(prepareSetupWorkspace(f.rt, { path: nested }), {
-      code: 'WORKSPACE_DATA_DIRECTORY',
+      code: 'WORKSPACE_FIXED',
     });
     const junction = path.join(f.files, 'alias');
     await fs.symlink(f.home, junction, process.platform === 'win32' ? 'junction' : 'dir');
     await assert.rejects(prepareSetupWorkspace(f.rt, { path: junction }), {
-      code: 'WORKSPACE_DATA_DIRECTORY',
+      code: 'WORKSPACE_FIXED',
     });
     await fs.unlink(junction);
   } finally {
@@ -167,7 +166,7 @@ test('CA-BOOT-001 辅助模型引用必须有效，旧偏好缺字段可读取�
     });
     const p = f.rt.preferences();
     assert.equal(p.userName, '');
-    assert.equal(p.defaultWorkspace, null);
+    assert.equal(p.defaultWorkspace, f.rt.suggestedWorkspace);
     assert.equal(p.setupStep, 0);
   } finally {
     await f.close();

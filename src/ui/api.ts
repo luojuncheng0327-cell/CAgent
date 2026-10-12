@@ -38,6 +38,7 @@ export interface SessionDetail {
   live: { text: string; reasoning: string };
 }
 import { localError } from './i18n.ts';
+import type { UpdateState } from '../shared/updates.ts';
 export class ApiError extends Error {
   code: string;
   constructor(code: string, message: string) {
@@ -112,6 +113,11 @@ declare global {
       close: () => void;
       finishSetup: () => void;
       onFlush: (handler: () => Promise<void>) => () => void;
+      updateStatus: () => Promise<UpdateState>;
+      checkUpdate: () => Promise<UpdateState>;
+      downloadUpdate: () => Promise<UpdateState>;
+      installUpdate: () => Promise<UpdateState>;
+      onUpdate: (handler: (state: UpdateState) => void) => () => void;
     };
   }
 }

@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -6,35 +5,18 @@ import type { Runtime } from './runtime.ts';
 import type { Agent, Model, Provider, Session } from '../shared/contracts.ts';
 import { sessionInput } from '../shared/contracts.ts';
 import { invariant } from './errors.ts';
+import { prepareDefaultWorkspace, sameDirectory } from './directories.ts';
 
 export async function prepareSetupWorkspace(rt: Runtime, raw: unknown) {
   const input = z
     .object({ path: z.string().min(1).max(4096), create: z.boolean().default(false) })
     .parse(raw);
-  const requested = path.resolve(input.path);
-  if (input.create) {
-    invariant(
-      requested === path.resolve(rt.suggestedWorkspace),
-      'WORKSPACE_CREATE_DENIED',
-      '只能创建建议的默认工作台',
-    );
-    await fs.mkdir(requested, { recursive: true });
-  }
-  const stat = await fs.stat(requested).catch(() => null);
-  invariant(stat?.isDirectory(), 'WORKSPACE_MISSING', '请选择一个存在的文件夹');
-  const canonical = await fs.realpath(requested);
-  const relative = path.relative(rt.store.home, canonical);
   invariant(
-    relative !== '' && (relative.startsWith('..' + path.sep) || path.isAbsolute(relative)),
-    'WORKSPACE_DATA_DIRECTORY',
-    '工作台必须放在应用数据目录之外',
+    sameDirectory(path.resolve(input.path), rt.suggestedWorkspace),
+    'WORKSPACE_FIXED',
+    '默认工作台位置固定，可在会话中另行授权其他文件夹',
   );
-  invariant(
-    !canonical.split(/[\\/]/).some((p) => p.toLowerCase() === '.hanako'),
-    'WORKSPACE_LEGACY_DIRECTORY',
-    '请选择独立的工作台目录',
-  );
-  return { path: canonical };
+  return { path: await prepareDefaultWorkspace(rt.store) };
 }
 
 // Async directory checks finish before the SQLite commit. A stale final page

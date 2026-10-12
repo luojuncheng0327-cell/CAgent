@@ -27,12 +27,13 @@ import { Setup } from './Setup.tsx';
 import { AttachmentPicker, ResourceLinks } from './Attachments.tsx';
 import { TopStrip, SessionRail, Soon } from './Shell.tsx';
 import { Workspace, forgetWorkspaceDrafts } from './Workspace.tsx';
-import { flushFileDrafts, hasPendingFileDrafts } from './file-draft-cache.ts';
+import { flushFileDrafts, hasPendingFileDrafts, deleteWithFileDrafts } from './file-draft-cache.ts';
 import { rememberRunStatus, resolveRunStatus } from './run-status-cache.ts';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { DirectoryPermissions } from './DirectoryPermissions.tsx';
 import { portraitSource } from './Marks.tsx';
+import { UpdatePanel } from './UpdatePanel.tsx';
 
 const reasoningNames: Record<string, string> = {
   off: '关闭',
@@ -77,7 +78,9 @@ export function App() {
     [rail, setRail] = useState(true);
   const [workspace, setWorkspace] = useState(false),
     [workspaceValue, setWorkspaceValue] = useState(''),
-    [confirm, setConfirm] = useState<{ title: string; action: () => Promise<void> } | null>(null);
+    [confirm, setConfirm] = useState<Session | null>(null),
+    [deleting, setDeleting] = useState(false);
+  const deletingSession = useRef<string | null>(null);
   const [renaming, setRenaming] = useState(false),
     [newTitle, setNewTitle] = useState('');
   const [live, setLive] = useState({ text: '', reasoning: '' }),
@@ -207,6 +210,7 @@ export function App() {
       ids = currentAttachments.current;
     if (
       !owner ||
+      deletingSession.current === owner.id ||
       (owner.draft === text &&
         JSON.stringify(owner.draftAttachmentIds ?? []) === JSON.stringify(ids))
     )
@@ -218,6 +222,7 @@ export function App() {
         const latest = currentDetail.current?.session;
         if (
           latest?.id !== id ||
+          deletingSession.current === id ||
           (latest.draft === text &&
             JSON.stringify(latest.draftAttachmentIds ?? []) === JSON.stringify(ids))
         )
@@ -236,10 +241,10 @@ export function App() {
     await saving.current;
   }
   useEffect(() => {
-    if (!detail || sending) return;
+    if (!detail || sending || deleting) return;
     const id = setTimeout(() => void persistDraft().catch(report), 450);
     return () => clearTimeout(id);
-  }, [draft, attachmentIds, detail?.session.id, detail?.session.revision, sending]);
+  }, [draft, attachmentIds, detail?.session.id, detail?.session.revision, sending, deleting]);
   useEffect(
     () =>
       window.cagent?.onFlush(async () => {
@@ -304,6 +309,63 @@ export function App() {
       report(e);
     } finally {
       setNavigating(false);
+    }
+  }
+  function requestDelete(session: Session) {
+    if (navigating || uploading || deleting) return;
+    if (
+      data?.runs.some((run) => run.sessionId === session.id) ||
+      (selected.current === session.id && (active || sending))
+    ) {
+      report(t('请先停止运行，再删除会话。'));
+      return;
+    }
+    setConfirm(session);
+  }
+  async function deleteConfirmedSession() {
+    if (!confirm || deletingSession.current) return;
+    const id = confirm.id;
+    deletingSession.current = id;
+    setDeleting(true);
+    try {
+      await saving.current.catch(() => {});
+      await deleteWithFileDrafts(id, () => api('/sessions/' + id, 'DELETE'));
+      forgetWorkspaceDrafts(id);
+      const wasSelected = selected.current === id;
+      if (wasSelected) {
+        selected.current = null;
+        currentDetail.current = null;
+        currentDraft.current = '';
+        currentAttachments.current = [];
+        searchJump.current++;
+        setSessionId(null);
+        setDetail(null);
+        setDraft('');
+        setAttachmentIds([]);
+        setLive({ text: '', reasoning: '' });
+        setActive(null);
+        setActivity(null);
+        setFileRequest(null);
+        setDirectoryPermissions(false);
+        setFinding(false);
+        setFindText('');
+        setLocated(null);
+      }
+      setConfirm(null);
+      setSearch('');
+      setSessions((items) => items.filter((session) => session.id !== id));
+      const next = await refresh();
+      await refreshList();
+      if (wasSelected) {
+        const replacement = next.sessions.find((session) => session.archived === archived);
+        if (replacement) await selectSession(replacement.id);
+      }
+      report(t('会话已删除'));
+    } catch (error) {
+      report(error);
+    } finally {
+      deletingSession.current = null;
+      setDeleting(false);
     }
   }
   async function authenticate(value: string) {
@@ -760,6 +822,7 @@ export function App() {
         toggleDesk={() => setRight(!right)}
         chat={() => setView('chat')}
       />
+      <UpdatePanel banner />
       <div className="work-area">
         {rail && (
           <SessionRail
@@ -768,13 +831,14 @@ export function App() {
             selected={sessionId}
             search={search}
             archived={archived}
-            busy={navigating || uploading}
+            busy={navigating || uploading || deleting}
             onSearch={setSearch}
             onArchive={() => setArchived(!archived)}
             create={() => void createSession()}
             settings={() => setSettings(true)}
             collapse={() => setRail(false)}
             choose={(id) => void selectSession(id)}
+            remove={requestDelete}
             locate={(hit) => void locateMessage(hit)}
             sort={(mode) => void sortSessions(mode)}
             reorder={(bucket, ids) => void reorderSessions(bucket, ids)}
@@ -1218,26 +1282,13 @@ export function App() {
                                 >
                                   {t('导出 Markdown')}
                                 </button>
-                                {current.archived && (
-                                  <button
-                                    className="danger"
-                                    onClick={() =>
-                                      setConfirm({
-                                        title: t('永久删除此会话？'),
-                                        action: async () => {
-                                          await api('/sessions/' + current.id, 'DELETE');
-                                          forgetWorkspaceDrafts(current.id);
-                                          setDetail(null);
-                                          selected.current = null;
-                                          setSessionId(null);
-                                          await refresh();
-                                        },
-                                      })
-                                    }
-                                  >
-                                    {t('永久删除')}
-                                  </button>
-                                )}
+                                <button
+                                  className="danger"
+                                  disabled={!!active || sending || uploading || deleting}
+                                  onClick={() => requestDelete(current)}
+                                >
+                                  {t('删除会话')}
+                                </button>
                               </div>
                             </details>
                             <span className="grow" />
@@ -1353,6 +1404,7 @@ export function App() {
           data={data}
           refresh={async () => {
             await refresh();
+            if (selected.current) await loadSession(selected.current);
           }}
           close={() => setSettings(false)}
           report={report}
@@ -1461,21 +1513,29 @@ export function App() {
         </Modal>
       )}
       {confirm && (
-        <Modal title={confirm.title} onClose={() => setConfirm(null)}>
+        <Modal
+          title={t('永久删除此会话？')}
+          onClose={() => {
+            if (!deleting) setConfirm(null);
+          }}
+        >
           <div className="editor-form">
-            <p>{t('删除后无法从归档列表恢复。已有导出文件不受影响。')}</p>
+            <p>
+              <strong>{confirm.title}</strong>
+            </p>
+            <p>
+              {t('将永久删除此会话的聊天记录、附件和编辑草稿，无法恢复。工作目录中的文件会保留。')}
+            </p>
             <div className="form-actions">
-              <button onClick={() => setConfirm(null)}>{t('取消')}</button>
+              <button disabled={deleting} onClick={() => setConfirm(null)}>
+                {t('取消')}
+              </button>
               <button
                 className="danger"
-                onClick={() =>
-                  void confirm
-                    .action()
-                    .then(() => setConfirm(null))
-                    .catch(report)
-                }
+                disabled={deleting}
+                onClick={() => void deleteConfirmedSession()}
               >
-                {t('确认删除')}
+                {deleting ? t('正在删除…') : t('确认删除')}
               </button>
             </div>
           </div>

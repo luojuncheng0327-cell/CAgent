@@ -22,6 +22,7 @@ interface Cached {
   saved: string;
   timer?: ReturnType<typeof setTimeout>;
   flight?: Promise<void>;
+  paused?: boolean;
   notify: (status: string, error?: unknown) => void;
 }
 const cache = new Map<string, Cached>();
@@ -60,9 +61,10 @@ export async function loadFileDraftView(sessionId: string, workspace: string) {
 }
 async function drain(entry: Cached): Promise<void> {
   clearTimeout(entry.timer);
+  if (entry.paused) return;
   if (entry.flight) return entry.flight;
   entry.flight = (async () => {
-    while (entry.value !== entry.saved) {
+    while (!entry.paused && entry.value !== entry.saved) {
       const value = entry.value;
       entry.notify('正在保存恢复草稿…');
       const result = await api<{ revision: number }>(
@@ -101,7 +103,7 @@ export function rememberFileDraftView(
   if (value === entry.value) return;
   entry.value = value;
   clearTimeout(entry.timer);
-  if (value !== entry.saved) {
+  if (value !== entry.saved && !entry.paused) {
     entry.notify('正在保存恢复草稿…');
     entry.timer = setTimeout(() => void drain(entry).catch(() => {}), 350);
   }
@@ -110,6 +112,26 @@ export const hasPendingFileDrafts = () =>
   [...cache.values()].some((entry) => entry.value !== entry.saved);
 export async function flushFileDrafts() {
   for (const entry of cache.values()) await drain(entry);
+}
+export async function deleteWithFileDrafts(sessionId: string, remove: () => Promise<unknown>) {
+  const entries = [...cache.values()].filter((entry) => entry.sessionId === sessionId);
+  for (const entry of entries) {
+    entry.paused = true;
+    clearTimeout(entry.timer);
+  }
+  try {
+    // Wait for writes already sent, without requiring abandoned drafts to save
+    // into a missing or revoked workspace before the user can delete the chat.
+    await Promise.allSettled(entries.map((entry) => entry.flight));
+    await remove();
+    forgetFileDrafts(sessionId);
+  } finally {
+    for (const entry of entries) {
+      entry.paused = false;
+      if (cache.get(keyFor(sessionId, entry.workspace)) === entry && entry.value !== entry.saved)
+        entry.timer = setTimeout(() => void drain(entry).catch(() => {}), 350);
+    }
+  }
 }
 export function forgetFileDrafts(sessionId: string) {
   for (const [key, entry] of cache) {

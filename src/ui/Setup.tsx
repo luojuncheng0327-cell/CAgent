@@ -44,9 +44,7 @@ export function Setup({
   const [adding, setAdding] = useState(false),
     [modelId, setModelId] = useState(''),
     [modelName, setModelName] = useState('');
-  const [workspace, setWorkspace] = useState(
-    data.preferences.defaultWorkspace ?? data.suggestedWorkspace,
-  );
+  const workspace = data.suggestedWorkspace;
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const heading = useRef<HTMLHeadingElement>(null),
@@ -148,7 +146,6 @@ export function Setup({
           create: workspace === data.suggestedWorkspace,
         });
         chosen = result.path;
-        setWorkspace(chosen);
       }
       if (step === 5) {
         const fresh = await reload();
@@ -545,40 +542,11 @@ export function Setup({
               <div className="first-run-workspace">
                 <Icon name="folder" size={24} />
                 <div>
-                  <h2>
-                    {text(
-                      workspace === data.suggestedWorkspace
-                        ? 'defaultWorkspace'
-                        : 'chosenWorkspace',
-                    )}
-                  </h2>
+                  <h2>{text('defaultWorkspace')}</h2>
                   <code>{workspace}</code>
                   <p>{text('workspaceNote')}</p>
                 </div>
               </div>
-              <div className="first-run-folder-actions">
-                <button
-                  type="button"
-                  onClick={() =>
-                    void attempt(async () => {
-                      const chosen = await window.cagent?.chooseFolder();
-                      if (chosen) setWorkspace(chosen);
-                    })
-                  }
-                >
-                  {text('chooseFolder')}
-                </button>
-                {workspace !== data.suggestedWorkspace && (
-                  <button type="button" onClick={() => setWorkspace(data.suggestedWorkspace)}>
-                    {text('resetFolder')}
-                  </button>
-                )}
-              </div>
-              {!window.cagent && (
-                <Field label={text('path')}>
-                  <input value={workspace} onChange={(e) => setWorkspace(e.target.value)} />
-                </Field>
-              )}
             </>
           )}
           {step === 5 && (

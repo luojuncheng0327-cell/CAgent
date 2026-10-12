@@ -222,6 +222,23 @@ textarea::placeholder {
 .desk-tools .future-control small {
   display: none;
 }
+.session-row {
+  position: relative;
+}
+.session-row .session-item {
+  padding-right: 32px;
+}
+.session-delete {
+  position: absolute;
+  right: 4px;
+  top: 10px;
+  opacity: 0;
+  color: var(--tone-danger);
+}
+.session-row:hover .session-delete,
+.session-row:focus-within .session-delete {
+  opacity: 1;
+}
 .session-item {
   display: flex;
   flex-direction: column;
@@ -234,6 +251,23 @@ textarea::placeholder {
   border-radius: 5px;
   background: transparent;
   text-align: left;
+}
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--tint-wash);
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.update-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
 }
 .session-item.selected {
   background: var(--tint-wash);

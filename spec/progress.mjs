@@ -8,10 +8,10 @@
 //   not_started     未开始：只在已有零星基础时登记，证据可以为空
 // 没有登记的必做功能一律视为未开始。编号和规格来自冻结的 spec/catalog.mjs。
 
-export const asOf = '2026-10-05';
+export const asOf = '2026-10-12';
 
 export const milestone =
-  'P2 加入成功文件工具的产物自动登记、稳定分页、原字节下载和来源定位；跨根打开绑定当前授权根与相对草稿路径，失效状态可见、移除记录保留磁盘文件，继续保留手动保存、文件预览与执行链能力';
+  '默认工作台固定到用户目录下的 .CAgent/workspace 并在新建会话时重建；会话可直接确认删除；Windows 改为 NSIS 安装包，接入 GitHub 更新检查、下载校验与重启安装，完整产品验证继续保留原边界';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -143,8 +143,8 @@ item(
 item(
   'CA-MODEL-001',
   'verified_local',
-  fixtures,
-  '自定义供应商（名称、地址、协议、请求头）带版本保存，改地址、拉取模型、重启两次后仍是最新值。',
+  [...fixtures, 'tests/provider-delete.test.ts', 'tests/desktop-provider-delete.mjs'],
+  '自定义供应商（名称、地址、协议、请求头）带版本保存；可确认删除 URL、已保存 Key、自定义请求头和关联模型，事务清理助手、会话及辅助模型引用，保留聊天历史和其他接口；运行中拒绝删除，失败可重试。',
   fixtureLimit,
 );
 item(
@@ -280,9 +280,15 @@ item(
 item(
   'CA-SESSION-006',
   'partial',
-  ['src/server/runtime.ts', 'src/ui/App.tsx'],
-  '可以归档、恢复，确认后永久删除，删除时一并撤销会话资源。',
-  '批量操作和各种异常情况还没有完整验证。',
+  [
+    'src/server/runtime.ts',
+    'src/ui/App.tsx',
+    'src/ui/Shell.tsx',
+    'tests/session-delete.test.ts',
+    'tests/desktop-workspace-sessions.mjs',
+  ],
+  '可以归档、恢复；列表和会话菜单都可直接确认删除，不必先归档。删除清理消息、附件、草稿和产物引用，保留磁盘文件；当前会话删除后选择其他会话，最后一条可删除并新建；运行中拒绝，失败可重试且数据库事务回滚。',
+  '批量操作和多客户端并发删除的完整矩阵还没有验证。',
 );
 item(
   'CA-SESSION-007',
@@ -576,7 +582,7 @@ item(
     'tests/boundaries.test.ts',
     'tests/desktop-onboarding.mjs',
   ],
-  '首次引导可以准备默认工作台或选择现有目录，中文与 emoji 路径通过本机验证；后续新会话沿用默认工作台，也可明确解除授权。每个会话可以授权多个目录、选择当前工作台，权限和选择重启保留。',
+  '默认工作台固定为用户目录下的 .CAgent/workspace，首次确认和新建会话时自动准备，丢失后重建空目录。旧自选默认值迁移到固定值，旧会话保持原绑定，应用私有数据仍拒绝访问；会话仍可明确解除授权或添加其他目录，权限和选择重启保留。',
   '最近使用的工作区列表和多个根目录同时展开的文件树还没有。',
 );
 item(
@@ -856,4 +862,31 @@ item(
   ['scripts/release-gate.mjs', 'package.json'],
   '发布门禁脚本在清单没有全部完整验证时阻止发布；约定不发布旧改造版、不上传旧构建。',
   '平台验收矩阵和可审阅的发布候选报告还没有。',
+);
+item(
+  'CA-SHIP-004',
+  'partial',
+  ['package.json', 'tests/desktop-onboarding.mjs', 'tests/desktop-workspace-sessions.mjs'],
+  'Windows x64 使用 NSIS 安装包，可选择安装目录并创建桌面和开始菜单快捷方式；卸载配置默认保留用户数据。',
+  '没有代码签名，干净虚拟机中的真实安装、卸载及升级矩阵仍未完成。',
+);
+item(
+  'CA-SHIP-005',
+  'partial',
+  [
+    'src/desktop/updates.ts',
+    'src/desktop/main.ts',
+    'src/ui/UpdatePanel.tsx',
+    'tests/updates.test.ts',
+    'tests/desktop-updates.mjs',
+  ],
+  '安装版启动后和每四小时自动检查 GitHub 预览版本，关于页可手动检查；界面显示可用版本、下载进度、失败重试和重启安装。开发运行不自动联网检查。',
+  '完整版本历史、可选频道、多网络环境和 GitHub 限流矩阵仍未完成。',
+);
+item(
+  'CA-SHIP-006',
+  'partial',
+  ['src/desktop/updates.ts', 'tests/updates.test.ts', 'tests/desktop-updates.mjs'],
+  '通过 electron-updater 校验更新清单中的 SHA-512，关闭降级；校验失败不进入安装。安装前等待草稿保存，运行中的会话阻止安装。',
+  '未签名预览不具备独立签名清单、真实升级回退和干净虚拟机安装证据；包内测试替换最终安装进程调用，避免安装到日常环境。',
 );

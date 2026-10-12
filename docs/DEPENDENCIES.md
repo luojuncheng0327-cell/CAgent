@@ -30,6 +30,7 @@
 | pdfjs-dist | 本机 PDF 文字提取 | 6.3.289 | Apache-2.0 |
 | mammoth | 本机 Word DOCX 文字提取 | 1.13.0 | BSD-2-Clause |
 | Electron（内含 Chromium 和 Node.js） | 桌面宿主 | 44.4.5 | MIT；Chromium 各组件的许可证汇总在 `node_modules/electron/dist/LICENSES.chromium.html` |
+| electron-updater | GitHub 更新检查、下载校验与 NSIS 安装交接 | 6.8.9 | MIT |
 | 5 款界面字体 | 见下文“界面字体” | — | SIL OFL 1.1 |
 
 2026-09-27 的旧快照为 27 个运行时依赖包。2026-10-03 经维护者授权加入三个通用附件库后，`pnpm licenses list --prod --json` 当前列出 61 项：MIT 45、Apache-2.0 3、BSD-2-Clause 5、ISC 2，以及 Python-2.0、BSD、BSD-3-Clause、`(MIT OR GPL-3.0-or-later)`、`(MIT AND Zlib)`、`Apache-2.0 AND LGPL-3.0-or-later` 各 1。完整本机证据在 `.artifacts/logs/p2-parser-licenses-20261003.json`。这些是已安装包声明的许可证，不能把新增 Windows 原生组件一概描述为仅有 MIT / Apache 条件；正式发布前仍须完成原生二进制及第三方声明审查。
@@ -39,6 +40,8 @@
 TypeScript 5.9.3（Apache-2.0）、Vite 8.3.1（MIT）、esbuild 0.27.4（MIT）、Playwright 1.58.2（Apache-2.0）、Prettier 3.9.9（MIT）、electron-builder 26.8.1（MIT）以及 `@types/*` 类型定义（MIT）。只在编译、测试、格式化和本地打包时使用。便携包复用本项目已安装的 Electron；不调用旧应用的代码或构建工具。未使用的 Squirrel 打包依赖 `electron-winstaller` 的安装脚本保持禁用。
 
 ## 界面字体
+
+2026-10-12：按维护者要求加入安装版和应用内自动更新，使用通用基础库 `electron-updater`，固定版本与间接依赖记录在锁文件中。NSIS 安装包替代新的便携包产出；构建仍使用 `--publish never`，GitHub 推送和预览附件上传单独执行。官方依据为 [Electron Builder 自动更新文档](https://www.electron.build/docs/features/auto-update) 与已安装版本的类型及源码；未实现独立签名清单、自动回退或跨平台安装。
 
 界面随包附带 5 个字体家族，均为 SIL Open Font License 1.1：Inter、EB Garamond、PT Serif、Noto Serif SC、JetBrains Mono。由 `scripts/fetch-fonts.mjs` 从 Google Fonts 官方 CSS 接口下载 woff2（Google 按字符范围切分的原始文件，未经本项目修改），只保留拉丁 / 拉丁扩展和中文分片，共 115 个文件、约 6.4 MB。每个家族的许可证原文取自 google/fonts 官方仓库，放在 `src/ui/fonts/licenses/`；每个文件的来源网址、大小和 SHA-256 记录在 `src/ui/fonts/sources.json`。字体没有从原 CAgent 工作区复制。发布时这些许可证必须随安装包一起提供。
 

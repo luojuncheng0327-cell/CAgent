@@ -1,5 +1,4 @@
 import fs from 'node:fs/promises';
-import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
@@ -40,7 +39,12 @@ import { runTool, toolDefinitions, hash, isWriteTool } from './tools.ts';
 import { acquireHome } from './home-lock.ts';
 import { validateAttachments, cloneResources, hydrateMessages } from './resources.ts';
 import { getSessionOrder } from './session-navigation.ts';
-import { normalizeDirectories, sameDirectory, directoryBlocks } from './directories.ts';
+import {
+  normalizeDirectories,
+  sameDirectory,
+  directoryBlocks,
+  prepareDefaultWorkspace,
+} from './directories.ts';
 import { RunQueue } from './run-queue.ts';
 import { recoverInterruptedRuns, completeToolPairs } from './run-recovery.ts';
 import { estimateContext, summaryFragments, nextSummaryBatch } from './compaction.ts';
@@ -57,12 +61,7 @@ export class Runtime {
   private closed = false;
   private unlock: () => void;
   suggestedWorkspace: string;
-  constructor(
-    home: string,
-    options: { codec?: SecretCodec | null; fetcher?: Fetcher; suggestedWorkspace?: string } = {},
-  ) {
-    this.suggestedWorkspace =
-      options.suggestedWorkspace ?? path.join(os.homedir(), 'Desktop', 'CAgent-Workspace');
+  constructor(home: string, options: { codec?: SecretCodec | null; fetcher?: Fetcher } = {}) {
     this.unlock = acquireHome(home);
     try {
       this.store = new Store(home);
@@ -70,11 +69,16 @@ export class Runtime {
       this.unlock();
       throw e;
     }
+    this.suggestedWorkspace = path.join(this.store.home, 'workspace');
     this.vault = new Vault(this.store, options.codec);
     this.fetcher = options.fetcher;
     this.events.setMaxListeners(40);
     if (!this.store.get('preferences', 'global'))
-      this.store.put<Preferences>('preferences', 'global', preferenceInput.parse({}));
+      this.store.put<Preferences>(
+        'preferences',
+        'global',
+        preferenceInput.parse({ defaultWorkspace: this.suggestedWorkspace }),
+      );
     if (!this.store.list('agent').length) {
       const agent = this.saveAgent({ name: 'CAgent' });
       const pref = this.preferences();
@@ -85,18 +89,32 @@ export class Runtime {
         pref.revision,
       );
     }
+    const saved = this.store.need<Preferences>('preferences', 'global');
+    if (saved.defaultWorkspace !== this.suggestedWorkspace)
+      this.store.put<Preferences>(
+        'preferences',
+        'global',
+        { ...saved, defaultWorkspace: this.suggestedWorkspace },
+        saved.revision,
+      );
     recoverInterruptedRuns(this.store);
   }
   preferences() {
     const saved = this.store.need<Preferences>('preferences', 'global');
     const locale = normalizeLocale(saved.locale);
-    return { ...preferenceInput.parse({ ...saved, locale }), ...saved, locale };
+    return {
+      ...preferenceInput.parse({ ...saved, locale }),
+      ...saved,
+      locale,
+      defaultWorkspace: this.suggestedWorkspace,
+    };
   }
   sessionOrder() {
     return getSessionOrder(this.store);
   }
   savePreferences(raw: unknown) {
     const input = preferenceInput.parse(raw);
+    input.defaultWorkspace = this.suggestedWorkspace;
     try {
       new Intl.DateTimeFormat('en', { timeZone: input.timezone });
     } catch {
@@ -222,6 +240,51 @@ export class Runtime {
       return result;
     });
   }
+  deleteProvider(id: string) {
+    this.store.need<Provider>('provider', id);
+    const models = new Set(
+      this.store
+        .list<Model>('model')
+        .filter((model) => model.providerId === id)
+        .map((model) => model.id),
+    );
+    invariant(
+      !this.store
+        .list<Run>('run')
+        .some(
+          (run) =>
+            !terminalStatuses.has(run.status) && (run.providerId === id || models.has(run.modelId)),
+        ),
+      'PROVIDER_BUSY',
+      '此接口仍有会话正在运行，请先停止后再删除',
+      409,
+    );
+    this.store.transaction(() => {
+      for (const session of this.store.list<Session>('session'))
+        if (session.modelId && models.has(session.modelId))
+          this.store.put('session', session.id, { ...session, modelId: null, reasoning: 'off' });
+      for (const agent of this.store.list<Agent>('agent'))
+        if (agent.modelId && models.has(agent.modelId))
+          this.store.put('agent', agent.id, { ...agent, modelId: null });
+      const prefs = this.preferences();
+      if (models.has(prefs.smallToolModelId ?? '') || models.has(prefs.largeToolModelId ?? ''))
+        this.store.put('preferences', 'global', {
+          ...prefs,
+          smallToolModelId: models.has(prefs.smallToolModelId ?? '')
+            ? null
+            : prefs.smallToolModelId,
+          largeToolModelId: models.has(prefs.largeToolModelId ?? '')
+            ? null
+            : prefs.largeToolModelId,
+        });
+      for (const modelId of models) this.store.remove('model', modelId);
+      this.vault.remove(id);
+      this.vault.remove(id + ':headers');
+      this.store.remove('provider', id);
+      this.store.audit('provider.delete', id, 'ok');
+    });
+    this.events.emit('preferences.changed');
+  }
   saveModel(raw: unknown, id: string = randomUUID()): Model {
     const input = modelInput.parse(raw);
     this.store.need<Provider>('provider', input.providerId);
@@ -243,10 +306,12 @@ export class Runtime {
     const input = sessionInput.parse(raw);
     if (raw && typeof raw === 'object' && !('title' in raw))
       input.title = translate(this.preferences().locale, '新会话');
-    if (raw && typeof raw === 'object' && !('workspace' in raw))
-      input.workspace = this.preferences().defaultWorkspace;
     const agent = this.store.need<Agent>('agent', input.agentId);
     if (input.modelId) this.store.need('model', input.modelId);
+    if (raw && typeof raw === 'object' && !('workspace' in raw) && !('directoryGrants' in raw))
+      input.workspace = await prepareDefaultWorkspace(this.store);
+    else if (input.workspace && sameDirectory(input.workspace, this.suggestedWorkspace))
+      input.workspace = await prepareDefaultWorkspace(this.store);
     if (input.workspace) {
       const stat = await fs.stat(input.workspace).catch(() => null);
       invariant(stat?.isDirectory(), 'WORKSPACE_MISSING', '工作区目录不存在');
@@ -458,8 +523,7 @@ export class Runtime {
     }
   }
   deleteSession(id: string) {
-    const s = this.store.need<Session>('session', id);
-    invariant(s.archived, 'ARCHIVE_FIRST', '请先归档再永久删除');
+    this.store.need<Session>('session', id);
     invariant(!this.activeRun(id), 'SESSION_BUSY', '会话仍在执行', 409);
     this.store.transaction(() => {
       this.store.db.prepare('DELETE FROM messages WHERE session_id=?').run(id);

@@ -16,6 +16,8 @@ const allowed = new Set([
   'pdfjs-dist',
   'mammoth',
   'electron',
+  // Standard installer update client for the update feature requested on 2026-10-12.
+  'electron-updater',
   'prosemirror-model',
   'prosemirror-state',
   'prosemirror-view',

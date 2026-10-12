@@ -178,11 +178,11 @@ const words = {
     '작업 공간 설정',
   ],
   workspaceHint: [
-    '使用默认工作台，或选择一个已有文件夹。',
-    '使用預設工作台，或選擇已有資料夾。',
-    'Use the default workspace or choose an existing folder.',
-    '既定の作業フォルダーを使うか、既存のフォルダーを選びます。',
-    '기본 작업 공간을 사용하거나 기존 폴더를 선택하세요.',
+    '默认工作台固定保存在用户目录下，可在会话中添加其他文件夹。',
+    '預設工作台固定儲存在使用者目錄下，可在對話中新增其他資料夾。',
+    'The default workspace stays in your user folder. Add other folders within a conversation.',
+    '既定の作業フォルダーはユーザーフォルダー内に固定されます。会話内で他のフォルダーを追加できます。',
+    '기본 작업 공간은 사용자 폴더 안에 고정됩니다. 대화에서 다른 폴더를 추가할 수 있습니다.',
   ],
   defaultWorkspace: [
     '默认工作台',
@@ -199,11 +199,11 @@ const words = {
     '선택한 작업 공간',
   ],
   workspaceNote: [
-    '默认目录将在确认后创建。文件写入和命令执行仍需逐次批准。',
-    '預設目錄會在確認後建立。檔案寫入和命令執行仍需逐次批准。',
-    'The default folder is created when confirmed. File writes and commands still require approval.',
-    '確認後に既定フォルダーを作成します。書き込みやコマンド実行には毎回承認が必要です。',
-    '확인하면 기본 폴더가 생성됩니다. 파일 쓰기와 명령 실행에는 매번 승인이 필요합니다.',
+    '确认后自动创建；若文件夹被删除，新建会话时会重建空文件夹，已删除的文件无法自动恢复。',
+    '確認後自動建立；若資料夾被刪除，新增對話時會重建空資料夾，已刪除的檔案無法自動還原。',
+    'Created on confirmation. If deleted, an empty folder is recreated for the next conversation; deleted files cannot be restored automatically.',
+    '確認後に作成します。削除された場合、新しい会話で空のフォルダーを再作成します。削除したファイルは自動復元されません。',
+    '확인 후 생성됩니다. 폴더가 삭제되면 새 대화에서 빈 폴더를 다시 만듭니다. 삭제된 파일은 자동 복구되지 않습니다.',
   ],
   chooseFolder: ['选择文件夹', '選擇資料夾', 'Choose folder', 'フォルダーを選ぶ', '폴더 선택'],
   resetFolder: [

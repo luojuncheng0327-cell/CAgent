@@ -2,12 +2,12 @@
 
 给下一个接手的 AI（Codex 或 Claude）看。每轮结束时**更新**本文件的对应章节，不再追加“本轮…交接”小节：每轮的过程和证据写进 `docs/VALIDATION.md`，功能进度只改 `spec/progress.mjs`。
 
-最后更新：2026-10-05，P2 成功文件工具的产物自动登记、列表、下载与来源定位完成本机及包内验证；跨根草稿和并行下载衔接已修复。完整产品仍未完成，见 docs/P2-FILE-ARTIFACTS-TDD.md 和 docs/VALIDATION.md 第 27 轮。
+最后更新：2026-10-12，固定默认工作台、直接删除会话和接口配置、Windows 安装包及应用内更新；本轮证据见 docs/VALIDATION.md 第 28 轮。完整产品仍未完成。
 
 ## 0. 接手步骤
 
 1. 读完本文件，再读 `README.md`、`docs/功能实现情况.md`，以及 `docs/VALIDATION.md` 开头的“当前结论”和“相似度检查的已审核例外”。
-2. 核对基线：分支 `codex/independent-rewrite`，工作区干净，没有 remote，最近几次提交和第 8 节“里程碑”一致。对不上先告诉用户，不要改动。
+2. 核对基线：当前分支 `main`，remote 为 `https://github.com/luojuncheng0327-cell/CAgent.git`；原来“无 remote / codex/independent-rewrite”的记录已过时。先核对本地修改和最近提交，保留其他工作。
 3. 每条 PowerShell 命令都加第 3 节的命令前缀。
 4. 开工前说明准备做什么；重要决定先问用户；工作中每隔一段用一两句话报告进度。
 
@@ -21,12 +21,15 @@
 
 ## 1. 当前状态
 
-- 仓库 `F:\CAgent-independent`，分支 `codex/independent-rewrite`，没有 remote。旧 `F:\CAgent` 只作只读参考。
-- 功能：必做 208 项中本机已验证 32、部分实现 47、未开始 129，另有计划中 1、外部待定 1。CA-WORK-011 已有四种文件工具产物的事务登记、统一分页、原字节下载、源消息定位与失效状态；跨根打开切至授权根，相对草稿路径与手动保存保持；任意命令、后续工具和原上传资源批量清理仍缺。逐项见 `docs/功能实现情况.md`，完整产品未完成，发布门禁关闭。
+- 仓库 `F:\CAgent-independent`，分支 `main`，GitHub remote 已配置。旧 `F:\CAgent` 只作只读参考。本轮用户明确授权代码和应用包推送，并指定安装包替代便携包。
+- 默认工作台固定为 Windows 用户目录下 `.CAgent/workspace`（`CAGENT_HOME` 隔离测试时使用该根下的 `workspace`）。Windows 兼容原 `.cagent` 数据，未迁移或复制用户文件；只有该子目录可授权，其他数据库、凭据、桌面状态仍私有。新建会话时重建丢失的目录，旧会话的目录绑定不变。
+- 删除入口位于列表行和会话菜单，二次确认后直接删除；无需先归档，保留磁盘文件，删除当前条后选择其他条，允许删空列表。运行中拒绝；编辑草稿删除期间暂停写入，失败恢复待保存状态。
+- `0.1.1` 使用 NSIS 安装程序。安装版启动 10 秒后、每 4 小时检查 GitHub 预览更新；关于页可手动检查，下载校验后点击“重启安装”，先保存草稿并阻止运行中的会话升级。`electron-updater` 6.8.9 为通用更新库，未签名、独立签名清单与真实虚拟机升级回退仍未验。
+- 功能：必做 208 项中本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1。逐项见 `docs/功能实现情况.md`，完整产品未完成，完整发布门禁关闭。
 - 界面复刻：第 1 步基础与第 3 步六步引导完成，第 2 步仍有已记录差别；现有设置共 6 页（含我的资料），第 4 步完整设置仍待用户决定。目录导航、文件工具与预览扩展不算完成该步骤。
-- 验证：最终 `pnpm run verify` 通过，204 项服务测试、0 失败 / 跳过；202 个应用源码、旧目录 2,901 个指纹，独立性违规和相似度越线 0、4 条既有例外未变。最终完整桌面命令退出 0，19 组 217 项；新服务 11 项、模块行 / 函数 100%、分支 96%，新桌面 15 项。之前完整运行在下载交错与旧资料截图超时处失败，证据保留；修复后专项及完整重跑通过。包内 3 组 38 项均断言打包模式。本轮未新增真实账号或跨平台验收。
-- 最新本地便携预览：`release/CAgent-0.1.0-Windows-x64-artifacts.exe`，131,960,449 字节，SHA-256 `861cc09c655d0a28fa3254fb79b5c97f89683becf3fe33fe46e66febfe1b53d4`，附同名 `.sha256`。126 个包内构建文件一致，4 个原生二进制解包、解析库版本与维护者原图 / 依赖声明核对。EXE 自身解压启动，independent / 0.1.0 / health 200 / 0 模型请求；未签名、未安装，发布门禁仍关闭。
-- 本轮另名交付，标准名保持 `024233d1e9645cbc323dbbd983f9aa2c789a22ea750b5ec87c4b1036875e4ccc`，上一版 `-transfer.exe` 保持 `b5aff790cd0bbef0562aadb880bc6730e6017682abe1bf87da03c7581554647e`；包内目录另存 `release/artifacts-preview/win-unpacked`，未覆盖旧包内程序。请用最新 `-artifacts.exe`，打开前从托盘退出旧预览。本地打包已有授权，替换标准名仍要核对程序退出、文件可写与 hash。
+- 验证：220 项服务测试通过；桌面 22 组 / 233 项分段通过，最终安装包内 3 组 / 19 项通过。完整命令与分段复测的区别见 `docs/VALIDATION.md` 第 28 轮。旧参考仓库有 8 个文件在本轮开始前已变化，历史指纹检查非零；没有修改旧仓库或重置快照。相似度新增一条已核对的通用 Electron IPC 薄封装例外，范围限定在 `src/desktop/preload.ts` 与参考 preload 文件、最大 139/282 词元，其余阈值保持。
+- 最新产物为 `release/CAgent-0.1.1-Windows-x64-Setup.exe` 及更新清单；源代码和安装包按本轮用户要求推送 GitHub 预览发布。旧便携版需要手动安装一次新安装版，之后可在应用内更新。未签名，未在用户日常环境安装，真实虚拟机安装 / 卸载 / 升级回退仍未验。
+- 设置的接口列表新增“删除接口”，确认后事务删除 URL、Key、自定义请求头和关联模型，同时清空相关会话、助手和辅助模型引用；保留聊天记录、输入草稿与其他接口。运行中的接口不能删除，失败保留配置可重试；仅清 Key 继续使用编辑接口中的现有复选框。
 - 用户仍在审阅 `docs/待实现功能清单.csv`，尚未收到排除或修改决定，未擅自缩减范围。
 
 ## 2. 用户边界与决定（已定，无需重问）
@@ -50,10 +53,10 @@
 
 安全与发布：
 
-- 不 push、不发布、不打包旧改造版、不安装或覆盖旧应用。用户已表示不需要远程备份，不要再主动提。
+- 不打包旧改造版、不安装或覆盖旧应用。2026-10-12 用户已明确要求将本轮独立版代码和安装包推送 GitHub；按预览版本上传，不宣称完整产品发布。
 - 2026-10-01 用户明确选择打包 `F:\CAgent-independent` 并要求版本 0.1，现为 `0.1.0` 本地便携预览包。允许按 `pnpm run package:win` 重新生成本地包；完整产品发布门禁继续关闭。聊天的 cwd 即便显示 `F:\CAgent`，也不能据此改打旧版；旧目录中的同名 0.1.0 EXE 是本轮纠正前的错误产物，不是独立版交付。
 - 不修改 `F:\CAgent`，不在里面运行命令，不 reset / clean；不读取 `~\.hanako`、`%APPDATA%\Hanako` 的真实数据和密钥。
-- 开发测试一律用显式的 `CAGENT_HOME` 临时目录；工作台用另一个独立临时目录，不能放进应用数据目录。
+- 开发测试一律用显式的 `CAGENT_HOME` 临时目录；默认工作台使用其中唯一放行的 `workspace` 子目录，其他自选工作区仍使用独立临时目录。禁止使用真实个人数据测试。
 - 原版只能按第 4 节“原版参考运行”的方法运行临时副本；禁止运行打包版或已安装的 HanaAgent（会自动更新，可能覆盖旧应用）。
 
 ## 3. 工作方式
@@ -62,8 +65,8 @@
   `$rt = 'C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies'; $env:PATH = "$rt\node\bin;$rt\bin\fallback;$rt\native\git\cmd;" + $env:PATH; [Console]::OutputEncoding = [Text.Encoding]::UTF8`
 - pnpm 的完整路径：`C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd`。Node 需要联网时加 `NODE_USE_ENV_PROXY=1`（本机代理 127.0.0.1:7900）。
 - 首次准备：`pnpm install --frozen-lockfile`、`pnpm run setup:desktop`。
-- 本地便携打包：`pnpm run package:win`，复用本项目 Electron 44.4.5；输出到 `release/`，固定 `--publish never`。打包使用通用开发工具 electron-builder 26.8.1，未使用的 electron-winstaller 安装脚本保持禁用。
-- 已运行的便携 EXE 会锁住输出文件。不要为打包强行结束用户的程序：可以在构建完成后用 `pnpm exec electron-builder --win portable --x64 --publish never --config.win.artifactName=CAgent-0.1.0-Windows-x64-p1.exe` 另名生成；退出原预览后再复制更新标准文件名，并比对 SHA-256。启动新版前需真正退出当前预览（关闭主窗口会收进托盘）。
+- Windows 安装打包：`pnpm run package:win`，复用本项目 Electron 44.4.5 和 electron-builder 26.8.1；输出 `release/CAgent-<version>-Windows-x64-Setup.exe`、`.blockmap` 和 `latest.yml`，固定 `--publish never`。预览上传另用 GitHub CLI；更新的三个文件必须一并上传，版本标签必须对应代码提交。未使用的 electron-winstaller 安装脚本保持禁用。
+- 不为打包强行结束用户的程序。遇到产物被锁定时，给 electron-builder 指定新的输出目录再生成 NSIS 安装包；启动或手动安装新版前从托盘真正退出旧应用（关闭主窗口会收进托盘）。
 - 同一执行链桌面脚本可验证本地打包程序：设置 `CAGENT_RUNTIME_TEST_EXE` 为本仓库 `release/` 下包内 `CAgent.exe` 的绝对路径，再运行 `node tests/desktop-runtime.mjs`；使用独立临时数据和假模型，并断言 `app.isPackaged=true`。测试后取消该环境变量，默认模式仍测试开发构建。
 - 附件包内检查：`CAGENT_ATTACHMENT_TEST_EXE` 指向本仓库 `release/win-unpacked/CAgent.exe` 后运行 `node tests/desktop-attachments.mjs`；9 项检查会断言并输出 `packaged:true`。`scripts/native-parsers.cjs` 解决本机 pnpm / builder 漏收集可选原生包的问题，配合 `.node` / `.dll` / `icudtl.dat` 解包。不要删掉它或只按包目录设置解包，否则图片库可能在归档临时路径找不到相邻 DLL。可先 `electron-builder --win --dir --x64 --publish never` 验证目录，再用 `--prepackaged release/win-unpacked` 生成便携文件。
 - 改代码后：`pnpm run format`，然后 `pnpm run verify` 必须全过；界面或桌面代码有改动，再跑 `pnpm run test:desktop`，不降低覆盖。验证串行运行，日志写到 `.artifacts/logs/`。
@@ -91,8 +94,8 @@
 - 简体、繁体、英、日、韩同时覆盖引导与当前已实现的主界面，首屏已说明。确认过的步骤、称呼、助手名和记忆开关持久化；未确认的字段只在进程内保留，API Key 输入不写入明文草稿。
 - 20 个具名供应商与自定义入口，四个官方 API 地址预置，其余地址手填；搜索、空结果、外部点击关闭、Escape、方向键、Home / End。连接测试请求模型列表，失败仍可手动添加。供应商重复保存更新原记录，密钥留空保留加密值。
 - 模型列表可添加、选择主模型、移除，辅助模型引用可保存。自动记忆提炼、辅助任务分工、便笺和协作尚未实现，页面如实说明；不要把保存职责引用说成已经执行了自动路由。
-- 默认工作台为桌面 `CAgent-Workspace`，只在确认时创建；现有目录需存在且不能位于应用数据目录内。首次完成标记与首个会话在同一 SQLite 事务提交；失效供应商、丢失目录、版本冲突和会话写入故障不会把配置标成完成。
-- 测试必须用独立临时 `CAGENT_HOME` 和外部工作台。Electron 引导测试传 `CAGENT_SMOKE_WORKSPACE` 指定建议目录；没有该变量时 smoke 模式建议临时目录，不会在真实桌面创建目录。
+- 默认工作台固定为 `.CAgent/workspace`，引导只展示并确认，不再选择默认位置；确认时与新建会话前创建，丢失则重建空目录。首次完成标记与首个会话仍在同一 SQLite 事务提交；无效模型、版本冲突和写入故障不提交完成标记。
+- 测试必须用独立临时 `CAGENT_HOME`，默认工作台跟随该临时根；`CAGENT_SMOKE_WORKSPACE` 已不再用于改变默认路径。包内引导 / 删除 / 更新可分别设置 `CAGENT_ONBOARDING_TEST_EXE`、`CAGENT_SESSION_TEST_EXE`、`CAGENT_UPDATE_TEST_EXE`。更新测试使用本机 HTTP 和真实校验库，只替换最终安装进程调用，不安装到日常环境。
 
 原版实测数值（事实值，变量名由我们自己起）：
 
@@ -222,3 +225,4 @@
 | 文件传输与预览交付（2026-10-04） | 193 项服务、18 组 202 项完整桌面、包内 81 项；`-transfer.exe` 自身启动与字节核对通过，完整产品门禁仍关闭 |
 | `762bd6f` → `a080061`、`98bf288` / `ba0e77b` → `ebac6d9`、`cbbe640` → `a215270`、`4f4eab7` | 工具产物服务、桌面与跨根草稿、下载交错、原生资料截图的 RED / GREEN 与修正，见 `docs/P2-FILE-ARTIFACTS-TDD.md` |
 | 工具产物交付（2026-10-05） | 204 项服务、19 组 217 项完整桌面、包内 38 项；`-artifacts.exe` 自身启动与字节核对通过，完整产品门禁关闭 |
+| 安装版与更新（2026-10-12） | 0.1.1：固定工作台、会话 / 接口配置删除、NSIS 安装与应用内更新；220 项服务、22 组 233 项桌面分段通过、最终包内 19 项。历史参考指纹漂移未改；完整产品门禁关闭，按本轮明确授权推送安装预览。 |

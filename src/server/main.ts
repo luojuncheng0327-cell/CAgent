@@ -4,7 +4,10 @@ import fs from 'node:fs';
 import { Runtime } from './runtime.ts';
 import { serve } from './http.ts';
 
-const home = path.resolve(process.env.CAGENT_HOME ?? path.join(os.homedir(), '.cagent'));
+const home = path.resolve(
+  process.env.CAGENT_HOME ??
+    path.join(os.homedir(), process.platform === 'win32' ? '.CAgent' : '.cagent'),
+);
 const rt = new Runtime(home);
 const uiDir = path.resolve('dist/ui');
 const app = await serve(rt, {

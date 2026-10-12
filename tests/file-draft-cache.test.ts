@@ -123,3 +123,34 @@ test('P2 删除会话后清除待写草稿，不会再向已删除会话发出�
     globalThis.fetch = fetch;
   }
 });
+
+test('删除会话不要求失效目录中的草稿先保存，删除失败保留草稿供重试', async () => {
+  const original = globalThis.fetch,
+    id = randomUUID();
+  let writes = 0;
+  globalThis.fetch = async (_url, init) => {
+    if (init?.method === 'PUT') {
+      writes++;
+      throw new Error('workspace missing');
+    }
+    return ok({ tabs: [], active: null, revision: 0 });
+  };
+  try {
+    await cache.loadFileDraftView(id, workspace);
+    cache.rememberFileDraftView(id, workspace, view('unsaved'), () => {});
+    await assert.rejects(
+      cache.deleteWithFileDrafts(id, async () => {
+        throw new Error('delete failed');
+      }),
+      /delete failed/,
+    );
+    assert.equal(cache.hasPendingFileDrafts(), true);
+    await cache.deleteWithFileDrafts(id, async () => {});
+    await cache.flushFileDrafts();
+    assert.equal(writes, 0);
+    assert.equal(cache.hasPendingFileDrafts(), false);
+  } finally {
+    cache.forgetFileDrafts(id);
+    globalThis.fetch = original;
+  }
+});
