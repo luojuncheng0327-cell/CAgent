@@ -17,7 +17,6 @@
 |---|---|
 | [功能实现情况](docs/功能实现情况.md) | 哪些实现了、哪些没有：按领域统计，每项写明“已有 / 还缺”（自动生成） |
 | [待实现功能清单](docs/待实现功能清单.md) | 还没做完的 176 项，每项的入口、要求和现状，用来决定取舍（自动生成，另有 CSV） |
-| [依赖、许可证与项目归属](docs/DEPENDENCIES.md) | 用了哪些第三方组件及其许可证，哪些部分归本项目，和原版的边界 |
 | [验证记录](docs/VALIDATION.md) | 每一轮实际执行的检查、结果和遇到的问题；开头是当前结论 |
 | [交接说明](.codex/HANDOFF.md) | 给接手 AI 的工作规则、用户决定、界面复刻数据和下一步 |
 | [功能清单与验收规格](docs/CAgent-功能清单与验收规格.md) | 冻结的 210 项功能规格；机器可读版 [spec/features.json](spec/features.json)，原版入口索引 [reference-coverage.json](docs/reference-coverage.json) |
