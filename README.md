@@ -2,6 +2,8 @@
 
 呈平安的独立 AI 工作应用：在本机运行的桌面 AI 助手（Windows / Electron）。
 
+![CAgent 主界面：对话、工作台与文件区](docs/screenshots/cagent-interface.png)
+
 当前阶段：功能规格已冻结（210 项），独立实现进行中，还不是可以发布的完整产品。
 
 ## 当前进度
