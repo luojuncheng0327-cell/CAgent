@@ -30,6 +30,7 @@ import { Workspace, forgetWorkspaceDrafts } from './Workspace.tsx';
 import { flushFileDrafts, hasPendingFileDrafts, deleteWithFileDrafts } from './file-draft-cache.ts';
 import { rememberRunStatus, resolveRunStatus } from './run-status-cache.ts';
 import { ChoiceMenu } from './ChoiceMenu.tsx';
+import { ContextMeter } from './ContextMeter.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { DirectoryPermissions } from './DirectoryPermissions.tsx';
 import { portraitSource } from './Marks.tsx';
@@ -1292,6 +1293,17 @@ export function App() {
                               </div>
                             </details>
                             <span className="grow" />
+                            <ContextMeter
+                              key={current.id}
+                              sessionId={current.id}
+                              model={
+                                model ?? data.models.find((item) => item.id === agent?.modelId)
+                              }
+                              draft={draft}
+                              attachmentIds={attachmentIds}
+                              eventCursor={detail.eventCursor}
+                              live={live.text + live.reasoning}
+                            />
                             <ChoiceMenu
                               key={current.id + '-reasoning'}
                               label={t('推理档位')}

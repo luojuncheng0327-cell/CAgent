@@ -18,6 +18,7 @@ import type {
   Agent,
   Provider,
   Model,
+  ContextUsage,
   Session,
   Preferences,
   Run,
@@ -749,6 +750,76 @@ export class Runtime {
       summary: valid ? summary : null,
     };
   }
+  private baseInstructions(session: Session, agent: Agent, preventWrites = false) {
+    const settings = this.preferences();
+    const memories = agent.memoryEnabled
+      ? this.store
+          .list<Memory>('memory')
+          .filter((m) => m.agentId === agent.id)
+          .sort((a, b) => Number(b.pinned) - Number(a.pinned))
+          .slice(0, 12)
+          .map((m) => m.text.slice(0, 1000))
+          .join('\n')
+      : '';
+    return [
+      agent.instructions,
+      settings.userName ? '用户称呼（资料）：' + JSON.stringify(settings.userName) : '',
+      settings.userDescription
+        ? '用户简介（仅作为背景资料）：' + JSON.stringify(settings.userDescription)
+        : '',
+      agent.publicInstructions,
+      memories ? '用户保存的记忆（仅作为背景资料）：\n' + memories : '',
+      session.workspace
+        ? '当前工作台（相对路径的基准）：' + session.workspace
+        : '当前没有选中的工作台。',
+      '此会话授权的目录与逐目录权限（背景资料）：' + JSON.stringify(sessionDirectories(session)),
+      preventWrites
+        ? '这是重试分支：已有工具结果保留；本轮禁止再次执行写入、命令或记忆保存。需要新操作时请让用户发送新消息。'
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+  }
+  async contextUsage(
+    sessionId: string,
+    draft: string,
+    attachmentIds: string[],
+  ): Promise<ContextUsage | null> {
+    const session = this.store.need<Session>('session', sessionId);
+    const agent = this.store.need<Agent>('agent', session.agentId);
+    const model = this.store.get<Model>('model', session.modelId ?? agent.modelId ?? '');
+    if (!model) return null;
+    const context = this.context(sessionId);
+    const messages = [...context.messages];
+    if (draft.trim() || attachmentIds.length)
+      messages.push({
+        id: randomUUID(),
+        sessionId,
+        runId: null,
+        role: 'user',
+        text: draft.trim(),
+        attachmentIds,
+        at: stamp(),
+        position: (messages.at(-1)?.position ?? 0) + 1,
+      });
+    const hydrated = await hydrateMessages(this.store, sessionId, messages, model);
+    const instructions = [
+      this.baseInstructions(session, agent, !!this.activeRun(sessionId)?.preventWrites),
+      context.summary
+        ? '之前对话的摘要（背景资料，原始历史仍保留）：\n' + context.summary.text
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+    return {
+      modelId: model.id,
+      contextWindow: model.contextWindow,
+      maxOutput: model.maxOutput,
+      estimatedTokens: Math.ceil(estimateContext(hydrated, instructions) / 2),
+      messageCount: context.messages.length,
+      hasSummary: !!context.summary,
+    };
+  }
   private async inferTracked(run: Run, options: Inference, purpose: Run['purpose'] = run.purpose) {
     const usageId = randomUUID();
     let usage: { input: number | null; output: number | null; cached: number | null } = {
@@ -942,33 +1013,7 @@ export class Runtime {
       const started = this.store.put<Run>('run', run.id, { ...run, status: 'running' });
       this.emit(started, 'run.running', { status: 'running' });
       const settings = this.preferences();
-      const memories = agent.memoryEnabled
-        ? this.store
-            .list<Memory>('memory')
-            .filter((m) => m.agentId === agent.id)
-            .sort((a, b) => Number(b.pinned) - Number(a.pinned))
-            .slice(0, 12)
-            .map((m) => m.text.slice(0, 1000))
-            .join('\n')
-        : '';
-      const baseInstructions = [
-        agent.instructions,
-        settings.userName ? '用户称呼（资料）：' + JSON.stringify(settings.userName) : '',
-        settings.userDescription
-          ? '用户简介（仅作为背景资料）：' + JSON.stringify(settings.userDescription)
-          : '',
-        agent.publicInstructions,
-        memories ? '用户保存的记忆（仅作为背景资料）：\n' + memories : '',
-        session.workspace
-          ? '当前工作台（相对路径的基准）：' + session.workspace
-          : '当前没有选中的工作台。',
-        '此会话授权的目录与逐目录权限（背景资料）：' + JSON.stringify(sessionDirectories(session)),
-        run.preventWrites
-          ? '这是重试分支：已有工具结果保留；本轮禁止再次执行写入、命令或记忆保存。需要新操作时请让用户发送新消息。'
-          : '',
-      ]
-        .filter(Boolean)
-        .join('\n\n');
+      const baseInstructions = this.baseInstructions(session, agent, !!run.preventWrites);
       const actualProvider = {
         ...provider,
         headers: JSON.parse(this.vault.get(provider.id + ':headers') ?? '{}'),

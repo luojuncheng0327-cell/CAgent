@@ -32,8 +32,8 @@ export const modelInput = z.object({
   providerId: id,
   name: label,
   model: label,
-  contextWindow: z.number().int().min(1024).max(4_000_000).default(128000),
-  maxOutput: z.number().int().min(16).max(262144).default(4096),
+  contextWindow: z.number().int().positive().default(128000),
+  maxOutput: z.number().int().positive().default(4096),
   reasoning: z.array(z.enum(['off', 'low', 'medium', 'high', 'xhigh', 'max'])).default([]),
   reasoningMap: z.record(z.string(), z.string().max(40)).default({}),
   defaultReasoning: z.string().max(40).default('off'),
@@ -44,6 +44,26 @@ export const modelInput = z.object({
   cachedInputPrice: z.number().nonnegative().nullable().default(null),
   revision: z.number().int().positive().optional(),
 });
+export interface DiscoveredModel {
+  model: string;
+  name: string;
+  contextWindow?: number;
+  maxOutput?: number;
+}
+export interface ModelLimits {
+  contextWindow: number | null;
+  maxOutput: number | null;
+  source: 'provider' | 'deepseek-docs' | 'mixed' | null;
+  sourceUrl: string | null;
+}
+export interface ContextUsage {
+  modelId: string;
+  contextWindow: number;
+  maxOutput: number;
+  estimatedTokens: number;
+  messageCount: number;
+  hasSummary: boolean;
+}
 export const agentInput = z.object({
   name: label,
   description: z.string().trim().max(2000).default(''),

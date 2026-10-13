@@ -3,10 +3,18 @@ import { UsagePage } from './UsagePage.tsx';
 import { ProfileEditor } from './ProfileEditor.tsx';
 import { portraitSource } from './Marks.tsx';
 import { UpdatePanel } from './UpdatePanel.tsx';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Bootstrap } from './api.ts';
 import { api } from './api.ts';
-import type { Agent, Model, Provider, Protocol, Preferences } from '../shared/contracts.ts';
+import type {
+  Agent,
+  Model,
+  Provider,
+  Protocol,
+  Preferences,
+  DiscoveredModel,
+  ModelLimits,
+} from '../shared/contracts.ts';
 import {
   Field,
   Icon,
@@ -117,7 +125,7 @@ function ModelSettings({
     [probe, setProbe] = useState(''),
     [discovered, setDiscovered] = useState<{
       providerId: string;
-      models: { name: string; model: string }[];
+      models: DiscoveredModel[];
     } | null>(null);
   return (
     <>
@@ -432,21 +440,80 @@ function ModelEditor({
     cachedInputPrice: initial?.cachedInputPrice ?? null,
   });
   const [mapping, setMapping] = useState(JSON.stringify(value.reasoningMap)),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(''),
+    [limits, setLimits] = useState<ModelLimits | null>(null),
+    [checkingLimits, setCheckingLimits] = useState(false),
+    [checkVersion, setCheckVersion] = useState(0);
+  useEffect(() => {
+    setLimits(null);
+    const modelId = value.model.trim();
+    if (!value.providerId || !modelId) {
+      setCheckingLimits(false);
+      return;
+    }
+    const controller = new AbortController();
+    setCheckingLimits(true);
+    const timer = setTimeout(() => {
+      void api<ModelLimits>(
+        '/providers/' + value.providerId + '/model-limits',
+        'POST',
+        { model: modelId },
+        controller.signal,
+      )
+        .then((result) => {
+          if (!controller.signal.aborted) setLimits(result);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted)
+            setLimits({ contextWindow: null, maxOutput: null, source: null, sourceUrl: null });
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setCheckingLimits(false);
+        });
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [value.providerId, value.model, checkVersion]);
   return (
     <Modal title={initial ? t('配置模型') : t('添加模型')} onClose={done}>
       <form
         className="editor-form"
+        onChange={() => setError('')}
+        onInvalid={(e) => {
+          const control = e.target as HTMLInputElement;
+          setError(
+            t('请检查“{0}”：{1}', [
+              control.getAttribute('aria-label') ?? '',
+              control.validationMessage,
+            ]),
+          );
+        }}
         onSubmit={(e) => {
           e.preventDefault();
+          if (busy) return;
+          setError('');
           setBusy(true);
           void attempt(async () => {
-            await api('/models' + (initial ? '/' + initial.id : ''), initial ? 'PUT' : 'POST', {
-              ...value,
-              reasoningMap: JSON.parse(mapping),
-              revision: initial?.revision,
-            });
-            done();
+            try {
+              let reasoningMap: unknown;
+              try {
+                reasoningMap = JSON.parse(mapping);
+              } catch {
+                throw new Error(t('出站参数映射必须是有效的 JSON 对象'));
+              }
+              await api('/models' + (initial ? '/' + initial.id : ''), initial ? 'PUT' : 'POST', {
+                ...value,
+                reasoningMap,
+                revision: initial?.revision,
+              });
+              done();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : t('保存失败，请重试'));
+              throw e;
+            }
           }).finally(() => setBusy(false));
         }}
       >
@@ -478,11 +545,64 @@ function ModelEditor({
             />
           </Field>
         </div>
+        <div className="model-limits-note">
+          <p role="status" aria-live="polite">
+            {checkingLimits
+              ? t('正在检查模型上限…')
+              : limits
+                ? limits.source
+                  ? t('上下文上限：{0} token；输出上限：{1} token', [
+                      limits.contextWindow?.toLocaleString() ?? t('未知'),
+                      limits.maxOutput?.toLocaleString() ?? t('未知'),
+                    ])
+                  : t('未查到模型上限，可手动填写；当前数值不会被自动修改。')
+                : t('填写模型 ID 后自动检查上限。')}
+          </p>
+          {limits?.source && (
+            <small>
+              {limits.source === 'provider'
+                ? t('来源：当前接口')
+                : limits.source === 'mixed'
+                  ? t('来源：当前接口与 DeepSeek 官方文档')
+                  : t('来源：DeepSeek 官方文档')}
+              {limits.sourceUrl && (
+                <a href={limits.sourceUrl} target="_blank" rel="noreferrer">
+                  {t('查看来源')}
+                </a>
+              )}
+            </small>
+          )}
+          <div className="form-actions">
+            <button
+              type="button"
+              disabled={checkingLimits || !value.model.trim()}
+              onClick={() => setCheckVersion((version) => version + 1)}
+            >
+              {t('重新检查上限')}
+            </button>
+            <button
+              type="button"
+              disabled={checkingLimits || !limits?.source}
+              onClick={() => {
+                setError('');
+                setValue((current) => ({
+                  ...current,
+                  contextWindow: limits?.contextWindow ?? current.contextWindow,
+                  maxOutput: limits?.maxOutput ?? current.maxOutput,
+                }));
+              }}
+            >
+              {t('使用检测上限')}
+            </button>
+          </div>
+        </div>
         <div className="form-grid">
           <Field label={t('上下文窗口')}>
             <input
               type="number"
-              min={1024}
+              min={1}
+              max={limits?.contextWindow ?? undefined}
+              required
               value={value.contextWindow}
               onChange={(e) => setValue({ ...value, contextWindow: Number(e.target.value) })}
             />
@@ -490,7 +610,9 @@ function ModelEditor({
           <Field label={t('最大输出 token')}>
             <input
               type="number"
-              min={16}
+              min={1}
+              max={Math.min(limits?.maxOutput ?? Infinity, value.contextWindow - 1)}
+              required
               value={value.maxOutput}
               onChange={(e) => setValue({ ...value, maxOutput: Number(e.target.value) })}
             />
@@ -596,12 +718,17 @@ function ModelEditor({
             />
           </Field>
         </div>
+        {error && (
+          <p className="inline-error" role="alert">
+            {error}
+          </p>
+        )}
         <div className="form-actions">
           <button type="button" onClick={done}>
             {t('取消')}
           </button>
           <button className="primary" disabled={busy}>
-            {t('保存模型')}
+            {busy ? t('保存中…') : t('保存模型')}
           </button>
         </div>
       </form>

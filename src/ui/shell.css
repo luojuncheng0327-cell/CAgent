@@ -530,6 +530,75 @@ textarea::placeholder {
   gap: 4px;
   min-width: 0;
 }
+.context-meter {
+  position: relative;
+  flex-shrink: 0;
+  color: var(--tint-main);
+}
+.context-meter > button {
+  width: 24px;
+  height: 24px;
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.context-meter > button:focus-visible {
+  outline: 2px solid var(--tint-main);
+  outline-offset: 2px;
+}
+.context-meter circle {
+  fill: none;
+  stroke-width: 2;
+}
+.context-track {
+  stroke: var(--text-faint);
+  opacity: 0.3;
+}
+.context-fill {
+  stroke: currentColor;
+  stroke-linecap: round;
+}
+.context-meter[data-level='near'] {
+  color: #ad7c38;
+}
+.context-meter[data-level='full'] {
+  color: #b05b48;
+}
+.context-tooltip {
+  position: absolute;
+  z-index: 30;
+  right: -30px;
+  bottom: calc(100% + 10px);
+  width: max-content;
+  max-width: min(340px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--sheet-tone);
+  box-shadow: var(--popup-shadow);
+  color: var(--text-strong);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.context-tooltip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -10px;
+  width: 100%;
+  height: 10px;
+}
+.context-tooltip p {
+  margin: 5px 0;
+}
+.context-tooltip small {
+  display: block;
+  color: var(--text-soft);
+}
 .composer .attach-trigger {
   position: absolute;
   bottom: 2px;

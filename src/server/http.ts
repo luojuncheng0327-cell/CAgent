@@ -21,7 +21,7 @@ import type {
 import { publicError, AppError, invariant } from './errors.ts';
 import { readWorkspaceFile, writeWorkspaceFile, workspacePath } from './tools.ts';
 import { exportBackup, inspectBackup, importBackup } from './backup.ts';
-import { discoverModels } from './discovery.ts';
+import { discoverModels, discoverModelLimits } from './discovery.ts';
 import { createResource, resourceBytes, removeResource, resourceLimit } from './resources.ts';
 import { fileHistory, restoreFile, manageFile, watchWorkspace } from './workspace.ts';
 import { usageReport } from './usage.ts';
@@ -274,7 +274,22 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
           return;
         }
       }
-      let match = route.match(/^\/api\/v1\/providers\/([^/]+)\/discover$/);
+      let match = route.match(/^\/api\/v1\/providers\/([^/]+)\/model-limits$/);
+      if (match && method === 'POST') {
+        const input = z.object({ model: z.string().trim().min(1).max(120) }).parse(await body(req));
+        const p = rt.store.need<Provider>('provider', match[1]);
+        json(res, {
+          data: await discoverModelLimits(
+            p,
+            rt.vault.get(p.id),
+            JSON.parse(rt.vault.get(p.id + ':headers') ?? '{}'),
+            input.model,
+            rt.fetcher,
+          ),
+        });
+        return;
+      }
+      match = route.match(/^\/api\/v1\/providers\/([^/]+)\/discover$/);
       if (match && method === 'POST') {
         const p = rt.store.need<Provider>('provider', match[1]);
         json(res, {
@@ -346,6 +361,16 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
         }
         if (action === 'runs' && method === 'POST') {
           json(res, { data: await rt.start(id, await body(req)) }, 202);
+          return;
+        }
+        if (action === 'context-usage' && method === 'POST') {
+          const input = z
+            .object({
+              text: z.string().max(200000).default(''),
+              attachmentIds: z.array(z.string().uuid()).max(8).default([]),
+            })
+            .parse(await body(req));
+          json(res, { data: await rt.contextUsage(id, input.text, input.attachmentIds) });
           return;
         }
         if (action === 'revisions' && method === 'POST') {

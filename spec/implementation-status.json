@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "asOf": "2026-10-12",
-  "milestone": "默认工作台固定到用户目录下的 .CAgent/workspace 并在新建会话时重建；会话可直接确认删除；Windows 改为 NSIS 安装包，接入 GitHub 更新检查、下载校验与重启安装，完整产品验证继续保留原边界",
+  "asOf": "2026-10-13",
+  "milestone": "模型配置移除固定 token 上限，自动检查接口元数据与 DeepSeek 当前官方规格；保存失败在弹窗内提示并保留输入；输入区新增随草稿、回复与模型切换更新的上下文用量圆环，显示估算值、窗口上限与百分比",
   "counts": {
     "verified_full": 0,
     "verified_local": 32,
@@ -217,9 +217,10 @@
       "evidence": [
         "src/server/discovery.ts",
         "src/server/runtime.ts",
-        "src/ui/Settings.tsx"
+        "src/ui/Settings.tsx",
+        "tests/model-limits.test.ts"
       ],
-      "done": "可以从供应商拉取模型清单，拉取失败时分别提示 HTTP 错误、响应为空、内容过大和格式错误；每个模型有“测试连接”按钮。",
+      "done": "可以从供应商拉取模型清单并保留提供的窗口与输出上限，拉取失败时分别提示 HTTP 错误、响应为空、内容过大和格式错误；每个模型有“测试连接”按钮。",
       "todo": "Codex 订阅协议不能自动拉取模型；网络、证书、超时失败还合在一种提示里；测试结果是否带协议和脱敏地址还没按规格核对。"
     },
     {
@@ -231,10 +232,14 @@
       "status": "partial",
       "evidence": [
         "src/server/runtime.ts",
-        "src/ui/Settings.tsx"
+        "src/server/discovery.ts",
+        "src/server/model-limits.ts",
+        "src/ui/Settings.tsx",
+        "tests/model-limits.test.ts",
+        "tests/desktop-model-settings.mjs"
       ],
-      "done": "模型详情可以编辑显示名称、模型 ID、上下文窗口、最大输出、推理档位和默认档位、出站参数映射、三种价格、是否允许工具调用和是否支持图片。",
-      "todo": "除图片外的其他模态（音频、视频）还不能声明；增删改后的列表同步和重启保持还没有专项验证。"
+      "done": "模型详情可编辑名称、ID、窗口、输出预算、推理与映射、价格、工具和图片能力。移除任意固定 token 上限，自动读取接口声明，DeepSeek 缺失信息时读取当前官方文档并展示来源；未知时可手动配置。1M / 384K 及更大预算保存、失败提示和重试、旧检查响应隔离、并发防重复、重新打开与重启保持已专项验证。",
+      "todo": "音频、视频等其他模态尚不能声明；其他厂商缺少元数据时尚无官方文档采集器，未知上限不靠模型名称猜测；真实付费模型生成及全部增删改同步仍待验证。"
     },
     {
       "id": "CA-MODEL-007",
@@ -521,9 +526,12 @@
         "tests/p1-runtime-bounds.test.ts",
         "tests/desktop-runtime.mjs",
         "docs/P1-RUNTIME-TDD.md",
-        "src/server/compaction.ts"
+        "src/server/compaction.ts",
+        "src/ui/ContextMeter.tsx",
+        "tests/context-usage.test.ts",
+        "tests/desktop-context-meter.mjs"
       ],
-      "done": "手动和默认关闭的实验自动压缩保留最后两轮与全部原文。长历史按当前窗口分批合并摘要，超长消息与工具参数分段不丢字，图片只发送一次，工具只作为待总结资料。中途失败、取消、历史或摘要变化、返回摘要过大均不提交半成品；单次最多 64 批，每次请求单独计量，页面显示当前批次。",
+      "done": "手动和默认关闭的实验自动压缩保留最后两轮与全部原文。长历史按当前窗口分批合并摘要，超长消息与工具参数分段不丢字，图片只发送一次，工具只作为待总结资料。中途失败、取消、历史或摘要变化、返回摘要过大均不提交半成品；单次最多 64 批，每次请求单独计量，页面显示当前批次。输入区推理按钮左侧新增上下文用量圆环，按完整有效历史、摘要、规则、草稿和附件估算；悬停或键盘聚焦显示已用 / 窗口、百分比及预留输出，Escape 可关闭，流式输出和模型切换同步更新。",
       "todo": "上下文仍按字符和图片数保守估算，没有精确分词；单张图片或已有摘要超过窗口时仍需更大模型。模型摘要事实保真和真实收费服务未验收。"
     },
     {

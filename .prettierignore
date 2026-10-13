@@ -4,3 +4,4 @@
 *.md
 *.yaml
 .codex/
+.pnpm-store/

@@ -15,6 +15,9 @@ const require = createRequire(import.meta.url),
   errors = [];
 const packaged = !!process.env.CAGENT_UPDATE_TEST_EXE;
 const bytes = Buffer.from('CAgent isolated updater download fixture');
+const expectedVersion = JSON.parse(
+  await fs.readFile(new URL('../package.json', import.meta.url), 'utf8'),
+).version;
 let corrupted = true,
   downloads = 0,
   app;
@@ -86,7 +89,7 @@ try {
   await page.getByRole('button', { name: '界面设置', exact: true }).click();
   await page.getByRole('button', { name: '关于 CAgent', exact: true }).click();
   const panel = page.getByRole('dialog').getByLabel('应用更新', { exact: true });
-  await panel.getByText('当前版本：0.1.1', { exact: true }).waitFor();
+  await panel.getByText('当前版本：' + expectedVersion, { exact: true }).waitFor();
   checks.push('about panel shows the packaged version through isolated IPC');
   if (!packaged) {
     await panel.getByText('安装版支持应用内更新', { exact: true }).waitFor();
