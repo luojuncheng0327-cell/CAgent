@@ -5,3 +5,7 @@
 *.yaml
 .codex/
 .pnpm-store/
+backend/
+deploy/
+*.toml
+*.yml

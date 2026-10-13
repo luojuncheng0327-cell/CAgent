@@ -46,6 +46,7 @@ interface ServerOptions {
   token?: string;
   uiDir?: string;
   trashItem?: (target: string) => Promise<void>;
+  internalRequest?: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>;
 }
 const equal = (a: string, b: string) => {
   const left = Buffer.from(a),
@@ -102,6 +103,11 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
       invariant(req.headers.host === new URL(origin).host, 'INVALID_HOST', '访问来源不匹配', 403);
       if (req.headers.origin)
         invariant(req.headers.origin === origin, 'INVALID_ORIGIN', '跨来源请求已拒绝', 403);
+      if (route.startsWith('/internal/')) {
+        invariant(options.internalRequest, 'NOT_FOUND', '此接口不存在', 404);
+        await options.internalRequest(req, res);
+        return;
+      }
       if (route === '/api/v1/auth' && method === 'POST') {
         const input = z.object({ token: z.string().max(256) }).parse(await body(req));
         invariant(equal(input.token, token), 'UNAUTHORIZED', '连接凭据无效', 401);
@@ -206,6 +212,7 @@ export async function serve(rt: Runtime, options: ServerOptions = {}) {
               workspace: true,
               attachments: true,
               manualMemory: true,
+              knowledge: rt.knowledgeAvailable,
               backup: true,
               oauth: false,
               mcp: false,

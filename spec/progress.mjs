@@ -11,7 +11,7 @@
 export const asOf = '2026-10-13';
 
 export const milestone =
-  '模型配置移除固定 token 上限，自动检查接口元数据与 DeepSeek 当前官方规格；保存失败在弹窗内提示并保留输入；输入区新增随草稿、回复与模型切换更新的上下文用量圆环，显示估算值、窗口上限与百分比';
+  'React / Electron 桌面端接入独立 FastAPI 后端与 LangGraph / LangChain 实际聊天编排；TanStack Query / Zustand 接管部分界面状态；SQLAlchemy / Alembic、持久化 Qdrant 与可选 Neo4j 知识服务支持文档导入、来源检索和聊天工具，原有模型协议与工具安全逻辑仍经 TypeScript 兼容进程运行';
 
 // 界面 1:1 复刻的四个步骤：[步骤, 状态 done / partial / not_started, 说明]
 export const replica = [
@@ -70,6 +70,23 @@ function item(id, status, evidence, done, todo) {
 }
 
 const desktop = ['src/desktop/main.ts', 'src/desktop/preload.ts', 'tests/desktop-smoke.mjs'];
+const modernBackend = [
+  'src/desktop/backend-process.ts',
+  'src/server/backend-worker.ts',
+  'backend/cagent_backend/app.py',
+  'backend/cagent_backend/agent/engine.py',
+  'tests/backend-process.test.ts',
+  'tests/graph-runtime.test.ts',
+  'backend/tests/test_graph.py',
+  'tests/desktop-modern-stack.mjs',
+];
+const knowledge = [
+  'src/server/knowledge-client.ts',
+  'backend/cagent_backend/knowledge/service.py',
+  'backend/tests/test_knowledge.py',
+  'tests/knowledge-tool.test.ts',
+  'tests/desktop-modern-stack.mjs',
+];
 const fixtures = [
   'tests/runtime.test.ts',
   'tests/boundaries.test.ts',
@@ -106,16 +123,16 @@ item(
 item(
   'CA-BOOT-002',
   'partial',
-  desktop,
-  '只允许运行一个实例，再次启动会聚焦已有窗口；本机服务随窗口启动；页面崩溃后自动重新载入。',
-  '本机服务和主窗口在同一进程，进程崩溃后要手动重开；“服务崩溃后恢复不丢会话”还没有专项验证。',
+  [...desktop, ...modernBackend],
+  '只允许运行一个实例，再次启动会聚焦已有窗口；窗口、FastAPI 后端和 TypeScript 兼容服务分为独立进程，主进程通过私有输入管道配置并等待服务就绪；页面崩溃后自动重新载入。真实桌面聊天与正常退出后的历史、知识文档恢复已验证。',
+  '后台服务意外退出会关闭应用并要求手动重开，尚无自动重启；后台服务崩溃时的完整数据恢复与长时间运行故障矩阵仍未完成。',
 );
 item(
   'CA-BOOT-003',
   'partial',
-  desktop,
-  '自绘标题栏的最小化 / 最大化 / 关闭；关闭窗口会收进托盘，托盘可打开或退出；重启后恢复窗口大小。',
-  '不恢复窗口位置，也没有移出屏幕后的位置校正；“退出后释放端口和后台任务”还没有专项验证。',
+  [...desktop, 'src/desktop/backend-process.ts', 'tests/backend-process.test.ts'],
+  '自绘标题栏的最小化 / 最大化 / 关闭；关闭窗口会收进托盘，托盘可打开或退出；重启后恢复窗口大小。正常退出释放服务端口与两个后台进程；启动失败的 Windows 强停等待整个子进程树关闭。',
+  '不恢复窗口位置，也没有移出屏幕后的位置校正；主进程硬退出、长时间挂起及其他平台的进程回收矩阵仍未完成。',
 );
 item(
   'CA-BOOT-004',
@@ -519,7 +536,7 @@ item(
   'partial',
   ['src/server/backup.ts', 'tests/p1-p2.test.ts', 'tests/p2-attachment-parsing.test.ts'],
   '中立备份 v3 包含附件原始字节，导入时核对数量和 hash，并重新解码图片、提取文档，全部校验成功后事务合并；可重复导入，被删助手的数据隔离，兼容 v1 / v2。提取缓存由原文件重建，不信任备份里的派生文字。',
-  '文件历史、用量和审计不在备份里；撤销导入、超大备份的流式处理还没有。',
+  '文件历史、用量和审计不在备份里；新后端的知识文档、Qdrant / Neo4j 索引及 LangGraph 检查点也不在现有中立备份中。撤销导入、超大备份的流式处理还没有。',
 );
 item(
   'CA-DATA-006',
@@ -820,9 +837,9 @@ item(
 item(
   'CA-MEM-001',
   'partial',
-  ['src/ui/App.tsx', 'src/server/tools.ts', 'src/server/runtime.ts'],
-  '每个助手有记忆开关。',
-  '记忆健康状态的查看还没有。',
+  ['src/ui/App.tsx', 'src/server/tools.ts', 'src/server/runtime.ts', ...knowledge],
+  '每个助手有记忆开关；新后端提供知识存储、向量与可选图谱的健康状态接口。',
+  '记忆健康状态界面、逐文件占用与修复入口仍未实现；本轮保留原记忆页，不新增知识库面板。',
 );
 item(
   'CA-MEM-002',
@@ -834,9 +851,9 @@ item(
 item(
   'CA-MEM-003',
   'partial',
-  ['src/ui/App.tsx', 'src/server/tools.ts', 'src/server/runtime.ts'],
-  '助手可以按关键词字面检索开启的记忆，结果带来源编号，数量有上限。',
-  '按范围检索、输出总量预算和语义检索还没有。',
+  ['src/ui/App.tsx', 'src/server/tools.ts', 'src/server/runtime.ts', ...knowledge],
+  '助手可以按关键词字面检索开启的手工记忆；知识后端支持文本写入、按当前助手隔离的关键词及显式配置的语义检索，knowledge_search 已接入实际 LangChain 工具往返。结果带文档、版本、片段与来源，限定条数和总量。SQLite / 本地 Qdrant、文档版本替换与删除、重启恢复已验证；界面沿用原记忆页。',
+  '旧手工记忆尚未自动迁入语义索引；分层记忆融合、自动实体关系抽取及完整 GraphRAG 尚未实现。真实嵌入账号与 Neo4j 服务联调、全部范围检索仍未验收。',
 );
 
 // P4 · 移动端、LAN、远程连接与 CLI
@@ -858,15 +875,21 @@ item(
     'scripts/similarity-exceptions.json',
     'tests/similarity.test.ts',
   ],
-  '源码不引用原项目，原目录 2,901 个受版本管理的文件指纹不变，独立的初始提交；词元级相似度检查并入 verify（报告在本机 .artifacts）。',
-  '这些检查都不是法律鉴定；相似度只能发现复制、改名和轻度改写，大幅改写查不出。',
+  '独立的初始提交；当前源码导入、直接依赖和整文件复制检查未发现新增违规，词元级相似度检查通过并保留既有 5 条公共约定例外。原目录 2,901 个受版本管理文件的历史指纹仍有前轮已记录的 8 个差异，合并检查因此非零；本轮没有改旧仓库或重置快照。',
+  '原参考指纹漂移尚未重新审核；这些检查都不是法律鉴定，相似度只能发现复制、改名和轻度改写，大幅改写查不出。',
 );
 item(
   'CA-SHIP-002',
   'partial',
-  ['package.json', 'scripts/build-desktop.mjs', 'scripts/check-independent.mjs'],
-  '依赖锁定；格式、类型检查、自动化测试和构建由 verify 一条命令完成；提供 Windows x64 本地便携 EXE 打包命令，使用维护者图片作为应用图标，随包附带字体许可证和来源说明。',
-  '完整第三方许可证合并声明还不能自动生成；全新环境安装、签名和更新验证还没做。',
+  [
+    'package.json',
+    'scripts/build-desktop.mjs',
+    'scripts/package-backend.mjs',
+    'backend/uv.lock',
+    'scripts/check-independent.mjs',
+  ],
+  'Node / Python 依赖分别由 pnpm / uv 锁定；verify 汇总格式、状态、类型、双语言测试和构建。Windows x64 NSIS 安装包包含独立 Python 与后端依赖、维护者图片、字体许可证和来源说明。',
+  '完整第三方许可证合并声明还不能自动生成；全新环境实际安装、签名和真实升级矩阵仍未完成。',
 );
 item(
   'CA-SHIP-003',

@@ -13,6 +13,17 @@ await build({
   define: { 'import.meta.url': 'cagentModuleUrl' },
 });
 await build({
+  entryPoints: ['src/server/backend-worker.ts'],
+  outfile: 'dist/desktop/backend-worker.cjs',
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  external: ['node:*'],
+  target: 'node24',
+  banner: { js: 'const cagentModuleUrl = require("node:url").pathToFileURL(__filename).href;' },
+  define: { 'import.meta.url': 'cagentModuleUrl' },
+});
+await build({
   entryPoints: ['src/server/attachment-worker.ts'],
   outfile: 'dist/desktop/attachment-worker.mjs',
   bundle: true,

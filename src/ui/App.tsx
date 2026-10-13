@@ -35,6 +35,8 @@ import { SearchResults } from './SearchResults.tsx';
 import { DirectoryPermissions } from './DirectoryPermissions.tsx';
 import { portraitSource } from './Marks.tsx';
 import { UpdatePanel } from './UpdatePanel.tsx';
+import { serverState } from './server-state.ts';
+import { useWorkspaceState } from './workspace-state.ts';
 
 const reasoningNames: Record<string, string> = {
   off: '关闭',
@@ -69,14 +71,12 @@ export function App() {
   const [detail, setDetail] = useState<SessionDetail | null>(null),
     [sessionId, setSessionId] = useState<string | null>(null),
     [draft, setDraft] = useState('');
-  const [settings, setSettings] = useState(false),
-    [view, setView] = useState<'chat' | 'memory'>('chat'),
-    [toast, setToast] = useState('');
+  const { settings, setSettings, view, setView, right, setRight, rail, setRail } =
+    useWorkspaceState();
+  const [toast, setToast] = useState('');
   const [search, setSearch] = useState(''),
     [archived, setArchived] = useState(false),
-    [sessions, setSessions] = useState<Session[]>([]),
-    [right, setRight] = useState(true),
-    [rail, setRail] = useState(true);
+    [sessions, setSessions] = useState<Session[]>([]);
   const [workspace, setWorkspace] = useState(false),
     [workspaceValue, setWorkspaceValue] = useState(''),
     [confirm, setConfirm] = useState<Session | null>(null),
@@ -142,15 +142,25 @@ export function App() {
     return () => clearTimeout(t);
   }, [toast]);
   const refresh = useCallback(async () => {
-    const next = await api<Bootstrap>('/bootstrap');
+    const next = await serverState.fetchQuery({
+      queryKey: ['bootstrap'],
+      queryFn: ({ signal }) => api<Bootstrap>('/bootstrap', 'GET', undefined, signal),
+    });
     setLanguage(next.preferences.locale);
     setData(next);
     return next;
   }, []);
   const refreshList = useCallback(async () => {
-    const result = await api<Session[]>(
-      `/sessions?archived=${archived}&q=${encodeURIComponent(search)}`,
-    );
+    const result = await serverState.fetchQuery({
+      queryKey: ['sessions', archived, search],
+      queryFn: ({ signal }) =>
+        api<Session[]>(
+          `/sessions?archived=${archived}&q=${encodeURIComponent(search)}`,
+          'GET',
+          undefined,
+          signal,
+        ),
+    });
     setSessions(result);
   }, [archived, search]);
   useEffect(() => {

@@ -1,6 +1,6 @@
 {
   "name": "cagent-independent",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": true,
   "description": "Independently implemented personal AI workspace",
   "author": "呈平安",
@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test --test-concurrency=1 tests/*.test.ts",
     "build": "vite build && node scripts/build-desktop.mjs",
-    "package:win": "pnpm run build && electron-builder --win nsis --x64 --publish never",
+    "package:win": "pnpm run build && pnpm run bundle:backend && electron-builder --win nsis --x64 --publish never",
     "dev": "node src/server/main.ts",
     "start": "electron .",
     "setup:desktop": "node node_modules/electron/install.js",
@@ -26,10 +26,16 @@
     "check:similarity": "node scripts/check-similarity.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm run format:check && pnpm run check:status && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
-    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-onboarding.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs && node tests/desktop-layout.mjs && node tests/desktop-menus.mjs && node tests/desktop-documents.mjs && node tests/desktop-navigation.mjs && node tests/desktop-directories.mjs && node tests/desktop-runtime.mjs && node tests/desktop-file-drafts.mjs && node tests/desktop-file-operations.mjs && node tests/desktop-attachments.mjs && node tests/desktop-profiles.mjs && node tests/desktop-locales.mjs && node tests/desktop-file-search.mjs && node tests/desktop-directory-pages.mjs && node tests/desktop-file-preview.mjs && node tests/desktop-file-artifacts.mjs && node tests/desktop-workspace-sessions.mjs && node tests/desktop-updates.mjs && node tests/desktop-provider-delete.mjs && node tests/desktop-model-settings.mjs && node tests/desktop-context-meter.mjs"
+    "verify": "pnpm run format:check && pnpm run check:status && pnpm run typecheck && pnpm run test && pnpm run check:backend && pnpm run test:backend && pnpm run build && pnpm run check:independent && pnpm run check:similarity",
+    "test:desktop": "node tests/desktop-smoke.mjs && node tests/desktop-onboarding.mjs && node tests/desktop-p1-p2.mjs && node tests/desktop-appearance.mjs && node tests/desktop-layout.mjs && node tests/desktop-menus.mjs && node tests/desktop-documents.mjs && node tests/desktop-navigation.mjs && node tests/desktop-directories.mjs && node tests/desktop-runtime.mjs && node tests/desktop-file-drafts.mjs && node tests/desktop-file-operations.mjs && node tests/desktop-attachments.mjs && node tests/desktop-profiles.mjs && node tests/desktop-locales.mjs && node tests/desktop-file-search.mjs && node tests/desktop-directory-pages.mjs && node tests/desktop-file-preview.mjs && node tests/desktop-file-artifacts.mjs && node tests/desktop-workspace-sessions.mjs && node tests/desktop-updates.mjs && node tests/desktop-provider-delete.mjs && node tests/desktop-model-settings.mjs && node tests/desktop-context-meter.mjs && node tests/desktop-modern-stack.mjs",
+    "setup:backend": "node scripts/backend.mjs setup",
+    "test:backend": "node scripts/backend.mjs test",
+    "check:backend": "node scripts/backend.mjs check",
+    "format:backend": "node scripts/backend.mjs format",
+    "bundle:backend": "node scripts/package-backend.mjs"
   },
   "dependencies": {
+    "@tanstack/react-query": "5.104.2",
     "electron-updater": "6.8.9",
     "mammoth": "1.13.0",
     "markdown-it": "14.1.1",
@@ -46,7 +52,8 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "sharp": "0.35.5",
-    "zod": "4.1.12"
+    "zod": "4.1.12",
+    "zustand": "5.0.15"
   },
   "devDependencies": {
     "@types/markdown-it": "14.1.2",
@@ -92,6 +99,14 @@
       {
         "from": "src/ui/assets/README.md",
         "to": "licenses/IMAGE-SOURCE.md"
+      },
+      {
+        "from": ".runtime/backend-package/python",
+        "to": "python"
+      },
+      {
+        "from": ".runtime/backend-package/backend",
+        "to": "backend"
       }
     ],
     "win": {

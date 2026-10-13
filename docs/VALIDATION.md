@@ -6,15 +6,15 @@
 
 ## 当前结论
 
-最后更新：2026-10-13。0.1.2 安装预览修复大输出预算无法保存与错误提示被弹窗遮挡，新增模型上限自动检查及上下文占用圆环；完整产品仍未完成。
+最后更新：2026-10-13。0.2.0 接入独立 FastAPI / LangGraph / LangChain 后端与 Qdrant / 可选 Neo4j，按用户截图保留原聊天、记忆和工作台界面，撤下新增知识库面板。当前是核心架构迁移预览，完整产品仍未完成。
 
-- 格式、状态生成一致性、类型检查、228 项单元 / 服务测试（0 失败 / 跳过）和构建通过。`pnpm run verify` 仍退出 1：旧参考仓库的同 8 个文件与 2026-09 历史指纹不同，上一轮已记录；没有修改旧仓库或重置快照。日志 `cagent-0.1.2-verify-20261013.log`。随后补助手默认模型继承分支，3 项上下文服务测试、类型检查与构建重新通过。
-- 独立性扫描没有新增应用依赖 / 导入或整文件复制问题。相似度单独检查通过，现有 5 条已审核例外、阈值与范围不变。日志 `cagent-0.1.2-similarity-20261013.log`。
-- 完整桌面命令 24 组 / 247 项退出 0，0 界面脚本错误。之后补助手默认模型继承，圆环 6 项重新通过；不能将此前完整回归描述为覆盖了之后新增的继承分支。日志 `cagent-0.1.2-desktop-full-20261013.log`、`context-meter-inherited-desktop-green-20261013.log`。
-- 最终安装包内模型保存 8 项、圆环 6 项、更新 5 项通过，均断言 `app.isPackaged=true`。全部使用临时 `CAGENT_HOME` 与本机 HTTP / 假模型，未调用付费模型。更新检查实际执行下载与 SHA-512 校验，只有最终系统安装调用被替换；日常安装、真实虚拟机升级与卸载仍未验证。
-- 已查看模型上限与原值、弹窗内保存失败提示、1280×800 圆环及悬停提示截图。`.artifacts/model-limits-detected.png`、`.artifacts/model-save-error.png`、`.artifacts/context-meter.png` 均为隔离夹具；局部预览为 `context-meter-detail.png`。
-- 安装包 `release/CAgent-0.1.2-Windows-x64-Setup.exe`：148628734 字节，SHA-256 `a51fe45811a5a481c5787847604d10fd124bd6366790137f762833d9b73a9c3f`。126 个包内构建文件与最终 dist 一致，更新清单 SHA-512 和 blockmap 校验通过；附 `latest.yml`、`.blockmap`、`.sha256`。0.1.1 安装包指纹不变；0.1.2 未签名，按用户追加的“推到github”授权发布至 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.1.2`，四个远端附件 SHA-256 与本地一致，未安装到日常环境。
-- 功能台账：本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1；`releaseAllowed:false` 保持。没有真实模型账号、跨平台、代码签名、独立签名清单或完整产品验收证据。
+- 格式、状态一致性、类型检查、248 项 Node / TypeScript 测试与 67 项 Python 测试（0 失败 / 跳过）、Ruff 和构建通过。`pnpm run verify` 仍退出 1：旧参考仓库的同 8 个历史文件指纹差异，未改旧仓库或重置快照。日志 `modern-delivery-verify.log`。
+- 独立性扫描没有新增应用依赖 / 导入或整文件复制问题。相似度单独检查通过，既有 5 条已审核例外、阈值与范围不变，日志 `modern-delivery-similarity.log`。
+- 完整桌面命令 25 组 / 253 项退出 0，页面错误为 0。既有引导、聊天、工具、文件编辑、附件、资料、五语、更新、模型和圆环全部保留；新增组通过后端接口验证知识服务，原记忆页明确断言没有新面板。日志 `modern-final-desktop-full.log`、汇总 `modern-desktop-summary.json`。
+- 包内 10 组 / 90 项通过，均断言 `app.isPackaged=true`：新架构 6、引导 23、执行链 11、文件操作 7、附件 9、资料 8、五语 7、更新 5、模型设置 8、圆环 6。汇总 `modern-packaged-summary.json`，全部使用隔离数据 / 本机模型夹具；更新下载和 SHA-512 实际校验，只替换最终安装调用。
+- 安装预览 `release/modern-stack/CAgent-0.2.0-Windows-x64-Setup.exe`：201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`，签名 `NotSigned`。127 个构建文件、20 个后端 / 迁移文件一致，4 个原生二进制正确解包；更新清单 SHA-512 正确，旧 0.1.2 安装包指纹保持。记录 `modern-package-content.json`。主界面 JSX 与迁移前基线结构相同，原记忆页 1280×800 截图 `modern-memory-desktop.png` 已查看。
+- 新后端采用独立 SQLAlchemy / Alembic 数据库与图检查点，未自动迁移原聊天数据，原模型协议及安全逻辑仍由 TypeScript 兼容进程管理；新知识库与索引不在旧中立备份内。真实 Neo4j、PostgreSQL / Redis、嵌入账号、干净虚拟机安装 / 升级 / 卸载及代码签名仍无完整证据。
+- 功能台账仍为本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1；`releaseAllowed:false` 保持。用户本轮已授权验收后推送代码与安装预览，预览上传不代表完整产品验收通过。
 
 ## 相似度检查的已审核例外
 
@@ -612,3 +612,16 @@ RED / GREEN：`c481f31` → `c4d43c0`（9 失败 → 9 通过）；`80d6f25` →
 - 用 GitHub CLI 创建 prerelease 草稿并上传 Setup.exe、`.blockmap`、`.sha256` 与 `latest.yml` 四个附件。完整上传后逐项检查 GitHub 返回的 state=uploaded、size 与 SHA-256 digest，全部与本地一致才公开；发布后再次读取 draft=false、prerelease=true、标签提交和四个附件。
 - 公开链接：`https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.1.2`。成品 148628734 字节，SHA-256 `a51fe45811a5a481c5787847604d10fd124bd6366790137f762833d9b73a9c3f`；记录 `.artifacts/logs/github-v0.1.2-verified-20261013.json`。公开说明包含保存修复、自动模型上限、上下文估算圆环及本机验证边界。
 - 仓库当前无 GitHub Actions 执行记录，不能声称远端 CI 已绿；依据第 29 轮本机测试及包内证据上传预览。完整 verify 的旧参考文件指纹差异、未签名与真实模型 / 虚拟机验收边界保持，未安装或启动用户日常应用。
+
+### 31. 主流技术栈迁移、保留原界面与 0.2.0 安装预览（2026-10-13）
+
+- 用户授权升级整个项目架构与技术栈并开始实现；后续明确要求“全部验证完成，推到github”。看过新增知识库面板后，用户选择撤下面板、保留原界面，又提供左侧会话 / 中间聊天 / 右侧工作台的截图作为界面基准。本轮删除新增面板及相关设置条目，只保留底层知识服务与工具能力。
+- Electron 主进程监督独立 FastAPI 与 TypeScript 兼容进程；私有输入管道配置凭据，服务只监听回环地址，内部 HTTP 显式绕过环境代理。实际聊天 / 压缩接入 LangGraph StateGraph，工具通过 LangChain StructuredTool 调用现有权限入口；保留批准、取消、排队、诊断和未知工具结果规则。图检查点只保存运行及调用引用，拒绝使用已运行编号重放。
+- SQLAlchemy / Alembic 新数据库、本地持久化 Qdrant、可选 Neo4j 与版本化索引 outbox 已接入；文档 / 版本 / 助手空间隔离、失败重试、当前版本过滤及删除均有测试。Neo4j 使用固定参数化语句，不接受任意 Cypher；自动图谱抽取与融合 GraphRAG 未实现。可选 Celery 测试使用真实任务 eager 执行，未连接 Redis。
+- 初始五语扫描发现新面板词条遗漏，修复后通过；面板撤下后相关新增词条也撤下，仅保留后端停止提示的翻译。新桌面脚本的“发送”修正为实际无障碍名称“发送消息”，重启后先新建空会话进入原记忆页。当前回归同时证明后台知识 API 可用和原页面未新增面板。
+- Windows 当前环境中 Python 对系统临时目录不能写入普通文件，导致检查点数据库启动失败。对照确认工作区内读写正常，验证使用 `.runtime/test-temp` 与独立 `CAGENT_HOME`，未迁移日常目录。Windows NumPy 原生 DLL 在主线程预加载，避免第一次在请求工作线程加载时卡住。
+- `tests/backend-process.test.ts` 两项通过：真实 FastAPI / LangGraph 聊天、SQLite / Qdrant 读写、正常退出释放端口 / 后台进程；模拟启动失败和停不下来的 Python 子进程时，等待 Windows 子进程树强停并释放原业务锁。日志 `modern-process-green.log`。
+- 对配置损坏的审查新增一个回归，第一次运行即通过，确认外层队列已正确结束任务并脱敏，未为此修改执行逻辑；日志 `modern-runtime-preparation-green.log`，不能把它当作 RED / GREEN 修复证据。后端准备脚本新增 worker extra，使冻结安装后的该项可选任务测试不会静默跳过。
+- 最终开发验证：248 项 Node / TypeScript、67 项 Python 全过，格式、状态、类型、Ruff 与构建通过；完整桌面 25 组 / 253 项退出 0。`verify` 合并命令仅因旧参考 8 个历史指纹差异退出 1，相似度单独通过。数据均为隔离夹具，未调用真实付费模型或安装日常程序。
+- `pnpm run package:win --config.directories.output=release/modern-stack` 本地构建退出 0，包内 Python 核心依赖导入检查通过；安装包为 NSIS Windows x64，签名状态 `NotSigned`。10 组包内专项共 90 项全部通过，来源 `modern-packaged-*.log`、`modern-packaged-summary.json`。更新测试替换最终系统安装调用，其余真实下载 / 校验与忙碌拒绝流程执行。
+- `modern-package-content.json` 核对 127 个 dist 构建文件、17 个后端 Python 文件和 3 个迁移文件一致，4 个原生二进制正确解包；主界面 JSX 与本轮之前 HEAD 完全相同，无 KnowledgePanel 导入。原记忆页截图 1280×800 已检查。安装包 201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`；旧 0.1.2 安装包保持 `a51fe45811a5a481c5787847604d10fd124bd6366790137f762833d9b73a9c3f`。安装包、blockmap、更新清单与 SHA-256 文件作为预览附件，GitHub 推送结果在下一节记录。

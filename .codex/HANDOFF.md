@@ -2,12 +2,12 @@
 
 给下一个接手的 AI（Codex 或 Claude）看。每轮结束时**更新**本文件的对应章节，不再追加“本轮…交接”小节：每轮的过程和证据写进 `docs/VALIDATION.md`，功能进度只改 `spec/progress.mjs`。
 
-最后更新：2026-10-13，模型预算保存修复、自动检查模型上限与上下文用量圆环，0.1.2 GitHub 安装预览；实现与发布证据见 docs/VALIDATION.md 第 29–30 轮。完整产品仍未完成。
+最后更新：2026-10-13，0.2.0 主流技术栈迁移：独立 FastAPI / LangGraph / LangChain 后端、Qdrant 与可选 Neo4j，保留原界面；当前开发在 `codex/modern-stack`，实际验证与 GitHub 推送情况见 docs/VALIDATION.md 第 31 轮。完整产品仍未完成。
 
 ## 0. 接手步骤
 
 1. 读完本文件，再读 `README.md`、`docs/功能实现情况.md`，以及 `docs/VALIDATION.md` 开头的“当前结论”和“相似度检查的已审核例外”。
-2. 核对基线：当前分支 `main`，remote 为 `https://github.com/luojuncheng0327-cell/CAgent.git`；原来“无 remote / codex/independent-rewrite”的记录已过时。先核对本地修改和最近提交，保留其他工作。
+2. 核对基线：迁移分支为 `codex/modern-stack`，通过本轮验收后可快进到 `main`，remote 为 `https://github.com/luojuncheng0327-cell/CAgent.git`。实际分支和推送提交以第 31 轮记录及 `git status` 为准；先核对本地修改和最近提交，保留其他工作。
 3. 每条 PowerShell 命令都加第 3 节的命令前缀。
 4. 开工前说明准备做什么；重要决定先问用户；工作中每隔一段用一两句话报告进度。
 
@@ -21,7 +21,10 @@
 
 ## 1. 当前状态
 
-- 仓库 `F:\CAgent-independent`，分支 `main`，GitHub remote 已配置。旧 `F:\CAgent` 只作只读参考。2026-10-12 用户授权当轮代码和应用包推送，并指定安装包替代便携包；2026-10-13 用户继续授权将模型保存修复、上下文圆环代码及 0.1.2 安装包推送 GitHub，已完成，未在日常环境安装。
+- 仓库 `F:\CAgent-independent`，GitHub remote 已配置。旧 `F:\CAgent` 只作只读参考。0.1.2 已推送 GitHub。2026-10-13 用户授权改用主流架构并开始开发，又要求“全部验证完成，推到github”；暂停后已要求继续，该验证和推送授权保持。未授权安装到日常环境。
+- 0.2.0：Electron 启动独立 FastAPI 与 TypeScript 兼容进程，实际聊天和压缩由 LangGraph StateGraph 驱动、工具经 LangChain StructuredTool 执行；原模型传输、工具安全和聊天数据库仍由 TypeScript 管理。TanStack Query 接管应用快照 / 会话列表请求，Zustand 管理工作台导航。新知识服务用 SQLAlchemy / Alembic、持久化 Qdrant、可选 Neo4j；PostgreSQL / Redis / Celery 为可选服务。职责、数据位置和迁移边界见 `docs/MODERN-STACK.md`。
+- 用户看过新增知识库面板后明确选择“撤下新面板，保留原界面”。KnowledgePanel 和设置里的新增条目已撤下；原记忆页、聊天与文件界面保持。后端知识接口与 `knowledge_search` 工具继续保留，不重新加入面板或扩大 UI 范围。
+- 用户随后提供主界面截图，明确“我只需要这样的界面、不需要乱七八糟的”：左侧会话、中间聊天与输入框、右侧工作台是本轮界面基准。技术栈迁移只改底层，不擅自增加面板、页面或入口；保留当前布局、图片与偏好。
 - 默认工作台固定为 Windows 用户目录下 `.CAgent/workspace`（`CAGENT_HOME` 隔离测试时使用该根下的 `workspace`）。Windows 兼容原 `.cagent` 数据，未迁移或复制用户文件；只有该子目录可授权，其他数据库、凭据、桌面状态仍私有。新建会话时重建丢失的目录，旧会话的目录绑定不变。
 - 删除入口位于列表行和会话菜单，二次确认后直接删除；无需先归档，保留磁盘文件，删除当前条后选择其他条，允许删空列表。运行中拒绝；编辑草稿删除期间暂停写入，失败恢复待保存状态。
 - `0.1.2` 延续 NSIS 安装程序。安装版启动 10 秒后、每 4 小时检查 GitHub 预览更新；关于页可手动检查，下载校验后点击“重启安装”，先保存草稿并阻止运行中的会话升级。`electron-updater` 6.8.9 为通用更新库，未签名、独立签名清单与真实虚拟机升级回退仍未验。
@@ -29,8 +32,8 @@
 - 输入区推理按钮左侧有上下文圆环。悬停 / 聚焦显示约用量、当前模型窗口、百分比和输出预留；统计完整有效历史、摘要、助手规则与资料、草稿和已解析附件，流式回复随长度更新。沿用字符 / 图片估算，尚未精确分词，也不把账本累计用量当作上下文；助手默认模型可继承，切换模型更新分母。
 - 功能：必做 208 项中本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1。逐项见 `docs/功能实现情况.md`，完整产品未完成，完整发布门禁关闭。
 - 界面复刻：第 1 步基础与第 3 步六步引导完成，第 2 步仍有已记录差别；现有设置共 6 页（含我的资料），第 4 步完整设置仍待用户决定。目录导航、文件工具与预览扩展不算完成该步骤。
-- 验证：228 项服务测试通过；完整桌面 24 组 / 247 项退出 0，随后助手默认模型继承分支专项 3 项服务 / 6 项桌面重测通过。最终安装包内模型保存 / 圆环 / 更新共 19 项、126 个构建文件通过。旧参考仓库同 8 个历史指纹差异使 verify 非零；没有修改旧仓库或重置快照。相似度检查通过，5 条既有例外与阈值不变。
-- 最新产物为 `release/CAgent-0.1.2-Windows-x64-Setup.exe` 及更新清单、blockmap / SHA-256；0.1.1 安装包保持原指纹。0.1.2 已发布至 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.1.2`（prerelease=true），标签绑定实现提交 `4015ae5`；四个附件的 GitHub SHA-256 与本地一致。未在用户日常环境安装；旧便携版需要手动安装一次新安装版。未签名，真实虚拟机安装 / 卸载 / 升级回退仍未验。
+- 验证：248 项 Node / TypeScript 与 67 项 Python 测试全过；完整桌面 25 组 / 253 项退出 0；最终包内 10 组 / 90 项通过，127 个构建文件、20 个后端文件核对一致。旧参考仓库同 8 个历史指纹差异使 verify 非零；没有修改旧仓库或重置快照。相似度检查通过，5 条既有例外与阈值不变。
+- 最新本地产物为 `release/modern-stack/CAgent-0.2.0-Windows-x64-Setup.exe` 及更新清单、blockmap / SHA-256；大小 201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`。旧 0.1.2 安装包保持原指纹与 GitHub 预览链接。未在用户日常环境安装；0.2.0 未签名，真实虚拟机安装 / 卸载 / 升级回退仍未验。GitHub 本轮推送结果见 `docs/VALIDATION.md` 第 32 轮。
 - 设置的接口列表新增“删除接口”，确认后事务删除 URL、Key、自定义请求头和关联模型，同时清空相关会话、助手和辅助模型引用；保留聊天记录、输入草稿与其他接口。运行中的接口不能删除，失败保留配置可重试；仅清 Key 继续使用编辑接口中的现有复选框。
 - 用户仍在审阅 `docs/待实现功能清单.csv`，尚未收到排除或修改决定，未擅自缩减范围。
 
@@ -41,6 +44,7 @@
 - 按冻结的 210 项功能规格（`spec/catalog.mjs`）独立重写，尽量还原原版的功能、实现行为和架构。遇到难点可以读原版理解思路，但不能复制或逐行改写原版的函数、组件、CSS 和独创文案。（2026-09-27）
 - 复制尺度为“只放宽公共约定”：标准浏览器标识、协议规定的字段、通用写法、颜色尺寸等外观数值与原版重合时不必绕写，登记到 `scripts/similarity-exceptions.json`（写理由和最大尺寸）。（2026-09-27）
 - 允许 React / Electron / Node.js 等通用基础技术；新增第三方依赖要先问。已批准：ProseMirror（2026-09-27）；sharp、pdfjs-dist、mammoth（2026-10-03，用户在本轮明确批准本机图片解码、PDF / DOCX 文字提取）。三库已固定版本，不需要再次询问。
+- 2026-10-13 用户授权项目架构与技术栈迁移，当前方案包含 FastAPI、LangGraph、LangChain、SQLAlchemy / Alembic、Qdrant、可选 Neo4j / PostgreSQL / Redis / Celery，以及前端 TanStack Query / Zustand；固定版本见 `package.json`、`backend/pyproject.toml` 与双语言锁文件。用户随后要求撤下新增知识库面板，保留原界面；该限制优先于此前扩展 UI 的实现。
 - 不使用 Hanako / HanaAgent / OpenHanako 的名字和标志；原版中带角色名的主题和人设（hanako、butter、ming 等）换成我们自己的名字和图。
 
 界面复刻：
@@ -67,6 +71,8 @@
   `$rt = 'C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies'; $env:PATH = "$rt\node\bin;$rt\bin\fallback;$rt\native\git\cmd;" + $env:PATH; [Console]::OutputEncoding = [Text.Encoding]::UTF8`
 - pnpm 的完整路径：`C:\Users\ljc20\.cache\codex-runtimes\codex-primary-runtime\dependencies\bin\fallback\pnpm.cmd`。Node 需要联网时加 `NODE_USE_ENV_PROXY=1`（本机代理 127.0.0.1:7900）。
 - 首次准备：`pnpm install --frozen-lockfile`、`pnpm run setup:desktop`。
+- 新后端开发准备：`pnpm run setup:backend`，项目内创建 `.runtime/backend-venv` 并按 `backend/uv.lock` 安装。开发与当前 Windows 打包使用 Python 3.12；安装预览内置 Python，不要求使用者安装。`CAGENT_PYTHON` 可显式指定开发解释器。
+- 本机 Python 对系统临时目录存在写入限制，测试终端设置 `$env:TEMP = (Resolve-Path .runtime/test-temp).Path; $env:TMP = $env:TEMP` 后执行验证。临时目录先创建在本仓库 `.runtime/` 中，不读取或迁移日常数据。
 - Windows 安装打包：`pnpm run package:win`，复用本项目 Electron 44.4.5 和 electron-builder 26.8.1；输出 `release/CAgent-<version>-Windows-x64-Setup.exe`、`.blockmap` 和 `latest.yml`，固定 `--publish never`。预览上传另用 GitHub CLI；更新的三个文件必须一并上传，版本标签必须对应代码提交。未使用的 electron-winstaller 安装脚本保持禁用。
 - 不为打包强行结束用户的程序。遇到产物被锁定时，给 electron-builder 指定新的输出目录再生成 NSIS 安装包；启动或手动安装新版前从托盘真正退出旧应用（关闭主窗口会收进托盘）。
 - 同一执行链桌面脚本可验证本地打包程序：设置 `CAGENT_RUNTIME_TEST_EXE` 为本仓库 `release/` 下包内 `CAgent.exe` 的绝对路径，再运行 `node tests/desktop-runtime.mjs`；使用独立临时数据和假模型，并断言 `app.isPackaged=true`。测试后取消该环境变量，默认模式仍测试开发构建。
@@ -120,12 +126,15 @@
 
 ## 5. 已知限制
 
+- 架构升级是分阶段迁移：公开 API 与图编排已接入 Python，现有业务与模型协议仍经独立 TypeScript 兼容进程运行，不能声称全部业务已重写为 Python。Neo4j 当前提供有来源的实体关系写入和固定邻居查询，自动图谱抽取与融合 GraphRAG 尚未完成；真实 Neo4j / PostgreSQL / Redis 服务和嵌入账号没有联调证据。
+- 新后端的知识文档、Qdrant / Neo4j 索引和 LangGraph 检查点不在当前中立备份中；完整备份扩展还缺。图检查点仅持久化调用与运行引用，不保存凭据、完整对话或工具参数，也不作为副作用自动重放入口。
+
 - 工具产物是原文件引用，下载须匹配生成时的 SHA-256；修改后可打开当前文件，旧版本不保证可取。每页 20 项、32 MiB 读取预算、约 5 秒协作检查，未检查项有状态。只接当前四种明确文件输出；任意命令 / 未来工具及原上传资源批量清理仍缺。元数据移除和会话删除不删磁盘文件，引用不随中立备份迁移。
 
 - 新文件工具：复制最大 16 MiB，物化 / 预览最大 4 MiB，父目录须存在且不覆盖同名。图片完整解码，PDF/DOCX 仅显示提取文字和警告。预览关闭取消请求，不改源文件或恢复草稿；原模型上下文切台后在批准前拒绝。真实平台、音视频、原页排版、独立系统窗口与持续路径替换仍未完成。
 
 - 资料：头像每个 4 MiB，沿用完整解码 / 像素 / 帧数预算，保存为 256×256 静态 PNG；头像不发给模型，用户简介会作为背景发送。解码后重新检查版本与删除状态。中立备份导入保留本机用户资料与偏好，助手头像随副本恢复。全部设备 / EXIF、动画头像和跨平台未全验。
-- 五语：699 条共享词条覆盖当前六个设置页及已实现的聊天 / 文件入口、检索、模型上限和上下文圆环；上游和未收录诊断详情保留原文。五种语言的 1280×800 截图已检查，母语审校、所有宽度和真实读屏软件未验。完整设置复刻仍未开始。
+- 五语：700 条共享词条覆盖当前六个设置页及已实现的聊天 / 文件入口、检索、模型上限、上下文圆环与后台退出提示；上游和未收录诊断详情保留原文。五种语言的 1280×800 截图已检查，母语审校、所有宽度和真实读屏软件未验。完整设置复刻仍未开始。
 
 - 数据格式 schema 2，事务兼容独立版 schema 1。中立备份 v3 含附件原始字节，保留 v1 / v2 导入路径；重新解码图片、从文档生成提取缓存后才事务合并。备份不含凭据、文件历史、文件恢复草稿、用量、审计，不迁移工作区授权；HTTP 导入上限 48 MiB。恢复草稿属于本机应用数据库，不随中立备份迁移。
 - 附件：每个 4 MiB，每条最多 8 个、共 16 MiB；UTF-8 文本及提取文字最大 512 KiB。PNG / JPEG / GIF / WebP 完整解码，边长最多 8192、最多 120 帧、合计 16777216 像素。PDF / DOCX 在本机提取文字，保留原文件；PDF 最多 200 页，Word 最多 1024 个 ZIP 条目、单项展开 8 MiB、合计 16 MiB。解析在两个工作线程名额内执行，每个最多 15 秒、V8 堆 128 MiB（不包含原生解码内存）。支持附件粘贴、提取状态和部分 PDF 缺字提示；扫描件 OCR、旧 DOC / Excel / PowerPoint、音视频、复杂排版及全部字体兼容性未完成。真实系统剪贴板来源矩阵、真实付费视觉账号未验。
@@ -146,11 +155,14 @@
 
 ## 6. 下一步
 
-1. 等用户交回 `docs/待实现功能清单.csv` 的决定：标“不要”的要在台账中排除（需新增排除记录方式，排除项不计入必做和发布门禁），标“修改”的记录新要求；尚未收到决定，不擅自删减。
-2. 第 3 步引导对照图待用户审阅；第 4 步完整设置由用户决定何时进入。第 2 步已记录差别保留，不改变已选的手动保存与图片。
-3. 已有 P1 执行链与 P2 文件流程、资料 / 五语、检索、目录导航、传输 / 预览及当前四种工具产物登记的本机切片。继续按台账补 P2，优先无需新依赖与无需进入第 4 步的范围，例如 CA-WORK-001 的最近工作区 / 多根树；工具产物后续接入任意命令、多媒体 / MCP 与批量资源清理仍单独追踪。完整 PDF 排版、音视频、独立窗口继续保留，然后推进 P3 / P4，最后补真实平台和发布验收。
+1. 先按第 31 轮核对 0.2.0 验证与 GitHub 推送是否已经完成，避免重复发布或恢复已撤下的面板。后续逐模块迁移模型适配、配置 / 会话 API、工具与业务存储，每项保留既有权限、批准、取消、数据恢复契约，验证通过再移除兼容入口。
+2. 等用户交回 `docs/待实现功能清单.csv` 的决定：标“不要”的要在台账中排除（需新增排除记录方式，排除项不计入必做和发布门禁），标“修改”的记录新要求；尚未收到决定，不擅自删减。
+3. 第 3 步引导对照图待用户审阅；第 4 步完整设置由用户决定何时进入。第 2 步已记录差别保留，不改变已选的手动保存与图片。
+4. 其余功能依旧按台账补 P2 / P3 / P4，真实平台和完整产品发布验收最后补齐。框架升级不代表剩余 126 项未开始功能已经完成。
 
 ## 7. 本机文件说明（都不进 git）
+
+- 0.2.0 迁移：`modern-delivery-verify.log`、`modern-delivery-similarity.log`、`modern-final-desktop-full.log` / `modern-desktop-summary.json`、`modern-package-win.log`、`modern-packaged-*.log` / `modern-packaged-summary.json` 与 `modern-package-content.json`，均在 `.artifacts/logs/`。`.artifacts/modern-package-check.mjs` 用于字节、原生解包、更新清单与 JSX 保留检查；原记忆页截图 `.artifacts/modern-memory-desktop.png` 已查看。包内新架构用 `CAGENT_MODERN_TEST_EXE` 指向 `release/modern-stack/win-unpacked/CAgent.exe` 验收，要求打包模式。旧截图 `.artifacts/modern-knowledge-desktop.png` 是已撤下的开发面板，不能当作交付界面。
 
 - 0.1.2 本轮：`logs/cagent-0.1.2-verify-20261013.log`、`cagent-0.1.2-desktop-full-20261013.log`、`cagent-0.1.2-packaged-{models,context,updates}-20261013.log`；`cagent-0.1.2-delivery-20261013.json` 汇总 24 组 / 247 项、最终包内 19 项、126 个文件和成品指纹。`github-v0.1.2-verified-20261013.json` 记录公开发布状态、标签提交和四个远端附件的大小 / SHA-256。`tests/desktop-model-settings.mjs` / `tests/desktop-context-meter.mjs` 可分别通过 `CAGENT_MODEL_TEST_EXE` / `CAGENT_CONTEXT_TEST_EXE` 测包内程序，均要求打包状态且使用隔离数据。`deepseek-limits-live-20261013.log` 使用真实官方网页及模型列表替身，未使用真实账号。截图 `context-meter.png` / `context-meter-detail.png`、`model-limits-detected.png`、`model-save-error.png` 已检查。
 
@@ -231,3 +243,4 @@
 | 工具产物交付（2026-10-05） | 204 项服务、19 组 217 项完整桌面、包内 38 项；`-artifacts.exe` 自身启动与字节核对通过，完整产品门禁关闭 |
 | 安装版与更新（2026-10-12） | 0.1.1：固定工作台、会话 / 接口配置删除、NSIS 安装与应用内更新；220 项服务、22 组 233 项桌面分段通过、最终包内 19 项。历史参考指纹漂移未改；完整产品门禁关闭，按本轮明确授权推送安装预览。 |
 | 模型配置与上下文圆环（2026-10-13） | 0.1.2：模型预算移除固定上限、接口 / DeepSeek 当前官方上限检查、弹窗内错误与重试、输入区上下文用量圆环；228 项服务、24 组 / 247 项完整桌面、继承分支 6 项专项和最终包内 19 项通过；126 个包内构建文件一致，按用户后续授权推送代码和安装预览，未在日常环境安装。 |
+| 主流技术栈迁移（2026-10-13） | 0.2.0：独立 FastAPI、LangGraph / LangChain、Qdrant 与可选 Neo4j，保留原界面、撤下新增面板；248 项 Node / TypeScript 与 67 项 Python、25 组 / 253 项桌面及最终包内 10 组 / 90 项通过，原参考 8 个历史指纹差异保留；GitHub 上传按本轮授权执行。 |

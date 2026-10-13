@@ -11,6 +11,9 @@ const allowed = new Set([
   'react-dom',
   'markdown-it',
   'zod',
+  // Generic frontend state libraries approved with the modern-stack migration on 2026-10-13.
+  '@tanstack/react-query',
+  'zustand',
   // Generic attachment parsers approved by the maintainer on 2026-10-03.
   'sharp',
   'pdfjs-dist',

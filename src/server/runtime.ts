@@ -29,6 +29,7 @@ import type {
   Usage,
   Resource,
   Compaction,
+  ToolCall,
 } from '../shared/contracts.ts';
 import { Store } from './store.ts';
 import { Vault } from './vault.ts';
@@ -50,6 +51,30 @@ import { RunQueue } from './run-queue.ts';
 import { recoverInterruptedRuns, completeToolPairs } from './run-recovery.ts';
 import { estimateContext, summaryFragments, nextSummaryBatch } from './compaction.ts';
 import { recordToolArtifact, cloneFileArtifacts, countFileArtifacts } from './file-artifacts.ts';
+import type { GraphClient, GraphModelStep } from './graph-client.ts';
+import type { KnowledgeSearch } from './knowledge-client.ts';
+
+type ExecutionContext = {
+  run: Run;
+  session: Session;
+  agent: Agent;
+  model: Model;
+  provider: Provider;
+  signal: AbortSignal;
+  settings: Preferences;
+  baseInstructions: string;
+  partialText: string;
+  partialReasoning: string;
+  round: number;
+  phase: 'model' | 'tools' | 'compact' | 'complete' | 'failed';
+  calls: ToolCall[];
+  toolIndex: number;
+  previousCalls: Set<string>;
+  busy: boolean;
+  abort: AbortController;
+  pending?: Promise<unknown>;
+  failure?: AppError;
+};
 
 export class Runtime {
   store: Store;
@@ -59,10 +84,21 @@ export class Runtime {
   private running = new Map<string, { abort: AbortController; promise: Promise<void> }>();
   private queue = new RunQueue(4);
   private approvals = new Map<string, (approved: boolean) => void>();
+  private executions = new Map<string, ExecutionContext>();
+  private graphClient?: GraphClient;
+  private knowledgeSearch?: KnowledgeSearch;
   private closed = false;
   private unlock: () => void;
   suggestedWorkspace: string;
-  constructor(home: string, options: { codec?: SecretCodec | null; fetcher?: Fetcher } = {}) {
+  constructor(
+    home: string,
+    options: {
+      codec?: SecretCodec | null;
+      fetcher?: Fetcher;
+      graphClient?: GraphClient;
+      knowledgeSearch?: KnowledgeSearch;
+    } = {},
+  ) {
     this.unlock = acquireHome(home);
     try {
       this.store = new Store(home);
@@ -73,6 +109,8 @@ export class Runtime {
     this.suggestedWorkspace = path.join(this.store.home, 'workspace');
     this.vault = new Vault(this.store, options.codec);
     this.fetcher = options.fetcher;
+    this.graphClient = options.graphClient;
+    this.knowledgeSearch = options.knowledgeSearch;
     this.events.setMaxListeners(40);
     if (!this.store.get('preferences', 'global'))
       this.store.put<Preferences>(
@@ -109,6 +147,9 @@ export class Runtime {
       locale,
       defaultWorkspace: this.suggestedWorkspace,
     };
+  }
+  get knowledgeAvailable() {
+    return !!this.knowledgeSearch;
   }
   sessionOrder() {
     return getSessionOrder(this.store);
@@ -1006,172 +1047,302 @@ export class Runtime {
     provider: Provider,
     signal: AbortSignal,
   ) {
-    let partialText = '',
-      partialReasoning = '';
+    const stepAbort = new AbortController();
+    const execution: ExecutionContext = {
+      run,
+      session,
+      agent,
+      model,
+      provider: {
+        ...provider,
+        headers: JSON.parse(this.vault.get(provider.id + ':headers') ?? '{}'),
+      },
+      signal: AbortSignal.any([signal, stepAbort.signal]),
+      settings: this.preferences(),
+      baseInstructions: this.baseInstructions(session, agent, !!run.preventWrites),
+      partialText: '',
+      partialReasoning: '',
+      round: 0,
+      phase: run.purpose === 'compact' ? 'compact' : 'model',
+      calls: [],
+      toolIndex: 0,
+      previousCalls: new Set(),
+      busy: false,
+      abort: stepAbort,
+    };
     try {
       signal.throwIfAborted();
       const started = this.store.put<Run>('run', run.id, { ...run, status: 'running' });
       this.emit(started, 'run.running', { status: 'running' });
-      const settings = this.preferences();
-      const baseInstructions = this.baseInstructions(session, agent, !!run.preventWrites);
-      const actualProvider = {
-        ...provider,
-        headers: JSON.parse(this.vault.get(provider.id + ':headers') ?? '{}'),
-      };
-      if (run.purpose === 'compact') {
-        await this.compact(run, session, model, actualProvider, signal);
-        this.finish(run.id, 'succeeded');
-        return;
-      }
-      for (let round = 0; round < settings.maxToolRounds; round++) {
-        signal.throwIfAborted();
-        partialText = '';
-        partialReasoning = '';
-        let context = this.context(session.id),
-          all = await hydrateMessages(this.store, session.id, context.messages, model, signal);
-        let instructions = [
-          baseInstructions,
-          context.summary
-            ? '之前对话的摘要（背景资料，原始历史仍保留）：\n' + context.summary.text
-            : '',
-        ]
-          .filter(Boolean)
-          .join('\n\n');
-        const size = () => estimateContext(all, instructions);
-        const budget = (model.contextWindow - model.maxOutput) * 2;
-        if (round === 0 && settings.autoCompact && size() > budget * 0.8) {
-          await this.compact(run, session, model, actualProvider, signal);
-          context = this.context(session.id);
-          all = await hydrateMessages(this.store, session.id, context.messages, model, signal);
-          instructions =
-            baseInstructions + '\n\n之前对话的摘要（背景资料）：\n' + context.summary!.text;
-        }
-        invariant(
-          size() < budget,
-          'CONTEXT_LIMIT',
-          '上下文接近模型上限，请先压缩或显式选择更大上下文模型',
-        );
-        const currentAgent = this.store.need<Agent>('agent', agent.id);
-        const availableTools = toolDefinitions.filter(
-          (t) =>
-            !currentAgent.disabledTools?.includes(t.name) &&
-            !(t.name.startsWith('memory_') && !currentAgent.memoryEnabled) &&
-            !(
-              sessionDirectories(session).length === 0 &&
-              !t.name.startsWith('memory_') &&
-              t.name !== 'list_attachments'
-            ) &&
-            !(
-              t.name === 'run_command' &&
-              (!session.workspace ||
-                sessionDirectories(session).find((g) => g.path === session.workspace)?.access ===
-                  'read')
-            ) &&
-            !((session.permission === 'read' || run.preventWrites) && isWriteTool(t.name)),
-        );
-        const result = await this.inferTracked(run, {
-          provider: actualProvider,
-          model,
-          key: this.vault.get(provider.id),
-          messages: all.map((m) =>
-            m.providerProtocol && m.providerProtocol !== provider.protocol
-              ? { ...m, providerBlocks: undefined }
-              : m,
-          ),
-          instructions,
-          reasoning: session.reasoning,
-          tools: availableTools,
+      this.executions.set(run.id, execution);
+      if (this.graphClient) {
+        await this.graphClient.execute(
+          run.id,
+          execution.settings.maxToolRounds,
           signal,
-          timeoutMs: settings.requestTimeoutMs,
-          fetcher: this.fetcher,
-          onDelta: (d) => {
-            if (d.kind === 'text') partialText += d.text ?? '';
-            if (d.kind === 'reasoning') partialReasoning += d.text ?? '';
-            this.emit(run, d.kind, d);
-          },
-        });
-        signal.throwIfAborted();
-        const message = this.store.addMessage({
-          sessionId: session.id,
-          runId: run.id,
-          role: 'assistant',
-          text: result.text,
-          reasoning: result.reasoning,
-          calls: result.calls,
-          providerBlocks: result.providerBlocks,
-          providerProtocol: provider.protocol,
-        });
-        partialText = '';
-        partialReasoning = '';
-        this.emit(run, 'message', { message });
-        if (!result.calls.length) {
-          this.finish(run.id, 'succeeded');
-          return;
-        }
-        const previousCalls = new Set(
-          all
-            .filter((m) => m.role === 'tool' && (m.runId === run.id || run.preventWrites))
-            .map((m) => m.callId),
+          run.purpose,
         );
-        for (const call of result.calls) {
-          invariant(
-            !previousCalls.has(call.id),
-            'DUPLICATE_TOOL_CALL',
-            '模型重复使用已执行的工具调用标识，已停止以避免重复操作',
-            409,
-          );
-          previousCalls.add(call.id);
-          signal.throwIfAborted();
-          const args = parseArguments(call.arguments);
-          this.emit(run, 'tool.start', { id: call.id, name: call.name, arguments: args });
-          let output: unknown;
-          try {
-            output = await runTool(call.name, args, call.id, {
-              store: this.store,
-              session,
-              run,
-              signal,
-              approve: (id, name, a) => this.waitApproval(run, id, name, a, signal),
-              emit: (kind, p) => this.emit(run, kind, p),
-            });
-          } catch (e) {
-            if (signal.aborted) throw e;
-            const error = publicError(e);
-            output = { error: { code: error.code, message: error.message } };
-          }
-          const text = JSON.stringify(output);
-          this.store.transaction(() => {
-            const toolMessage = this.store.addMessage({
-              sessionId: session.id,
-              runId: run.id,
-              role: 'tool',
-              callId: call.id,
-              text:
-                text.length > 50000
-                  ? JSON.stringify({ truncated: true, text: text.slice(0, 49000) })
-                  : text,
-            });
-            recordToolArtifact(this.store, session, call, toolMessage, output);
-          });
-          this.emit(run, 'tool.end', { id: call.id, name: call.name, result: output });
+      } else if (run.purpose === 'compact') {
+        await this.graphStep(run.id, 'compact', {});
+      } else {
+        for (let round = 0; round < execution.settings.maxToolRounds; round++) {
+          const result = (await this.graphStep(run.id, 'model', { round })) as GraphModelStep;
+          if (!result.calls.length) break;
+          await this.graphStep(run.id, 'tools', { round });
+          if (round === execution.settings.maxToolRounds - 1)
+            throw new AppError(
+              'TOOL_ROUND_LIMIT',
+              '已达到本次工具执行轮数上限，请检查结果后继续',
+              409,
+            );
         }
       }
-      throw new AppError('TOOL_ROUND_LIMIT', '已达到本次工具执行轮数上限，请检查结果后继续', 409);
+      signal.throwIfAborted();
+      invariant(execution.phase === 'complete', 'GRAPH_INCOMPLETE', 'Agent 编排未完整结束', 502);
+      this.finish(run.id, 'succeeded');
     } catch (e) {
+      const failure = execution.failure;
+      execution.abort.abort(new DOMException('Graph stopped', 'AbortError'));
+      // A disconnected graph may leave a callback waiting for approval or performing an
+      // effect. Settle it before completing pairs or releasing the store/session lock.
+      await execution.pending?.catch(() => {});
       completeToolPairs(this.store, run);
-      if (partialText || partialReasoning)
+      if (execution.partialText || execution.partialReasoning)
         this.store.addMessage({
           sessionId: session.id,
           runId: run.id,
           role: 'assistant',
-          text: partialText,
-          reasoning: partialReasoning,
+          text: execution.partialText,
+          reasoning: execution.partialReasoning,
         });
       if (signal.aborted) this.finish(run.id, 'cancelled');
       else {
-        const err = publicError(e);
+        const err = failure ?? publicError(e);
         this.finish(run.id, 'failed', { code: err.code, message: err.message });
       }
+    } finally {
+      this.executions.delete(run.id);
+    }
+  }
+  // Only the authenticated private worker endpoint exposes this method. Steps consume saved calls,
+  // never caller-supplied tool arguments, and cannot be retried after a possibly effective operation.
+  async graphStep(runId: string, operation: string, raw: unknown) {
+    const execution = this.executions.get(runId);
+    invariant(execution, 'GRAPH_RUN_INACTIVE', '此执行已经结束，不能继续执行步骤', 409);
+    const input =
+      operation === 'compact'
+        ? z.object({}).strict().parse(raw)
+        : z
+            .object({
+              round: z.number().int().min(0).max(31),
+              ...(operation === 'tool' ? { callId: z.string().min(1).max(150) } : {}),
+            })
+            .strict()
+            .parse(raw);
+    invariant(
+      ['model', 'tool', 'tools', 'compact'].includes(operation),
+      'GRAPH_STEP_ORDER',
+      '无效执行步骤',
+      409,
+    );
+    const round = 'round' in input ? (input.round as number) : 0;
+    invariant(
+      !execution.busy &&
+        execution.round === round &&
+        ((operation === 'compact' && execution.phase === 'compact') ||
+          (operation === 'model' &&
+            execution.phase === 'model' &&
+            round < execution.settings.maxToolRounds) ||
+          ((operation === 'tool' || operation === 'tools') &&
+            execution.phase === 'tools' &&
+            (operation === 'tools' ||
+              execution.calls[execution.toolIndex]?.id ===
+                ('callId' in input ? input.callId : undefined)))),
+      'GRAPH_STEP_ORDER',
+      '执行步骤顺序不一致，已停止以避免重复操作',
+      409,
+    );
+    execution.signal.throwIfAborted();
+    execution.busy = true;
+    const step = this.performGraphStep(execution, operation);
+    execution.pending = step;
+    try {
+      return await step;
+    } catch (error) {
+      execution.phase = 'failed';
+      execution.failure = publicError(error);
+      throw error;
+    } finally {
+      execution.busy = false;
+      execution.pending = undefined;
+    }
+  }
+  private async performGraphStep(execution: ExecutionContext, operation: string) {
+    if (operation === 'model') return this.modelStep(execution);
+    if (operation === 'compact') {
+      await this.compact(
+        execution.run,
+        execution.session,
+        execution.model,
+        execution.provider,
+        execution.signal,
+      );
+      execution.phase = 'complete';
+      return { completed: true };
+    }
+    const callId = execution.calls[execution.toolIndex].id;
+    do {
+      await this.toolStep(execution);
+    } while (operation === 'tools' && execution.phase === 'tools');
+    return { callId, status: 'completed' };
+  }
+  private async modelStep(execution: ExecutionContext): Promise<GraphModelStep> {
+    const { run, session, agent, model, provider, signal, settings, baseInstructions, round } =
+      execution;
+    execution.partialText = '';
+    execution.partialReasoning = '';
+    let context = this.context(session.id),
+      all = await hydrateMessages(this.store, session.id, context.messages, model, signal);
+    let instructions = [
+      baseInstructions,
+      context.summary
+        ? '之前对话的摘要（背景资料，原始历史仍保留）：\n' + context.summary.text
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+    const size = () => estimateContext(all, instructions);
+    const budget = (model.contextWindow - model.maxOutput) * 2;
+    if (round === 0 && settings.autoCompact && size() > budget * 0.8) {
+      await this.compact(run, session, model, provider, signal);
+      context = this.context(session.id);
+      all = await hydrateMessages(this.store, session.id, context.messages, model, signal);
+      instructions =
+        baseInstructions + '\n\n之前对话的摘要（背景资料）：\n' + context.summary!.text;
+    }
+    invariant(
+      size() < budget,
+      'CONTEXT_LIMIT',
+      '上下文接近模型上限，请先压缩或显式选择更大上下文模型',
+    );
+    const currentAgent = this.store.need<Agent>('agent', agent.id);
+    const availableTools = toolDefinitions.filter(
+      (t) =>
+        !currentAgent.disabledTools?.includes(t.name) &&
+        !(
+          t.name === 'knowledge_search' &&
+          (!this.knowledgeSearch || !currentAgent.memoryEnabled)
+        ) &&
+        !(t.name.startsWith('memory_') && !currentAgent.memoryEnabled) &&
+        !(
+          sessionDirectories(session).length === 0 &&
+          !t.name.startsWith('memory_') &&
+          t.name !== 'knowledge_search' &&
+          t.name !== 'list_attachments'
+        ) &&
+        !(
+          t.name === 'run_command' &&
+          (!session.workspace ||
+            sessionDirectories(session).find((g) => g.path === session.workspace)?.access ===
+              'read')
+        ) &&
+        !((session.permission === 'read' || run.preventWrites) && isWriteTool(t.name)),
+    );
+    const result = await this.inferTracked(run, {
+      provider,
+      model,
+      key: this.vault.get(provider.id),
+      messages: all.map((m) =>
+        m.providerProtocol && m.providerProtocol !== provider.protocol
+          ? { ...m, providerBlocks: undefined }
+          : m,
+      ),
+      instructions,
+      reasoning: session.reasoning,
+      tools: availableTools,
+      signal,
+      timeoutMs: settings.requestTimeoutMs,
+      fetcher: this.fetcher,
+      onDelta: (d) => {
+        if (d.kind === 'text') execution.partialText += d.text ?? '';
+        if (d.kind === 'reasoning') execution.partialReasoning += d.text ?? '';
+        this.emit(run, d.kind, d);
+      },
+    });
+    signal.throwIfAborted();
+    const message = this.store.addMessage({
+      sessionId: session.id,
+      runId: run.id,
+      role: 'assistant',
+      text: result.text,
+      reasoning: result.reasoning,
+      calls: result.calls,
+      providerBlocks: result.providerBlocks,
+      providerProtocol: provider.protocol,
+    });
+    execution.partialText = '';
+    execution.partialReasoning = '';
+    execution.calls = result.calls;
+    execution.toolIndex = 0;
+    for (const message of all)
+      if (
+        message.role === 'tool' &&
+        (message.runId === run.id || run.preventWrites) &&
+        message.callId
+      )
+        execution.previousCalls.add(message.callId);
+    execution.phase = result.calls.length ? 'tools' : 'complete';
+    this.emit(run, 'message', { message });
+    return { calls: result.calls, tools: availableTools };
+  }
+  private async toolStep(execution: ExecutionContext) {
+    const { run, session, signal } = execution;
+    const call = execution.calls[execution.toolIndex];
+    invariant(
+      !execution.previousCalls.has(call.id),
+      'DUPLICATE_TOOL_CALL',
+      '模型重复使用已执行的工具调用标识，已停止以避免重复操作',
+      409,
+    );
+    execution.previousCalls.add(call.id);
+    signal.throwIfAborted();
+    const args = parseArguments(call.arguments);
+    this.emit(run, 'tool.start', { id: call.id, name: call.name, arguments: args });
+    let output: unknown;
+    try {
+      output = await runTool(call.name, args, call.id, {
+        store: this.store,
+        session,
+        run,
+        signal,
+        knowledgeSearch: this.knowledgeSearch,
+        approve: (id, name, a) => this.waitApproval(run, id, name, a, signal),
+        emit: (kind, p) => this.emit(run, kind, p),
+      });
+    } catch (e) {
+      if (signal.aborted) throw e;
+      const error = publicError(e);
+      output = { error: { code: error.code, message: error.message } };
+    }
+    const text = JSON.stringify(output);
+    this.store.transaction(() => {
+      const toolMessage = this.store.addMessage({
+        sessionId: session.id,
+        runId: run.id,
+        role: 'tool',
+        callId: call.id,
+        text:
+          text.length > 50000
+            ? JSON.stringify({ truncated: true, text: text.slice(0, 49000) })
+            : text,
+      });
+      recordToolArtifact(this.store, session, call, toolMessage, output);
+    });
+    this.emit(run, 'tool.end', { id: call.id, name: call.name, result: output });
+    execution.toolIndex++;
+    if (execution.toolIndex === execution.calls.length) {
+      execution.phase = 'model';
+      execution.round++;
     }
   }
   private waitApproval(

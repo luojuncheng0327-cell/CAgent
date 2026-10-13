@@ -18,14 +18,23 @@ CAgent 是一款本地优先（Local-First）的桌面智能助手，将对话�
 ## 快速开始
 
 ```powershell
-# 环境要求：Node.js 24+ 与 pnpm 11
+# 环境要求：Node.js 24 与 pnpm 11；开发后端需要 Python 3.12
 pnpm install --frozen-lockfile
 pnpm run setup:desktop
+pnpm run setup:backend
 pnpm run build
 pnpm start
 ```
 
 开发时可通过环境变量 `CAGENT_HOME` 指定独立的数据目录，与日常使用互不影响。
+
+Windows 安装包内含独立 Python 运行时，使用者无需自行安装 Python。完整本机检查为 `pnpm run verify` 与 `pnpm run test:desktop`；后端依赖由 `backend/uv.lock` 固定，`setup:backend` 使用冻结锁文件。
+
+## 项目架构
+
+当前迁移到 React / TypeScript / Electron 桌面端、独立 FastAPI 后端和 LangGraph / LangChain 执行服务。界面使用 TanStack Query 管理部分服务数据、Zustand 管理工作台导航；本地知识库使用 SQLAlchemy / Alembic 与持久化 Qdrant，可按需连接 Neo4j。
+
+迁移按模块推进：公开 API 和实际聊天编排已接入新后端，已有模型协议、文件工具、权限与原聊天数据仍由独立 TypeScript 兼容进程管理。界面保留原有记忆页；文档导入、来源检索及可选图谱通过后端接口提供，语义检索需明确配置嵌入接口。架构、数据归属、运行方式和迁移边界见 [技术栈与迁移说明](docs/MODERN-STACK.md)，可选 PostgreSQL / Redis / Celery / Neo4j 服务见 [部署说明](deploy/README.md)。
 
 ## 状态与许可
 

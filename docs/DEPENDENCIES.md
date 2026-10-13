@@ -4,7 +4,7 @@
 
 ## 项目归属
 
-- 本项目从空目录独立创建。核心执行循环、存储、模型传输、权限和界面由本项目编写，不导入原 CAgent 改造版、其他 Agent 应用、Pi Agent SDK、OpenCode 或 Codex 应用的实现。
+- 本项目从空目录独立创建。图节点、存储、模型传输、权限和界面由本项目编写；2026-10-13 起使用通用 LangGraph / LangChain 编排与工具库，不导入原 CAgent 改造版、其他 Agent 应用、Pi Agent SDK、OpenCode 或 Codex 应用的实现。
 - 自己编写的代码、文档、测试、自绘图标和占位图归维护者呈平安所有。`package.json` 中的 `private: true` 和 `UNLICENSED` 表示暂不发布到 npm、公开许可证尚未选择；将来开源还是闭源由维护者决定。这不影响第三方组件各自的许可证。
 - 借助 AI 工具编写的内容：Codex 和 Claude 的服务条款都把生成内容的权利归使用者。这类内容能受多大的版权保护，各地法律仍在发展；计划商业化时建议请律师确认。
 
@@ -21,6 +21,8 @@
 | 组件 | 用途 | 版本 | 许可证 |
 |---|---|---|---|
 | React、React DOM（含 scheduler） | 界面 | 19.3.0 | MIT |
+| TanStack Query | 界面查询缓存 | 5.104.2 | MIT |
+| Zustand | 工作台导航状态 | 5.0.15 | MIT |
 | markdown-it（含 linkify-it、mdurl、uc.micro、punycode.js） | Markdown 渲染 | 14.1.1 | MIT |
 | entities（markdown-it 的依赖） | HTML 实体解析 | 4.5.0 | BSD-2-Clause |
 | argparse（markdown-it 的依赖） | 库自带的命令行参数解析 | 2.0.1 | Python-2.0 |
@@ -33,7 +35,25 @@
 | electron-updater | GitHub 更新检查、下载校验与 NSIS 安装交接 | 6.8.9 | MIT |
 | 5 款界面字体 | 见下文“界面字体” | — | SIL OFL 1.1 |
 
-2026-09-27 的旧快照为 27 个运行时依赖包。2026-10-03 经维护者授权加入三个通用附件库后，`pnpm licenses list --prod --json` 当前列出 61 项：MIT 45、Apache-2.0 3、BSD-2-Clause 5、ISC 2，以及 Python-2.0、BSD、BSD-3-Clause、`(MIT OR GPL-3.0-or-later)`、`(MIT AND Zlib)`、`Apache-2.0 AND LGPL-3.0-or-later` 各 1。完整本机证据在 `.artifacts/logs/p2-parser-licenses-20261003.json`。这些是已安装包声明的许可证，不能把新增 Windows 原生组件一概描述为仅有 MIT / Apache 条件；正式发布前仍须完成原生二进制及第三方声明审查。
+2026-09-27 的旧快照为 27 个运行时依赖包。2026-10-03 经维护者授权加入三个通用附件库后，`pnpm licenses list --prod --json` 当轮列出 61 项：MIT 45、Apache-2.0 3、BSD-2-Clause 5、ISC 2，以及 Python-2.0、BSD、BSD-3-Clause、`(MIT OR GPL-3.0-or-later)`、`(MIT AND Zlib)`、`Apache-2.0 AND LGPL-3.0-or-later` 各 1。该数字是历史快照，本轮新 Node / Python 依赖另见锁文件。完整本机证据在 `.artifacts/logs/p2-parser-licenses-20261003.json`。这些是已安装包声明的许可证，不能把新增 Windows 原生组件一概描述为仅有 MIT / Apache 条件；正式发布前仍须完成原生二进制及第三方声明审查。
+
+## Python 后端依赖
+
+2026-10-13 用户授权升级项目架构与技术栈，新增通用 Python Web、编排和数据组件。固定版本见 `backend/pyproject.toml`，含哈希的解析锁见 `backend/uv.lock`；许可证列来自当前已安装包的元数据，原始 dist-info 许可证随打包运行时保留。
+
+| 组件 | 用途 | 版本 | 已声明许可证 |
+|---|---|---|---|
+| FastAPI、Pydantic | API 与输入契约 | 0.143.0 / 2.14.1 | MIT |
+| Uvicorn、HTTPX | 回环服务与内部 HTTP | 0.54.0 / 0.28.1 | BSD-3-Clause |
+| LangGraph、LangChain、langchain-openai | 图编排、工具与嵌入接口 | 1.2.15 / 1.4.5 / 1.7.1 | MIT |
+| langgraph-checkpoint-sqlite | 本地执行检查点 | 3.1.2 | MIT |
+| SQLAlchemy、Alembic | 新知识数据库与迁移 | 2.1.4 / 1.20.0 | MIT |
+| qdrant-client | 持久化向量索引 | 1.19.1 | Apache-2.0 |
+| Neo4j Python driver | 可选关系图谱适配 | 6.4.0 | Apache-2.0 AND Python-2.0 |
+| Psycopg（postgres extra） | 可选 PostgreSQL | 3.3.6 | LGPL-3.0-only |
+| Celery、Redis client（worker extra） | 可选索引 worker | 5.6.3 / 8.1.0 | BSD-3-Clause / MIT |
+
+Python 本身及 NumPy、Pydantic 原生组件等间接依赖也随运行时分发，不能仅凭上表声称全部依赖的合并声明已完成。包内 `backend/requirements.txt` 与 `python/Lib/site-packages/*dist-info` 保留依赖和许可证资料；Docker 服务端镜像的许可证与驱动包分别核对，当前表不代表数据库服务器许可证。
 
 ## 开发工具（不进安装包）
 

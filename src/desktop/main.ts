@@ -9,22 +9,16 @@ import {
   Menu,
   nativeImage,
   globalShortcut,
-  net,
-  safeStorage,
   autoUpdater as electronAutoUpdater,
 } from 'electron';
 import type { IpcMainInvokeEvent, IpcMainEvent } from 'electron';
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
-import { Runtime } from '../server/runtime.ts';
-import { serve } from '../server/http.ts';
-import type { SecretCodec } from '../server/vault.ts';
+import { startBackend, backendRuntimePaths } from './backend-process.ts';
 import { translate } from '../shared/i18n.ts';
 import { autoUpdater } from 'electron-updater';
 import { Updates } from './updates.ts';
-import { terminalStatuses } from '../shared/contracts.ts';
-import type { Run } from '../shared/contracts.ts';
 
 const home = path.resolve(
   process.env.CAGENT_HOME ??
@@ -45,8 +39,7 @@ app.setPath('userData', path.join(home, 'desktop'));
 app.setName('CAgent');
 app.setAppUserModelId('com.chengpingan.cagent.independent');
 let window: BrowserWindow | null = null,
-  rt: Runtime | null = null,
-  server: Awaited<ReturnType<typeof serve>> | null = null,
+  server: Awaited<ReturnType<typeof startBackend>> | null = null,
   tray: Tray | null = null,
   quitting = false,
   shutdownReady = false;
@@ -57,7 +50,7 @@ let updateInstallReady = false;
 electronAutoUpdater.on('before-quit-for-update', () => {
   updateInstallReady = true;
 });
-const t = (source: string) => translate(rt?.preferences().locale, source);
+const t = (source: string) => translate(server?.preferences().locale, source);
 async function flushRenderer() {
   if (!window || window.isDestroyed() || window.webContents.isLoadingMainFrame()) return true;
   const id = crypto.randomUUID();
@@ -103,28 +96,30 @@ if (single)
   void app
     .whenReady()
     .then(async () => {
-      let codec: SecretCodec | undefined;
-      if (
-        process.platform !== 'win32' &&
-        safeStorage.isEncryptionAvailable() &&
-        !(process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text')
-      )
-        codec = {
-          id: 'electron-os-v1',
-          seal: (s) => safeStorage.encryptString(s),
-          open: (b) => safeStorage.decryptString(Buffer.from(b)),
-        };
-      rt = new Runtime(home, {
-        ...(codec ? { codec } : {}),
-        fetcher: (url, init) => net.fetch(String(url), init),
-      });
-      server = await serve(rt, {
+      const appDir = app.getAppPath();
+      server = await startBackend({
+        home,
+        workerPath: path.join(__dirname, 'backend-worker.cjs'),
+        nodeExecutable: process.execPath,
+        ...backendRuntimePaths(appDir, process.resourcesPath, app.isPackaged),
         uiDir: path.join(__dirname, '../ui'),
         trashItem: (target) => shell.trashItem(target),
+        onFailure: () => {
+          if (!quitting) {
+            dialog.showErrorBox(t('CAgent 启动失败'), t('后端服务已停止，请重新打开应用。'));
+            app.quit();
+          }
+        },
       });
       fs.writeFileSync(
         path.join(home, 'connection.json'),
-        JSON.stringify({ origin: server.origin, token: server.token, pid: process.pid }),
+        JSON.stringify({
+          origin: server.origin,
+          token: server.token,
+          pid: process.pid,
+          backendPid: server.backendPid,
+          workerPid: server.workerPid,
+        }),
         { mode: 0o600 },
       );
       session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) =>
@@ -135,7 +130,7 @@ if (single)
       try {
         state = JSON.parse(fs.readFileSync(path.join(home, 'window.json'), 'utf8'));
       } catch {}
-      const needsSetup = !rt.preferences().setupComplete;
+      const needsSetup = !server.preferences().setupComplete;
       window = new BrowserWindow({
         width: needsSetup ? 545 : Math.max(880, Math.min(state.width ?? 1280, 1800)),
         height: needsSetup ? 774 : Math.max(640, Math.min(state.height ?? 860, 1200)),
@@ -178,11 +173,9 @@ if (single)
       autoUpdater.allowPrerelease = true;
       autoUpdater.allowDowngrade = false;
       updates = new Updates(app.getVersion(), canUpdate ? autoUpdater : null, async () => {
-        const busy = () =>
-          rt?.store.list<Run>('run').some((run) => !terminalStatuses.has(run.status));
-        if (busy()) throw new Error('请先停止正在运行的会话，再安装更新。');
+        if (await server?.busy()) throw new Error('请先停止正在运行的会话，再安装更新。');
         if (!(await flushRenderer())) throw new Error('草稿尚未保存，请保存后再安装更新。');
-        if (busy()) throw new Error('请先停止正在运行的会话，再安装更新。');
+        if (await server?.busy()) throw new Error('请先停止正在运行的会话，再安装更新。');
       });
       updates.on('changed', (state) => window?.webContents.send('cagent:update-state', state));
       for (const [channel, action] of [
@@ -210,7 +203,7 @@ if (single)
       ipcMain.on('cagent:setup-finished', (event) => {
         try {
           allowed(event);
-          if (!rt?.preferences().setupComplete || !window) return;
+          if (!server?.preferences().setupComplete || !window) return;
           window.setMinimumSize(760, 560);
           window.setSize(1280, 860);
         } catch {}
@@ -249,7 +242,7 @@ if (single)
             ]),
           );
         refreshTray();
-        rt.events.on('preferences.changed', refreshTray);
+        server.events.on('preferences.changed', refreshTray);
         tray.on('double-click', () => {
           window?.show();
           window?.focus();
@@ -293,7 +286,6 @@ app.on('before-quit', (event) => {
     clearInterval(periodicUpdateCheck);
     tray?.destroy();
     await server?.close();
-    await rt?.close();
     fs.rmSync(path.join(home, 'connection.json'), { force: true });
     shutdownReady = true;
     app.quit();
