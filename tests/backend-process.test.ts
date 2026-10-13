@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
+import sharp from 'sharp';
 import { startBackend } from '../src/desktop/backend-process.ts';
 import { Runtime } from '../src/server/runtime.ts';
+import { saveProfile } from '../src/server/profiles.ts';
 import { fixture, response } from './helpers.ts';
 
 test('桌面后端在独立进程运行，FastAPI 与 LangGraph 实际处理聊天，退出释放进程', async () => {
@@ -88,6 +90,55 @@ test('桌面后端在独立进程运行，FastAPI 与 LangGraph 实际处理聊�
   } finally {
     await backend?.close();
     await mock.close();
+    assert.equal(path.dirname(home), temporaryRoot);
+    await fs.rm(home, { recursive: true, force: true });
+  }
+});
+
+test('自定义头像超过 64 KiB 时后端仍可启动，资料与偏好在重启后保留', async () => {
+  const temporaryRoot = path.resolve('.runtime/test-temp');
+  await fs.mkdir(temporaryRoot, { recursive: true });
+  const home = await fs.mkdtemp(path.join(temporaryRoot, 'cagent-backend-avatar-'));
+  let backend: Awaited<ReturnType<typeof startBackend>> | undefined;
+  const rt = new Runtime(home, { codec: null });
+  try {
+    const png = await sharp(randomBytes(256 * 256 * 3), {
+      raw: { width: 256, height: 256, channels: 3 },
+    })
+      .png()
+      .toBuffer();
+    await saveProfile(rt, null, {
+      name: '头像启动回归',
+      description: '保留用户资料。'.repeat(200),
+      revision: rt.preferences().revision,
+      avatar: { mime: 'image/png', base64: png.toString('base64') },
+    });
+    rt.savePreferences({ ...rt.preferences(), setupComplete: true, locale: 'en' });
+    const expected = rt.preferences();
+    assert.ok(expected.userAvatar!.length > 65536);
+    await rt.close();
+    for (let attempt = 0; attempt < 2; attempt++) {
+      backend = await startBackend({
+        home,
+        workerPath: path.resolve('src/server/backend-worker.ts'),
+        python: path.resolve('.runtime/backend-venv/Scripts/python.exe'),
+        backendDir: path.resolve('backend'),
+        nodeExecutable: process.execPath,
+      });
+      assert.deepEqual(backend.preferences(), expected);
+      const response = await fetch(backend.origin + '/api/v1/bootstrap', {
+        headers: { Authorization: 'Bearer ' + backend.token },
+        signal: AbortSignal.timeout(5000),
+      });
+      assert.equal(response.status, 200);
+      const payload = (await response.json()) as any;
+      assert.deepEqual(payload.data.preferences, expected);
+      await backend.close();
+      backend = undefined;
+    }
+  } finally {
+    await backend?.close();
+    if (rt.store.db.isOpen) await rt.close();
     assert.equal(path.dirname(home), temporaryRoot);
     await fs.rm(home, { recursive: true, force: true });
   }
