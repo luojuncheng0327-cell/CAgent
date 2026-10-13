@@ -2,7 +2,7 @@
 
 给下一个接手的 AI（Codex 或 Claude）看。每轮结束时**更新**本文件的对应章节，不再追加“本轮…交接”小节：每轮的过程和证据写进 `docs/VALIDATION.md`，功能进度只改 `spec/progress.mjs`。
 
-最后更新：2026-10-13，模型预算保存修复、自动检查模型上限与上下文用量圆环，0.1.2 本地安装包；本轮证据见 docs/VALIDATION.md 第 29 轮。完整产品仍未完成。
+最后更新：2026-10-13，模型预算保存修复、自动检查模型上限与上下文用量圆环，0.1.2 GitHub 安装预览；实现与发布证据见 docs/VALIDATION.md 第 29–30 轮。完整产品仍未完成。
 
 ## 0. 接手步骤
 
@@ -21,7 +21,7 @@
 
 ## 1. 当前状态
 
-- 仓库 `F:\CAgent-independent`，分支 `main`，GitHub remote 已配置。旧 `F:\CAgent` 只作只读参考。2026-10-12 用户授权当轮代码和应用包推送，并指定安装包替代便携包；2026-10-13 本轮为本地修复与安装包，未上传或安装。
+- 仓库 `F:\CAgent-independent`，分支 `main`，GitHub remote 已配置。旧 `F:\CAgent` 只作只读参考。2026-10-12 用户授权当轮代码和应用包推送，并指定安装包替代便携包；2026-10-13 用户继续授权将模型保存修复、上下文圆环代码及 0.1.2 安装包推送 GitHub，已完成，未在日常环境安装。
 - 默认工作台固定为 Windows 用户目录下 `.CAgent/workspace`（`CAGENT_HOME` 隔离测试时使用该根下的 `workspace`）。Windows 兼容原 `.cagent` 数据，未迁移或复制用户文件；只有该子目录可授权，其他数据库、凭据、桌面状态仍私有。新建会话时重建丢失的目录，旧会话的目录绑定不变。
 - 删除入口位于列表行和会话菜单，二次确认后直接删除；无需先归档，保留磁盘文件，删除当前条后选择其他条，允许删空列表。运行中拒绝；编辑草稿删除期间暂停写入，失败恢复待保存状态。
 - `0.1.2` 延续 NSIS 安装程序。安装版启动 10 秒后、每 4 小时检查 GitHub 预览更新；关于页可手动检查，下载校验后点击“重启安装”，先保存草稿并阻止运行中的会话升级。`electron-updater` 6.8.9 为通用更新库，未签名、独立签名清单与真实虚拟机升级回退仍未验。
@@ -30,7 +30,7 @@
 - 功能：必做 208 项中本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1。逐项见 `docs/功能实现情况.md`，完整产品未完成，完整发布门禁关闭。
 - 界面复刻：第 1 步基础与第 3 步六步引导完成，第 2 步仍有已记录差别；现有设置共 6 页（含我的资料），第 4 步完整设置仍待用户决定。目录导航、文件工具与预览扩展不算完成该步骤。
 - 验证：228 项服务测试通过；完整桌面 24 组 / 247 项退出 0，随后助手默认模型继承分支专项 3 项服务 / 6 项桌面重测通过。最终安装包内模型保存 / 圆环 / 更新共 19 项、126 个构建文件通过。旧参考仓库同 8 个历史指纹差异使 verify 非零；没有修改旧仓库或重置快照。相似度检查通过，5 条既有例外与阈值不变。
-- 最新产物为 `release/CAgent-0.1.2-Windows-x64-Setup.exe` 及更新清单、blockmap / SHA-256；0.1.1 安装包保持原指纹。本轮 0.1.2 未上传、未在用户日常环境安装。旧便携版需要手动安装一次新安装版；已安装用户可用本地安装包升级。未签名，真实虚拟机安装 / 卸载 / 升级回退仍未验。
+- 最新产物为 `release/CAgent-0.1.2-Windows-x64-Setup.exe` 及更新清单、blockmap / SHA-256；0.1.1 安装包保持原指纹。0.1.2 已发布至 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.1.2`（prerelease=true），标签绑定实现提交 `4015ae5`；四个附件的 GitHub SHA-256 与本地一致。未在用户日常环境安装；旧便携版需要手动安装一次新安装版。未签名，真实虚拟机安装 / 卸载 / 升级回退仍未验。
 - 设置的接口列表新增“删除接口”，确认后事务删除 URL、Key、自定义请求头和关联模型，同时清空相关会话、助手和辅助模型引用；保留聊天记录、输入草稿与其他接口。运行中的接口不能删除，失败保留配置可重试；仅清 Key 继续使用编辑接口中的现有复选框。
 - 用户仍在审阅 `docs/待实现功能清单.csv`，尚未收到排除或修改决定，未擅自缩减范围。
 
@@ -55,7 +55,7 @@
 
 安全与发布：
 
-- 不打包旧改造版、不安装或覆盖旧应用。2026-10-12 用户已明确要求将本轮独立版代码和安装包推送 GitHub；按预览版本上传，不宣称完整产品发布。
+- 不打包旧改造版、不安装或覆盖旧应用。2026-10-12、2026-10-13 用户明确要求将相应独立版代码和安装包推送 GitHub；按预览版本上传，不宣称完整产品发布。
 - 2026-10-01 用户明确选择打包 `F:\CAgent-independent` 并要求版本 0.1，现为 `0.1.0` 本地便携预览包。允许按 `pnpm run package:win` 重新生成本地包；完整产品发布门禁继续关闭。聊天的 cwd 即便显示 `F:\CAgent`，也不能据此改打旧版；旧目录中的同名 0.1.0 EXE 是本轮纠正前的错误产物，不是独立版交付。
 - 不修改 `F:\CAgent`，不在里面运行命令，不 reset / clean；不读取 `~\.hanako`、`%APPDATA%\Hanako` 的真实数据和密钥。
 - 开发测试一律用显式的 `CAGENT_HOME` 临时目录；默认工作台使用其中唯一放行的 `workspace` 子目录，其他自选工作区仍使用独立临时目录。禁止使用真实个人数据测试。
@@ -152,7 +152,7 @@
 
 ## 7. 本机文件说明（都不进 git）
 
-- 0.1.2 本轮：`logs/cagent-0.1.2-verify-20261013.log`、`cagent-0.1.2-desktop-full-20261013.log`、`cagent-0.1.2-packaged-{models,context,updates}-20261013.log`；`cagent-0.1.2-delivery-20261013.json` 汇总 24 组 / 247 项、最终包内 19 项、126 个文件和成品指纹。`tests/desktop-model-settings.mjs` / `tests/desktop-context-meter.mjs` 可分别通过 `CAGENT_MODEL_TEST_EXE` / `CAGENT_CONTEXT_TEST_EXE` 测包内程序，均要求打包状态且使用隔离数据。`deepseek-limits-live-20261013.log` 使用真实官方网页及模型列表替身，未使用真实账号。截图 `context-meter.png` / `context-meter-detail.png`、`model-limits-detected.png`、`model-save-error.png` 已检查。
+- 0.1.2 本轮：`logs/cagent-0.1.2-verify-20261013.log`、`cagent-0.1.2-desktop-full-20261013.log`、`cagent-0.1.2-packaged-{models,context,updates}-20261013.log`；`cagent-0.1.2-delivery-20261013.json` 汇总 24 组 / 247 项、最终包内 19 项、126 个文件和成品指纹。`github-v0.1.2-verified-20261013.json` 记录公开发布状态、标签提交和四个远端附件的大小 / SHA-256。`tests/desktop-model-settings.mjs` / `tests/desktop-context-meter.mjs` 可分别通过 `CAGENT_MODEL_TEST_EXE` / `CAGENT_CONTEXT_TEST_EXE` 测包内程序，均要求打包状态且使用隔离数据。`deepseek-limits-live-20261013.log` 使用真实官方网页及模型列表替身，未使用真实账号。截图 `context-meter.png` / `context-meter-detail.png`、`model-limits-detected.png`、`model-save-error.png` 已检查。
 
 - 工具产物日志：`p2-artifacts-verify-delivery-20261005.log`、`p2-artifacts-desktop-full-delivery-20261005.log` / `p2-artifacts-desktop-summary-20261005.json`；最初两次完整失败分别在 `p2-artifacts-desktop-full-20261005.log` / `p2-artifacts-desktop-full-final-20261005.log`。包内 38 项、成品、签名与便携启动见 `p2-artifacts-packaged-*`、`p2-artifacts-package-content-20261005.json`、`p2-artifacts-signature-20261005.json`、`p2-artifacts-portable-start-20261005.log`。新 `tests/desktop-file-artifacts.mjs` 可用 `CAGENT_ARTIFACT_TEST_EXE` 指向本仓库 `release/` 内的 `CAgent.exe`，必须断言打包模式；15 项只用临时数据 / 假模型。`.artifacts/p2-artifacts-summary.mjs` / `p2-artifacts-package-content.mjs` 是本轮汇总与成品校验脚本；产物与资料 1280×800 截图已查看。
 
@@ -230,4 +230,4 @@
 | `762bd6f` → `a080061`、`98bf288` / `ba0e77b` → `ebac6d9`、`cbbe640` → `a215270`、`4f4eab7` | 工具产物服务、桌面与跨根草稿、下载交错、原生资料截图的 RED / GREEN 与修正，见 `docs/P2-FILE-ARTIFACTS-TDD.md` |
 | 工具产物交付（2026-10-05） | 204 项服务、19 组 217 项完整桌面、包内 38 项；`-artifacts.exe` 自身启动与字节核对通过，完整产品门禁关闭 |
 | 安装版与更新（2026-10-12） | 0.1.1：固定工作台、会话 / 接口配置删除、NSIS 安装与应用内更新；220 项服务、22 组 233 项桌面分段通过、最终包内 19 项。历史参考指纹漂移未改；完整产品门禁关闭，按本轮明确授权推送安装预览。 |
-| 模型配置与上下文圆环（2026-10-13） | 0.1.2：模型预算移除固定上限、接口 / DeepSeek 当前官方上限检查、弹窗内错误与重试、输入区上下文用量圆环；228 项服务、24 组 / 247 项完整桌面、继承分支 6 项专项和最终包内 19 项通过；126 个包内构建文件一致，本地安装包，未上传 / 安装。 |
+| 模型配置与上下文圆环（2026-10-13） | 0.1.2：模型预算移除固定上限、接口 / DeepSeek 当前官方上限检查、弹窗内错误与重试、输入区上下文用量圆环；228 项服务、24 组 / 247 项完整桌面、继承分支 6 项专项和最终包内 19 项通过；126 个包内构建文件一致，按用户后续授权推送代码和安装预览，未在日常环境安装。 |

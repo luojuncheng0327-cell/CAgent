@@ -13,7 +13,7 @@
 - 完整桌面命令 24 组 / 247 项退出 0，0 界面脚本错误。之后补助手默认模型继承，圆环 6 项重新通过；不能将此前完整回归描述为覆盖了之后新增的继承分支。日志 `cagent-0.1.2-desktop-full-20261013.log`、`context-meter-inherited-desktop-green-20261013.log`。
 - 最终安装包内模型保存 8 项、圆环 6 项、更新 5 项通过，均断言 `app.isPackaged=true`。全部使用临时 `CAGENT_HOME` 与本机 HTTP / 假模型，未调用付费模型。更新检查实际执行下载与 SHA-512 校验，只有最终系统安装调用被替换；日常安装、真实虚拟机升级与卸载仍未验证。
 - 已查看模型上限与原值、弹窗内保存失败提示、1280×800 圆环及悬停提示截图。`.artifacts/model-limits-detected.png`、`.artifacts/model-save-error.png`、`.artifacts/context-meter.png` 均为隔离夹具；局部预览为 `context-meter-detail.png`。
-- 安装包 `release/CAgent-0.1.2-Windows-x64-Setup.exe`：148628734 字节，SHA-256 `a51fe45811a5a481c5787847604d10fd124bd6366790137f762833d9b73a9c3f`。126 个包内构建文件与最终 dist 一致，更新清单 SHA-512 和 blockmap 校验通过；附 `latest.yml`、`.blockmap`、`.sha256`。0.1.1 安装包指纹不变；0.1.2 未签名，本轮未安装到日常环境或上传外部发布。
+- 安装包 `release/CAgent-0.1.2-Windows-x64-Setup.exe`：148628734 字节，SHA-256 `a51fe45811a5a481c5787847604d10fd124bd6366790137f762833d9b73a9c3f`。126 个包内构建文件与最终 dist 一致，更新清单 SHA-512 和 blockmap 校验通过；附 `latest.yml`、`.blockmap`、`.sha256`。0.1.1 安装包指纹不变；0.1.2 未签名，按用户追加的“推到github”授权发布至 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.1.2`，四个远端附件 SHA-256 与本地一致，未安装到日常环境。
 - 功能台账：本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1；`releaseAllowed:false` 保持。没有真实模型账号、跨平台、代码签名、独立签名清单或完整产品验收证据。
 
 ## 相似度检查的已审核例外
@@ -604,3 +604,11 @@ RED / GREEN：`c481f31` → `c4d43c0`（9 失败 → 9 通过）；`80d6f25` →
 - 上下文 RED：`context-usage-red-20261013.log`、`context-meter-desktop-red-20261013.log`；GREEN：`context-usage-green-final-20261013.log`、`context-meter-desktop-green-final-20261013.log`。第一轮 hover 后 Escape 没有键盘焦点，暴露提示不能关闭，补全局 Escape 监听后 6 项通过；继承分支服务 / 桌面日志为 `context-usage-inherited-green-20261013.log`、`context-meter-inherited-desktop-green-20261013.log`。
 - 全量与包内结果见当前结论。包内三个测试使用临时数据，`app.isPackaged=true`；打包、签名检查和内容汇总为 `cagent-0.1.2-package-20261013.log`、`cagent-0.1.2-delivery-20261013.json`。首次汇总脚本漏计一个以数字报告 checks 的既有组，修正汇总兼容数字后核对为 24 组 / 247 项；没有调整产品断言或减少覆盖。
 - 工作区原有 `.pnpm-store/` 和 `scripts/check-knowledge-base.mjs` 保留。Prettier 原先进入 pnpm 内容缓存导致格式检查失败，新增缓存忽略后格式通过，未改写缓存内容。完整产品台账仍为本机已验证 32、部分 50、未开始 126，发布门禁继续关闭；本轮只生成本地 0.1.2 安装预览，未执行用户环境安装或外部上传。
+
+### 30. 0.1.2 代码与安装预览推送 GitHub（2026-10-13）
+
+- 用户在上轮交付后明确要求“推到github”，授权当前修复代码与安装预览上传。核对当前 `main`、origin 为 `luojuncheng0327-cell/CAgent`，远端没有新增提交或既有 v0.1.2；原有未跟踪缓存与 `scripts/check-knowledge-base.mjs` 未加入提交。
+- 实现提交 `4015ae5e17a1e0ef07952a6dafee9b67485d2956` 与 annotated tag `v0.1.2` 推送成功，GitHub 标签解析到同一提交。推送前重新核对安装包、更新清单、126 个包内构建文件及既有验证日志，没有重复运行未改动的功能测试。
+- 用 GitHub CLI 创建 prerelease 草稿并上传 Setup.exe、`.blockmap`、`.sha256` 与 `latest.yml` 四个附件。完整上传后逐项检查 GitHub 返回的 state=uploaded、size 与 SHA-256 digest，全部与本地一致才公开；发布后再次读取 draft=false、prerelease=true、标签提交和四个附件。
+- 公开链接：`https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.1.2`。成品 148628734 字节，SHA-256 `a51fe45811a5a481c5787847604d10fd124bd6366790137f762833d9b73a9c3f`；记录 `.artifacts/logs/github-v0.1.2-verified-20261013.json`。公开说明包含保存修复、自动模型上限、上下文估算圆环及本机验证边界。
+- 仓库当前无 GitHub Actions 执行记录，不能声称远端 CI 已绿；依据第 29 轮本机测试及包内证据上传预览。完整 verify 的旧参考文件指纹差异、未签名与真实模型 / 虚拟机验收边界保持，未安装或启动用户日常应用。
