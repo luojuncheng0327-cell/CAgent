@@ -13,6 +13,7 @@
 - 完整桌面命令 25 组 / 253 项退出 0，页面错误为 0。既有引导、聊天、工具、文件编辑、附件、资料、五语、更新、模型和圆环全部保留；新增组通过后端接口验证知识服务，原记忆页明确断言没有新面板。日志 `modern-final-desktop-full.log`、汇总 `modern-desktop-summary.json`。
 - 包内 10 组 / 90 项通过，均断言 `app.isPackaged=true`：新架构 6、引导 23、执行链 11、文件操作 7、附件 9、资料 8、五语 7、更新 5、模型设置 8、圆环 6。汇总 `modern-packaged-summary.json`，全部使用隔离数据 / 本机模型夹具；更新下载和 SHA-512 实际校验，只替换最终安装调用。
 - 安装预览 `release/modern-stack/CAgent-0.2.0-Windows-x64-Setup.exe`：201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`，签名 `NotSigned`。127 个构建文件、20 个后端 / 迁移文件一致，4 个原生二进制正确解包；更新清单 SHA-512 正确，旧 0.1.2 安装包指纹保持。记录 `modern-package-content.json`。主界面 JSX 与迁移前基线结构相同，原记忆页 1280×800 截图 `modern-memory-desktop.png` 已查看。
+- 代码已推送 `main` / `codex/modern-stack`，标签 `v0.2.0` 绑定实现提交 `1a378be`。GitHub 安装预览已公开：`https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.0`，`draft=false`、`prerelease=true`；四个附件的 size、state、SHA-256 与本地一致。远端没有 Actions 执行记录，依据本机和包内证据发布预览，未安装日常程序。
 - 新后端采用独立 SQLAlchemy / Alembic 数据库与图检查点，未自动迁移原聊天数据，原模型协议及安全逻辑仍由 TypeScript 兼容进程管理；新知识库与索引不在旧中立备份内。真实 Neo4j、PostgreSQL / Redis、嵌入账号、干净虚拟机安装 / 升级 / 卸载及代码签名仍无完整证据。
 - 功能台账仍为本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1；`releaseAllowed:false` 保持。用户本轮已授权验收后推送代码与安装预览，预览上传不代表完整产品验收通过。
 
@@ -625,3 +626,10 @@ RED / GREEN：`c481f31` → `c4d43c0`（9 失败 → 9 通过）；`80d6f25` →
 - 最终开发验证：248 项 Node / TypeScript、67 项 Python 全过，格式、状态、类型、Ruff 与构建通过；完整桌面 25 组 / 253 项退出 0。`verify` 合并命令仅因旧参考 8 个历史指纹差异退出 1，相似度单独通过。数据均为隔离夹具，未调用真实付费模型或安装日常程序。
 - `pnpm run package:win --config.directories.output=release/modern-stack` 本地构建退出 0，包内 Python 核心依赖导入检查通过；安装包为 NSIS Windows x64，签名状态 `NotSigned`。10 组包内专项共 90 项全部通过，来源 `modern-packaged-*.log`、`modern-packaged-summary.json`。更新测试替换最终系统安装调用，其余真实下载 / 校验与忙碌拒绝流程执行。
 - `modern-package-content.json` 核对 127 个 dist 构建文件、17 个后端 Python 文件和 3 个迁移文件一致，4 个原生二进制正确解包；主界面 JSX 与本轮之前 HEAD 完全相同，无 KnowledgePanel 导入。原记忆页截图 1280×800 已检查。安装包 201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`；旧 0.1.2 安装包保持 `a51fe45811a5a481c5787847604d10fd124bd6366790137f762833d9b73a9c3f`。安装包、blockmap、更新清单与 SHA-256 文件作为预览附件，GitHub 推送结果在下一节记录。
+
+### 32. 0.2.0 代码与安装预览推送 GitHub（2026-10-13）
+
+- 按用户本轮“全部验证完成，推到github”及暂停后的“继续”授权执行。确认 remote / 本地 main 原提交均为 `ba743e0`，无远端分歧。实现提交 `1a378bed119727c1a8cb85318a170176c21a6923` 在迁移分支提交后，main 以 fast-forward 接入；`main`、`codex/modern-stack` 与 annotated tag `v0.2.0` 一次原子推送成功。
+- GitHub CLI 创建 prerelease 草稿并上传四个附件。安装包为 201611321 字节，其余为 blockmap、SHA-256 文件与 `latest.yml`；较小附件先完成，安装包完成后才核对。四个远端附件均为 `state=uploaded`，size 与 SHA-256 digest 逐项等于本地。标签解析到同一实现提交；证据 `github-v0.2.0-draft-verified.json`。
+- 核对后公开预览，并再次读取 `draft=false` / `prerelease=true`、tag 提交和四个附件。公开链接 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.0`；证据 `github-v0.2.0-published-verified.json`。公开说明包含界面保留、核心迁移、仍有 TypeScript 兼容层及实际验证边界，未声称完整产品完成。
+- 远端 Actions 执行总数仍为 0，不声称远端 CI 已通过；依靠第 31 轮本机 / 包内测试上传预览。旧参考指纹差异、未签名、真实模型 / 可选数据库 / 虚拟机验收边界保持。原未跟踪 `.pnpm-store/`、`scripts/check-knowledge-base.mjs` 及隔离诊断目录保留，未加入提交；用户日常应用未安装或替换。

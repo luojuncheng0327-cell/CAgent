@@ -2,12 +2,12 @@
 
 给下一个接手的 AI（Codex 或 Claude）看。每轮结束时**更新**本文件的对应章节，不再追加“本轮…交接”小节：每轮的过程和证据写进 `docs/VALIDATION.md`，功能进度只改 `spec/progress.mjs`。
 
-最后更新：2026-10-13，0.2.0 主流技术栈迁移：独立 FastAPI / LangGraph / LangChain 后端、Qdrant 与可选 Neo4j，保留原界面；当前开发在 `codex/modern-stack`，实际验证与 GitHub 推送情况见 docs/VALIDATION.md 第 31 轮。完整产品仍未完成。
+最后更新：2026-10-13，0.2.0 主流技术栈迁移与 GitHub 安装预览已完成：独立 FastAPI / LangGraph / LangChain 后端、Qdrant 与可选 Neo4j，保留原界面；当前分支 `main`，实现与发布证据见 docs/VALIDATION.md 第 31–32 轮。完整产品仍未完成。
 
 ## 0. 接手步骤
 
 1. 读完本文件，再读 `README.md`、`docs/功能实现情况.md`，以及 `docs/VALIDATION.md` 开头的“当前结论”和“相似度检查的已审核例外”。
-2. 核对基线：迁移分支为 `codex/modern-stack`，通过本轮验收后可快进到 `main`，remote 为 `https://github.com/luojuncheng0327-cell/CAgent.git`。实际分支和推送提交以第 31 轮记录及 `git status` 为准；先核对本地修改和最近提交，保留其他工作。
+2. 核对基线：当前 `main`，迁移分支 `codex/modern-stack` 保留，remote 为 `https://github.com/luojuncheng0327-cell/CAgent.git`。0.2.0 标签绑定实现提交 `1a378be`，发布记录文档另有后续提交；先核对本地修改和最近提交，保留其他工作。
 3. 每条 PowerShell 命令都加第 3 节的命令前缀。
 4. 开工前说明准备做什么；重要决定先问用户；工作中每隔一段用一两句话报告进度。
 
@@ -34,6 +34,7 @@
 - 界面复刻：第 1 步基础与第 3 步六步引导完成，第 2 步仍有已记录差别；现有设置共 6 页（含我的资料），第 4 步完整设置仍待用户决定。目录导航、文件工具与预览扩展不算完成该步骤。
 - 验证：248 项 Node / TypeScript 与 67 项 Python 测试全过；完整桌面 25 组 / 253 项退出 0；最终包内 10 组 / 90 项通过，127 个构建文件、20 个后端文件核对一致。旧参考仓库同 8 个历史指纹差异使 verify 非零；没有修改旧仓库或重置快照。相似度检查通过，5 条既有例外与阈值不变。
 - 最新本地产物为 `release/modern-stack/CAgent-0.2.0-Windows-x64-Setup.exe` 及更新清单、blockmap / SHA-256；大小 201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`。旧 0.1.2 安装包保持原指纹与 GitHub 预览链接。未在用户日常环境安装；0.2.0 未签名，真实虚拟机安装 / 卸载 / 升级回退仍未验。GitHub 本轮推送结果见 `docs/VALIDATION.md` 第 32 轮。
+- 0.2.0 已公开至 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.0`，`draft=false` / `prerelease=true`；实现提交 `1a378bed119727c1a8cb85318a170176c21a6923` 已推送 `main`、迁移分支和 annotated tag，四个附件的 GitHub SHA-256 与本地一致。远端没有 Actions 执行记录，不声称远端 CI 已通过。
 - 设置的接口列表新增“删除接口”，确认后事务删除 URL、Key、自定义请求头和关联模型，同时清空相关会话、助手和辅助模型引用；保留聊天记录、输入草稿与其他接口。运行中的接口不能删除，失败保留配置可重试；仅清 Key 继续使用编辑接口中的现有复选框。
 - 用户仍在审阅 `docs/待实现功能清单.csv`，尚未收到排除或修改决定，未擅自缩减范围。
 
@@ -155,7 +156,7 @@
 
 ## 6. 下一步
 
-1. 先按第 31 轮核对 0.2.0 验证与 GitHub 推送是否已经完成，避免重复发布或恢复已撤下的面板。后续逐模块迁移模型适配、配置 / 会话 API、工具与业务存储，每项保留既有权限、批准、取消、数据恢复契约，验证通过再移除兼容入口。
+1. 0.2.0 验证和 GitHub 推送已完成，证据见第 31–32 轮；不要重复发布或恢复已撤下的面板。后续逐模块迁移模型适配、配置 / 会话 API、工具与业务存储，每项保留既有权限、批准、取消、数据恢复契约，验证通过再移除兼容入口。
 2. 等用户交回 `docs/待实现功能清单.csv` 的决定：标“不要”的要在台账中排除（需新增排除记录方式，排除项不计入必做和发布门禁），标“修改”的记录新要求；尚未收到决定，不擅自删减。
 3. 第 3 步引导对照图待用户审阅；第 4 步完整设置由用户决定何时进入。第 2 步已记录差别保留，不改变已选的手动保存与图片。
 4. 其余功能依旧按台账补 P2 / P3 / P4，真实平台和完整产品发布验收最后补齐。框架升级不代表剩余 126 项未开始功能已经完成。
@@ -163,6 +164,7 @@
 ## 7. 本机文件说明（都不进 git）
 
 - 0.2.0 迁移：`modern-delivery-verify.log`、`modern-delivery-similarity.log`、`modern-final-desktop-full.log` / `modern-desktop-summary.json`、`modern-package-win.log`、`modern-packaged-*.log` / `modern-packaged-summary.json` 与 `modern-package-content.json`，均在 `.artifacts/logs/`。`.artifacts/modern-package-check.mjs` 用于字节、原生解包、更新清单与 JSX 保留检查；原记忆页截图 `.artifacts/modern-memory-desktop.png` 已查看。包内新架构用 `CAGENT_MODERN_TEST_EXE` 指向 `release/modern-stack/win-unpacked/CAgent.exe` 验收，要求打包模式。旧截图 `.artifacts/modern-knowledge-desktop.png` 是已撤下的开发面板，不能当作交付界面。
+- 0.2.0 推送：`.artifacts/logs/github-v0.2.0-draft-verified.json` / `github-v0.2.0-published-verified.json` 记录发布前后的草稿状态、tag 提交、四个附件大小与 SHA-256；`.artifacts/github-modern-verify.mjs` 为校验脚本，`.artifacts/modern-release-notes.md` 为实际公开说明。
 
 - 0.1.2 本轮：`logs/cagent-0.1.2-verify-20261013.log`、`cagent-0.1.2-desktop-full-20261013.log`、`cagent-0.1.2-packaged-{models,context,updates}-20261013.log`；`cagent-0.1.2-delivery-20261013.json` 汇总 24 组 / 247 项、最终包内 19 项、126 个文件和成品指纹。`github-v0.1.2-verified-20261013.json` 记录公开发布状态、标签提交和四个远端附件的大小 / SHA-256。`tests/desktop-model-settings.mjs` / `tests/desktop-context-meter.mjs` 可分别通过 `CAGENT_MODEL_TEST_EXE` / `CAGENT_CONTEXT_TEST_EXE` 测包内程序，均要求打包状态且使用隔离数据。`deepseek-limits-live-20261013.log` 使用真实官方网页及模型列表替身，未使用真实账号。截图 `context-meter.png` / `context-meter-detail.png`、`model-limits-detected.png`、`model-save-error.png` 已检查。
 
