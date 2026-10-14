@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="360" viewBox="0 0 1280 360" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">暖纸与青夜，适合你的每一种心情</title>
+  <desc id="desc">左侧暖纸色的白昼，右侧青色的夜晚，两张抽象工作台卡片与五种语言符号，展示主题和语言个性化。</desc>
+  <defs>
+    <linearGradient id="day" x1="0" y1="0" x2="660" y2="360" gradientUnits="userSpaceOnUse"><stop stop-color="#F6F1E5" /><stop offset="1" stop-color="#E9ECDF" /></linearGradient>
+    <linearGradient id="night" x1="630" y1="0" x2="1280" y2="360" gradientUnits="userSpaceOnUse"><stop stop-color="#23444C" /><stop offset="1" stop-color="#122E39" /></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="170%" height="190%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1E3B35" flood-opacity=".12" /></filter>
+    <clipPath id="clip"><rect width="1280" height="360" rx="18" /></clipPath>
+  </defs>
+  <g clip-path="url(#clip)">
+    <rect width="1280" height="360" fill="url(#day)" />
+    <path d="M669 0h611v360H611z" fill="url(#night)" />
+    <circle cx="203" cy="130" r="72" fill="#E2D4A8" fill-opacity=".5" />
+    <circle cx="203" cy="130" r="93" stroke="#C0BE9D" stroke-opacity=".35" />
+    <path d="M203 24v12M203 224v12M97 130h12M297 130h12M128 55l9 9M269 196l9 9M128 205l9-9M269 64l9-9" stroke="#C5BB8F" stroke-width="1.5" stroke-linecap="round" />
+    <g transform="rotate(-6 363 149)" filter="url(#shadow)">
+      <rect x="224" y="66" width="283" height="171" rx="13" fill="#FFFDF5" stroke="#D3DBC9" />
+      <path d="M224 96h283M285 96v141" stroke="#DEE4D4" />
+      <circle cx="241" cy="82" r="3" fill="#94AC8E" /><circle cx="252" cy="82" r="3" fill="#C2CEB4" /><circle cx="263" cy="82" r="3" fill="#C2CEB4" />
+      <rect x="236" y="112" width="36" height="7" rx="3.5" fill="#CBD7BD" /><rect x="236" y="129" width="29" height="5" rx="2.5" fill="#DFE5D4" /><rect x="236" y="145" width="33" height="5" rx="2.5" fill="#DFE5D4" />
+      <path d="M306 116h111M306 132h176M306 148h154" stroke="#C8D3BD" stroke-width="3" stroke-linecap="round" />
+      <rect x="304" y="171" width="183" height="47" rx="8" fill="#F3F3E9" stroke="#E1E6D6" /><path d="M317 186h117M317 199h86" stroke="#C8D3BD" stroke-width="2" stroke-linecap="round" />
+    </g>
+    <circle cx="1051" cy="115" r="65" stroke="#88A59D" stroke-opacity=".15" /><circle cx="1051" cy="115" r="92" stroke="#88A59D" stroke-opacity=".1" stroke-dasharray="3 9" />
+    <path d="M1069 63a48 48 0 1 0 28 85 42 42 0 0 1-28-85z" fill="#D5D9B7" />
+    <g transform="rotate(6 912 161)" filter="url(#shadow)">
+      <rect x="771" y="79" width="283" height="171" rx="13" fill="#284A52" stroke="#56777A" />
+      <path d="M771 109h283M832 109v141" stroke="#537175" stroke-opacity=".6" />
+      <circle cx="788" cy="95" r="3" fill="#B6C9AD" /><circle cx="799" cy="95" r="3" fill="#6D8E85" /><circle cx="810" cy="95" r="3" fill="#6D8E85" />
+      <rect x="783" y="125" width="36" height="7" rx="3.5" fill="#718F80" /><rect x="783" y="142" width="29" height="5" rx="2.5" fill="#506F6D" /><rect x="783" y="158" width="33" height="5" rx="2.5" fill="#506F6D" />
+      <path d="M853 129h111M853 145h176M853 161h154" stroke="#88A394" stroke-width="3" stroke-linecap="round" />
+      <rect x="851" y="184" width="183" height="47" rx="8" fill="#31565B" stroke="#557674" /><path d="M864 199h117M864 212h86" stroke="#88A394" stroke-width="2" stroke-linecap="round" />
+    </g>
+    <path d="M1166 68v12m-6-6h12M1128 225v8m-4-4h8M731 58v8m-4-4h8" stroke="#99B0A0" stroke-width="1.3" stroke-linecap="round" />
+    <circle cx="1202" cy="180" r="2" fill="#A8BDA7" /><circle cx="1152" cy="120" r="2" fill="#BFC8A6" /><circle cx="699" cy="213" r="2" fill="#A8BDA7" />
+    <text x="53" y="299" fill="#587762" font-family="Microsoft YaHei, PingFang SC, sans-serif" font-size="20">暖纸</text>
+    <text x="53" y="322" fill="#8F9D81" font-family="Segoe UI, Arial, sans-serif" font-size="10" letter-spacing="2.5">A QUIETER DAY</text>
+    <text x="1227" y="299" fill="#E0E5CF" text-anchor="end" font-family="Microsoft YaHei, PingFang SC, sans-serif" font-size="20">青夜</text>
+    <text x="1227" y="322" fill="#8EA99D" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="10" letter-spacing="2.5">A SOFTER NIGHT</text>
+    <rect x="443" y="279" width="394" height="52" rx="26" fill="#FAF8EF" stroke="#D5DFCD" />
+    <text x="486" y="312" text-anchor="middle" fill="#486E61" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="16">中</text>
+    <path d="M523 295v20M601 295v20M679 295v20M757 295v20" stroke="#DBE1D0" />
+    <text x="562" y="312" text-anchor="middle" fill="#486E61" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="16">繁</text>
+    <text x="640" y="311" text-anchor="middle" fill="#486E61" font-family="Segoe UI, Arial, sans-serif" font-size="14">EN</text>
+    <text x="718" y="312" text-anchor="middle" fill="#486E61" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="16">日</text>
+    <text x="794" y="312" text-anchor="middle" fill="#486E61" font-family="Malgun Gothic, Segoe UI, sans-serif" font-size="16">한</text>
+  </g>
+</svg>

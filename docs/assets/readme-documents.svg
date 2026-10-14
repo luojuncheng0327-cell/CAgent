@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="330" viewBox="0 0 640 330" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">让资料，参与思考</title>
+  <desc id="desc">PDF、Word 文档与一张山景图片叠放在一起，柔和沙色的原创产品插图。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="640" y2="330" gradientUnits="userSpaceOnUse"><stop stop-color="#F4EDE1" /><stop offset="1" stop-color="#F8F5EE" /></linearGradient>
+    <linearGradient id="land" x1="339" y1="112" x2="486" y2="217" gradientUnits="userSpaceOnUse"><stop stop-color="#C2D4BE" /><stop offset="1" stop-color="#93B0A0" /></linearGradient>
+    <filter id="shadow" x="-35%" y="-30%" width="180%" height="190%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#77674F" flood-opacity=".1" /></filter>
+  </defs>
+  <rect width="640" height="330" rx="16" fill="url(#bg)" />
+  <ellipse cx="328" cy="173" rx="187" ry="103" fill="#ECE6D6" fill-opacity=".65" />
+  <path d="M169 78c36-32 117-40 167-17M473 236c-24 32-71 46-116 47" stroke="#B8A77F" stroke-opacity=".5" stroke-dasharray="3 7" />
+  <g transform="rotate(-12 219 161)" filter="url(#shadow)">
+    <path d="M161 67h88l32 32v143a9 9 0 0 1-9 9H161a9 9 0 0 1-9-9V76a9 9 0 0 1 9-9z" fill="#FFFEFA" stroke="#E0D8C7" />
+    <path d="M249 67v25c0 4 3 7 7 7h25" fill="#E6DDC7" />
+    <rect x="172" y="103" width="50" height="24" rx="6" fill="#EAD9BC" />
+    <text x="197" y="120" fill="#8D7555" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" font-weight="600">PDF</text>
+    <path d="M173 151h87M173 167h75M173 183h86M173 199h56M173 215h73" stroke="#D7CFBB" stroke-width="3" stroke-linecap="round" />
+  </g>
+  <g transform="rotate(4 323 153)" filter="url(#shadow)">
+    <path d="M275 54h83l31 31v146c0 5-4 9-9 9H275c-5 0-9-4-9-9V63c0-5 4-9 9-9z" fill="#FDFDF8" stroke="#DCE2D4" />
+    <path d="M358 54v24c0 4 3 7 7 7h24" fill="#E2E9DB" />
+    <rect x="285" y="90" width="57" height="25" rx="6" fill="#DDE7D7" />
+    <text x="313" y="107" fill="#5C7C67" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="11" font-weight="600">DOCX</text>
+    <path d="M286 137h83M286 153h72M286 169h80M286 185h55M286 201h70" stroke="#CBD6C4" stroke-width="3" stroke-linecap="round" />
+  </g>
+  <g transform="rotate(12 430 190)" filter="url(#shadow)">
+    <rect x="345" y="116" width="171" height="134" rx="9" fill="#FFFEF8" stroke="#D9DECF" />
+    <rect x="356" y="128" width="149" height="96" rx="4" fill="url(#land)" />
+    <circle cx="468" cy="151" r="12" fill="#F4E9C4" />
+    <path d="m356 212 44-53 35 36 20-23 50 41v11H356z" fill="#658C77" />
+    <path d="m356 219 54-26 36 24 34-16 25 15v8H356z" fill="#426C5F" />
+    <path d="M406 237h52" stroke="#C6CFBB" stroke-width="3" stroke-linecap="round" />
+  </g>
+  <path d="M495 69v14m-7-7h14M128 236v12m-6-6h12" stroke="#B5A179" stroke-width="1.4" stroke-linecap="round" />
+  <circle cx="540" cy="205" r="4" stroke="#A6B49A" />
+  <text x="28" y="305" fill="#A18F70" font-family="Segoe UI, Arial, sans-serif" font-size="10" letter-spacing="2.4">BRING YOUR REFERENCES</text>
+  <text x="611" y="33" text-anchor="end" fill="#AD9D80" font-family="Georgia, serif" font-size="15">02</text>
+</svg>

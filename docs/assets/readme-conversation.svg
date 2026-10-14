@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="330" viewBox="0 0 640 330" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">聊清楚，再往前一步</title>
+  <desc id="desc">几张纸片式对话气泡沿着思路连线展开，暖纸与鼠尾草绿的原创产品插图。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="640" y2="330" gradientUnits="userSpaceOnUse"><stop stop-color="#EDF1E7" /><stop offset="1" stop-color="#F6F4EB" /></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="170%" height="180%"><feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#426459" flood-opacity=".1" /></filter>
+  </defs>
+  <rect width="640" height="330" rx="16" fill="url(#bg)" />
+  <circle cx="325" cy="162" r="123" stroke="#A1B79F" stroke-opacity=".3" />
+  <circle cx="325" cy="162" r="96" stroke="#A1B79F" stroke-opacity=".3" stroke-dasharray="2 7" />
+  <path d="M176 168c43 45 73-56 139-26s107 77 152 10" stroke="#8CA996" stroke-width="1.5" stroke-dasharray="4 7" />
+  <g transform="rotate(-5 227 112)" filter="url(#shadow)">
+    <path d="M147 69h162c10 0 18 8 18 18v46c0 10-8 18-18 18h-44l-17 16v-16H147c-10 0-18-8-18-18V87c0-10 8-18 18-18z" fill="#FFFEF9" stroke="#DAE0D1" />
+    <circle cx="154" cy="93" r="9" fill="#B0C3AC" />
+    <path d="M177 94h120M151 117h130M151 131h99" stroke="#C2CFB9" stroke-width="3" stroke-linecap="round" />
+  </g>
+  <g transform="rotate(4 407 193)" filter="url(#shadow)">
+    <path d="M320 150h175c10 0 18 8 18 18v55c0 10-8 18-18 18h-121l-19 16v-16h-35c-10 0-18-8-18-18v-55c0-10 8-18 18-18z" fill="#365E5A" />
+    <path d="M325 175h108M325 191h163M325 207h145" stroke="#A8C0AE" stroke-width="3" stroke-linecap="round" />
+    <circle cx="329" cy="226" r="2" fill="#D8DFCA" /><circle cx="340" cy="226" r="2" fill="#D8DFCA" /><circle cx="351" cy="226" r="2" fill="#D8DFCA" />
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="146" y="195" width="96" height="55" rx="13" fill="#E8DEC2" />
+    <path d="m165 222 9 8 19-21" stroke="#6D8569" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M205 217h20M205 228h13" stroke="#B7A77F" stroke-width="3" stroke-linecap="round" />
+  </g>
+  <path d="M464 78v16m-8-8h16M113 185v10m-5-5h10" stroke="#8EA58A" stroke-width="1.5" stroke-linecap="round" />
+  <circle cx="524" cy="125" r="4" stroke="#B7A271" />
+  <text x="28" y="305" fill="#7D9480" font-family="Segoe UI, Arial, sans-serif" font-size="10" letter-spacing="2.4">A LITTLE MORE CLARITY</text>
+  <text x="611" y="33" text-anchor="end" fill="#8C9F89" font-family="Georgia, serif" font-size="15">01</text>
+</svg>

@@ -6,6 +6,8 @@
 
 ## 当前结论
 
+README 已按用户要求改为纯产品展示，新增 6 幅原创矢量插图；本机电脑 / 手机 / 深色预览与下载链接检查通过。仅展示文档与配图改动，尚未推送，不改变下述 0.2.1 应用验证结论；本轮记录见第 35 节。
+
 最后更新：2026-10-14。0.2.1 修复代码与安装预览已推送 GitHub，解决 0.2.0 自定义头像超过 64 KiB 时的启动失败；完整偏好改从鉴权内部接口读取，保留就绪消息长度检查、原界面和数据格式。主流架构保持，完整产品仍未完成。
 
 - 0.2.1 格式、状态一致性、类型检查、249 项 Node / TypeScript 测试与 67 项 Python 测试（0 失败 / 跳过）、Ruff 和构建通过。`pnpm run verify` 仍退出 1：旧参考仓库的同 8 个历史文件指纹差异，未改旧仓库或重置快照。日志 `startup-verify-20261014.log`；相似度单独通过，日志 `startup-similarity-20261014.log`。
@@ -652,3 +654,11 @@ RED / GREEN：`c481f31` → `c4d43c0`（9 失败 → 9 通过）；`80d6f25` →
 - GitHub CLI 先创建 prerelease 草稿，上传 Setup.exe、blockmap、SHA-256 文件、latest.yml 四个附件。安装包 201611280 字节，其余大小分别为 210248、101、365 字节。上传完成后逐项读取 `state=uploaded`、size 与 SHA-256 digest，全部等于本地；标签对象解析到同一提交，说明与本地 notes 文件一致。草稿证据 `github-v0.2.1-draft-verified-20261014.json`。
 - 核对后公开并再次验证：发布 ID `412278993`，`draft=false`、`prerelease=true`，链接 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.1`；全部四个附件、说明及标签再次一致。安装包 SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`。发布证据 `github-v0.2.1-published-verified-20261014.json`，校验脚本 `.artifacts/github-startup-verify.mjs`，公开说明 `.artifacts/startup-release-notes.md`。
 - 远端 Actions 执行总数仍为 0，不声称远端 CI 已通过；保留未签名、旧参考指纹差异、真实模型与干净虚拟机验收边界。没有安装或修改日常应用，原未跟踪缓存、诊断目录及 check-knowledge-base 脚本未加入提交。发布记录另以 docs 提交推到 main，版本标签保持绑定上述成品对应提交。
+
+### 35. README 产品展示与原创插图（2026-10-14）
+
+- 用户要求自述文件更有质感，随后明确“不要加入什么乱七八糟的技术栈啥的、和一些缺陷啥的、就只用展示产品就行”，并允许多加插图。README 以产品为中心，包含品牌封面、真实界面、对话 / 资料 / 文件 / 模型体验、主题与语言、内容自主和下载安装；不加入架构、开发命令、功能完成率或缺陷清单。
+- 新增 `docs/assets/readme-cover.svg`、`readme-conversation.svg`、`readme-documents.svg`、`readme-workspace.svg`、`readme-models.svg`、`readme-appearance.svg` 六幅原创矢量插图，暖纸 / 青绿配色。所有图片有替代文字，SVG 自包含且没有脚本、外部资源或依赖；六幅合计 23055 字节。当前会话未提供内置生图工具，未调用收费 API。
+- 用已安装的 markdown-it、Playwright / Edge 与 sharp 在本机检查，脚本 `.artifacts/readme-review.mjs`，汇总 `.artifacts/logs/readme-showcase-20261014.json`。六幅 SVG 均可解析和栅格化；1200px 电脑、390px 手机及深色预览均加载 7 张图、2 个内部锚点有效、页面无横向溢出、浏览器页面异常 0。已查看顶部、能力卡片和手机长图；预览采用本机 GitHub 风格 Markdown 样式，不声称已在 GitHub 线上渲染验收。
+- Windows 下载链接 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.1` 实时 HEAD 返回 HTTP 200。原真实界面截图保持 SHA-256 `b7327d92683c68b9cfb96f387183d1c1ce2c8158cb872f0d2c6d41642210391b`；`git diff --check` 通过。
+- 仅修改 README、展示配图与既有交接 / 验证文档，未修改应用源码、依赖、功能台账、旧仓库或安装产物。未重复运行无关功能测试，既有 0.2.1 验证结论保持。本轮改版留在本地，未推送 GitHub；原未跟踪缓存、诊断目录及 check-knowledge-base 脚本保持。

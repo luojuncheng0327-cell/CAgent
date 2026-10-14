@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="330" viewBox="0 0 640 330" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">好用的模型，由你选择</title>
+  <desc id="desc">不同形状的模型符号环绕中心的对话卡片，表现自由选择模型的产品体验。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="640" y2="330" gradientUnits="userSpaceOnUse"><stop stop-color="#E9EDF1" /><stop offset="1" stop-color="#F3F4EE" /></linearGradient>
+    <linearGradient id="card" x1="250" y1="111" x2="403" y2="215" gradientUnits="userSpaceOnUse"><stop stop-color="#476E75" /><stop offset="1" stop-color="#2C535B" /></linearGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="190%" height="210%"><feDropShadow dx="0" dy="7" stdDeviation="10" flood-color="#3F5E6B" flood-opacity=".12" /></filter>
+  </defs>
+  <rect width="640" height="330" rx="16" fill="url(#bg)" />
+  <ellipse cx="320" cy="157" rx="177" ry="107" stroke="#A5B8BF" stroke-opacity=".5" />
+  <ellipse cx="320" cy="157" rx="144" ry="79" stroke="#A5B8BF" stroke-opacity=".4" stroke-dasharray="2 7" />
+  <path d="m213 94 68 48M452 98l-74 44M205 220l76-43M453 221l-75-44" stroke="#98B1B4" stroke-opacity=".6" stroke-width="1.3" />
+  <g filter="url(#shadow)">
+    <rect x="250" y="110" width="140" height="101" rx="20" fill="url(#card)" />
+    <path d="M283 136h73v36h-30l-13 11v-11h-30z" stroke="#E3EBDE" stroke-width="1.7" stroke-linejoin="round" />
+    <path d="M298 149h44M298 159h30" stroke="#A6C3BA" stroke-width="2" stroke-linecap="round" />
+    <circle cx="320" cy="195" r="2.5" fill="#D5C58E" />
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="173" y="57" width="66" height="66" rx="20" fill="#FDFCF7" stroke="#D5DFD6" />
+    <path d="m205 74 5 12 13 5-13 5-5 13-5-13-13-5 13-5z" fill="#809F87" />
+    <rect x="421" y="61" width="66" height="66" rx="20" fill="#FDFCF7" stroke="#D7DFDE" />
+    <circle cx="454" cy="94" r="15" stroke="#819DAA" stroke-width="5" /><path d="m454 79 13 24h-26z" fill="#FDFCF7" />
+    <rect x="165" y="194" width="66" height="66" rx="20" fill="#FDFCF7" stroke="#DDD9C7" />
+    <path d="m199 209 18 10v18l-18 10-18-10v-18z" fill="#D1BB8B" /><path d="m181 219 18 10 18-10M199 229v18" stroke="#F8F4E4" stroke-width="1.4" />
+    <rect x="425" y="195" width="66" height="66" rx="20" fill="#FDFCF7" stroke="#D6DDD7" />
+    <path d="m442 227 10-13 10 13-10 13z" fill="#A6B3A0" /><path d="m455 227 10-13 10 13-10 13z" fill="#748C7E" />
+  </g>
+  <circle cx="320" cy="49" r="5" fill="#C1CABD" /><circle cx="498" cy="158" r="4" fill="#C7BEA3" /><circle cx="322" cy="265" r="5" fill="#B7C7C1" /><circle cx="143" cy="157" r="4" fill="#A6BCB8" />
+  <path d="M523 74v12m-6-6h12" stroke="#9AAFAC" stroke-width="1.4" stroke-linecap="round" />
+  <text x="28" y="305" fill="#81959B" font-family="Segoe UI, Arial, sans-serif" font-size="10" letter-spacing="2.4">CHOOSE YOUR COMPANION</text>
+  <text x="611" y="33" text-anchor="end" fill="#8DA1A4" font-family="Georgia, serif" font-size="15">04</text>
+</svg>
