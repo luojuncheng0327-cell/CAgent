@@ -149,7 +149,6 @@ async function start(raw: string) {
       kind: 'ready',
       origin: server.origin,
       pid: process.pid,
-      preferences: rt.preferences(),
     }),
   );
 }

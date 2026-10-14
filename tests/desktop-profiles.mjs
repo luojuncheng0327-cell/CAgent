@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import sharp from 'sharp';
+import { randomBytes } from 'node:crypto';
 import { setup, removeTemporary } from './helpers.ts';
 
 const require = createRequire(import.meta.url);
@@ -37,8 +38,8 @@ try {
   await button('我的资料').click();
   await page.getByLabel('称呼', { exact: true }).fill('本机小罗');
   await page.getByLabel('简介', { exact: true }).fill('请用清晰的中文说明');
-  const png = await sharp({
-    create: { width: 160, height: 80, channels: 3, background: '#537d96' },
+  const png = await sharp(randomBytes(256 * 256 * 3), {
+    raw: { width: 256, height: 256, channels: 3 },
   })
     .png()
     .toBuffer();
@@ -54,6 +55,7 @@ try {
   assert.equal(data.preferences.userName, '本机小罗');
   assert.equal(data.preferences.userDescription, '请用清晰的中文说明');
   assert.match(data.preferences.userAvatar, /^data:image\/png;base64,/);
+  assert.ok(data.preferences.userAvatar.length > 65536);
   assert.equal(data.agents[0].name, 'CAgent');
   const avatar = data.preferences.userAvatar;
   checks.push(

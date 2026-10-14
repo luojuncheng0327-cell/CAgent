@@ -56,10 +56,7 @@ function localJson(url: string, token: string, method = 'GET', body?: unknown) {
     request.end(body === undefined ? undefined : JSON.stringify(body));
   });
 }
-function ready(
-  child: ChildProcess,
-  label: string,
-): Promise<z.infer<typeof readySchema> & { preferences?: Preferences }> {
+function ready(child: ChildProcess, label: string): Promise<z.infer<typeof readySchema>> {
   return new Promise((resolve, reject) => {
     const lines = createInterface({ input: child.stdout! });
     const timer = setTimeout(() => fail(), 60000);
@@ -93,7 +90,7 @@ function ready(
         child.off('exit', fail);
         lines.close();
         child.stdout?.resume();
-        resolve({ ...parsed, preferences: value.preferences });
+        resolve(parsed);
       } catch {
         fail();
       }
@@ -236,7 +233,18 @@ export async function startBackend(options: BackendOptions) {
       JSON.stringify({ home: options.home, token, internalToken, uiDir: options.uiDir }) + '\n',
     );
     const upstream = await workerReady;
-    preferences = upstream.preferences!;
+    const internal = async (route: string, method = 'GET', body?: unknown) => {
+      const result = await localJson(
+        upstream.origin + '/internal/v1' + route,
+        internalToken,
+        method,
+        body,
+      );
+      if (result.status !== 200) throw new Error('后端状态读取失败');
+      return result.data.data;
+    };
+    // Avatars can exceed the bounded readiness line; load preferences through the private API.
+    preferences = (await internal('/runtime')).preferences;
     const env: NodeJS.ProcessEnv = {
       ...process.env,
       TEMP: temporaryDir,
@@ -264,16 +272,6 @@ export async function startBackend(options: BackendOptions) {
       }) + '\n',
     );
     const backend = await pythonReady;
-    const internal = async (route: string, method = 'GET', body?: unknown) => {
-      const result = await localJson(
-        upstream.origin + '/internal/v1' + route,
-        internalToken,
-        method,
-        body,
-      );
-      if (result.status !== 200) throw new Error('后端状态读取失败');
-      return result.data.data;
-    };
     await internal('/configure', 'POST', { origin: backend.origin });
     const architecture = await localJson(backend.origin + '/api/v1/architecture', token);
     if (architecture.status !== 200) throw new Error('Python 后端就绪检查失败');
