@@ -6,13 +6,13 @@
 
 ## 当前结论
 
-最后更新：2026-10-14。0.2.1 本地修复预览解决 0.2.0 自定义头像超过 64 KiB 时的启动失败；完整偏好改从鉴权内部接口读取，保留就绪消息长度检查、原界面和数据格式。0.2.0 已公开版本的主流架构保持，完整产品仍未完成。
+最后更新：2026-10-14。0.2.1 修复代码与安装预览已推送 GitHub，解决 0.2.0 自定义头像超过 64 KiB 时的启动失败；完整偏好改从鉴权内部接口读取，保留就绪消息长度检查、原界面和数据格式。主流架构保持，完整产品仍未完成。
 
 - 0.2.1 格式、状态一致性、类型检查、249 项 Node / TypeScript 测试与 67 项 Python 测试（0 失败 / 跳过）、Ruff 和构建通过。`pnpm run verify` 仍退出 1：旧参考仓库的同 8 个历史文件指纹差异，未改旧仓库或重置快照。日志 `startup-verify-20261014.log`；相似度单独通过，日志 `startup-similarity-20261014.log`。
 - 0.2.1 完整桌面 25 组 / 253 项全部通过、页面异常 0；大头像保存及实际重启恢复纳入资料组。从最终 NSIS 安装包解出的程序另外通过 5 组 / 53 项：资料 8、新架构 6、执行链 11、引导 23、更新 5，全部要求 `app.isPackaged=true`。日志 `startup-desktop-full-20261014.log`、`startup-packaged-*-20261014.log` 与相应汇总。
-- 最新本地安装包 `release/startup-fix/CAgent-0.2.1-Windows-x64-Setup.exe`，201611280 字节，SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`，签名 `NotSigned`；127 个 dist、20 个后端 / 迁移文件一致、4 个原生二进制正确解包，安装包实际解出的 9416 个文件与构建目录逐字节核对一致。更新 SHA-512 正确，旧 0.2.0 安装包指纹不变。此修复仅本地交付，未上传 GitHub 或执行日常安装；完整 NSIS 安装 / 卸载 / 升级回退仍未验证。证据 `startup-package-content-20261014.json`。
+- 最新安装包 `release/startup-fix/CAgent-0.2.1-Windows-x64-Setup.exe`，201611280 字节，SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`，签名 `NotSigned`；127 个 dist、20 个后端 / 迁移文件一致、4 个原生二进制正确解包，安装包实际解出的 9416 个文件与构建目录逐字节核对一致。更新 SHA-512 正确，旧 0.2.0 安装包指纹不变。代码与预览已按本轮要求推送，未执行日常安装；完整 NSIS 安装 / 卸载 / 升级回退仍未验证。证据 `startup-package-content-20261014.json`。
 - 独立性扫描没有新增应用依赖 / 导入或整文件复制问题；既有 5 条相似度已审核例外、阈值与范围不变。0.2.0 架构迁移时的 25 组桌面 / 253 项与 10 组包内 / 90 项历史证据仍在第 31 轮，不当作新版或真实安装环境的重复验收。旧 0.2.0 成品记录为 `modern-package-content.json`，未改其内容。
-- 代码已推送 `main` / `codex/modern-stack`，标签 `v0.2.0` 绑定实现提交 `1a378be`。GitHub 安装预览已公开：`https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.0`，`draft=false`、`prerelease=true`；四个附件的 size、state、SHA-256 与本地一致。远端没有 Actions 执行记录，依据本机和包内证据发布预览，未安装日常程序。
+- 0.2.1 代码已推送 `main`，合并保留远端 README 修改；标签 `v0.2.1` 绑定 `4affb1b7cab08af2ed20a176e5a64b6fc8e3d30b`。GitHub 安装预览已公开：`https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.1`，`draft=false`、`prerelease=true`；四个附件的 size、state、SHA-256 与本地一致。远端 Actions 执行总数仍为 0，依据本机和包内证据发布预览。记录 `github-v0.2.1-published-verified-20261014.json`，详情见第 34 轮。
 - 新后端采用独立 SQLAlchemy / Alembic 数据库与图检查点，未自动迁移原聊天数据，原模型协议及安全逻辑仍由 TypeScript 兼容进程管理；新知识库与索引不在旧中立备份内。真实 Neo4j、PostgreSQL / Redis、嵌入账号、干净虚拟机安装 / 升级 / 卸载及代码签名仍无完整证据。
 - 功能台账仍为本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1；`releaseAllowed:false` 保持。用户本轮已授权验收后推送代码与安装预览，预览上传不代表完整产品验收通过。
 
@@ -643,3 +643,12 @@ RED / GREEN：`c481f31` → `c4d43c0`（9 失败 → 9 通过）；`80d6f25` →
 - 本地 `pnpm run package:win --config.directories.output=release/startup-fix` 退出 0；Python 固定依赖导入通过。NSIS 0.2.1 安装包 201611280 字节，SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`，blockmap、SHA-256 文件、latest.yml 一并生成，更新 SHA-512 一致。签名状态 `NotSigned`（构建日志的签名步骤不能当作签名成功）。
 - `.artifacts/startup-package-check.mjs` 核对 127 个 dist、20 个 Python / 迁移文件、4 个原生解包标记；App.tsx 与修复前完全一致。实际从 NSIS 解出的 9416 个文件与 win-unpacked 一致，再使用解出目录的 CAgent.exe 跑 5 组 / 53 项包内检查：资料 8（大头像实际保存 / 重启）、新架构 6、执行链 11、引导 23、更新 5。所有断言 packaged=true，页面异常 0，数据仅临时目录 / 本机模型夹具；更新真实下载校验，仅替换最终安装调用。证据 `startup-package-content-20261014.json`、`startup-packaged-summary-20261014.json`、`startup-packaged-*-20261014.log`。
 - GREEN 实现提交 `6642c9a`，0.2.1 仅本地交付，未推送 GitHub、未修改已公开 0.2.0、未安装覆盖日常应用。旧 0.2.0 安装包仍为 SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`。原未跟踪缓存 / 诊断目录 / check-knowledge-base 脚本保留。更新 `CA-BOOT-002` 的已有与证据，状态及统计保持，完整产品门禁仍关闭。此处只验证安装包载荷及应用运行，不声称 NSIS 安装 / 卸载或干净虚拟机升级回退已经通过。
+
+### 34. 0.2.1 修复代码与安装预览推送 GitHub（2026-10-14）
+
+- 用户明确要求“推一下github”，授权本次修复代码和安装预览上传。核对远端 `main` 比本地基线多一条 `359ebb2`，只删除 README 的架构说明；以合并提交 `4affb1b` 保留这次修改，不覆盖远端内容。修复源码、依赖、测试与已验证本地产物未变。
+- 发布前重新核对成品 SHA-256、latest.yml 的版本 / 大小 / SHA-512，127 个 dist 构建文件和 20 个 Python / 迁移文件均与包内一致。依据第 33 轮的有效验证证据上传，没有为只改 README 和发布记录重复跑未变的功能测试。证据 `github-v0.2.1-preflight-20261014.json`。
+- `git push --atomic origin main refs/tags/v0.2.1` 成功：远端 main 从 `359ebb2` 到 `4affb1b7cab08af2ed20a176e5a64b6fc8e3d30b`，新 annotated tag `v0.2.1` 指向同一提交。原迁移分支保持，旧版本标签不改。
+- GitHub CLI 先创建 prerelease 草稿，上传 Setup.exe、blockmap、SHA-256 文件、latest.yml 四个附件。安装包 201611280 字节，其余大小分别为 210248、101、365 字节。上传完成后逐项读取 `state=uploaded`、size 与 SHA-256 digest，全部等于本地；标签对象解析到同一提交，说明与本地 notes 文件一致。草稿证据 `github-v0.2.1-draft-verified-20261014.json`。
+- 核对后公开并再次验证：发布 ID `412278993`，`draft=false`、`prerelease=true`，链接 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.1`；全部四个附件、说明及标签再次一致。安装包 SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`。发布证据 `github-v0.2.1-published-verified-20261014.json`，校验脚本 `.artifacts/github-startup-verify.mjs`，公开说明 `.artifacts/startup-release-notes.md`。
+- 远端 Actions 执行总数仍为 0，不声称远端 CI 已通过；保留未签名、旧参考指纹差异、真实模型与干净虚拟机验收边界。没有安装或修改日常应用，原未跟踪缓存、诊断目录及 check-knowledge-base 脚本未加入提交。发布记录另以 docs 提交推到 main，版本标签保持绑定上述成品对应提交。
