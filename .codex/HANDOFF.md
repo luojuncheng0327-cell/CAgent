@@ -2,12 +2,12 @@
 
 给下一个接手的 AI（Codex 或 Claude）看。每轮结束时**更新**本文件的对应章节，不再追加“本轮…交接”小节：每轮的过程和证据写进 `docs/VALIDATION.md`，功能进度只改 `spec/progress.mjs`。
 
-最后更新：2026-10-13，0.2.0 主流技术栈迁移与 GitHub 安装预览已完成：独立 FastAPI / LangGraph / LangChain 后端、Qdrant 与可选 Neo4j，保留原界面；当前分支 `main`，实现与发布证据见 docs/VALIDATION.md 第 31–32 轮。完整产品仍未完成。
+最后更新：2026-10-14，0.2.1 本地修复预览解决自定义头像超过 64 KiB 时的启动失败，保留原界面和数据；当前分支 `main`，RED `699f6b6`、GREEN `6642c9a`。验证与成品证据见 docs/VALIDATION.md 第 33 轮；0.2.0 GitHub 已公开版本保持，0.2.1 未推送或安装日常程序。完整产品仍未完成。
 
 ## 0. 接手步骤
 
 1. 读完本文件，再读 `README.md`、`docs/功能实现情况.md`，以及 `docs/VALIDATION.md` 开头的“当前结论”和“相似度检查的已审核例外”。
-2. 核对基线：当前 `main`，迁移分支 `codex/modern-stack` 保留，remote 为 `https://github.com/luojuncheng0327-cell/CAgent.git`。0.2.0 标签绑定实现提交 `1a378be`，发布记录文档另有后续提交；先核对本地修改和最近提交，保留其他工作。
+2. 核对基线：当前 `main` 有本地 0.2.1 修复与证据提交，origin/main 保留 0.2.0 发布记录 `d933bcf`；迁移分支 `codex/modern-stack` 保留，remote 为 `https://github.com/luojuncheng0327-cell/CAgent.git`。0.2.0 标签绑定实现提交 `1a378be`；先核对本地修改和最近提交，保留其他工作。
 3. 每条 PowerShell 命令都加第 3 节的命令前缀。
 4. 开工前说明准备做什么；重要决定先问用户；工作中每隔一段用一两句话报告进度。
 
@@ -21,6 +21,8 @@
 
 ## 1. 当前状态
 
+- 0.2.1 本地修复：0.2.0 就绪 stdout 携带完整偏好，已保存头像使约 80 KB 消息超过 64 KiB 上限而报兼容服务失败。就绪行现只传小型 ready 信息，完整偏好改走已有鉴权内部接口，头像 / 配置 / 聊天不清理、不迁移。实际带大头像连续启动、保存与真实重启恢复通过。249 项 Node / TypeScript、67 项 Python、25 组 / 253 项桌面以及最终安装包解出程序 5 组 / 53 项通过；verify 仍只因同 8 个旧参考指纹差异非零，相似度单独通过。
+- 最新本地产物 `release/startup-fix/CAgent-0.2.1-Windows-x64-Setup.exe`：201611280 字节，SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`，未签名；127 个构建文件、20 个后端 / 迁移文件与 NSIS 解出的 9416 个文件一致。修复未上传 GitHub，也未执行日常覆盖安装；此前 0.2.0 产物及公开链接保留。实际 NSIS 安装 / 卸载 / 升级回退仍未验。
 - 仓库 `F:\CAgent-independent`，GitHub remote 已配置。旧 `F:\CAgent` 只作只读参考。0.1.2 已推送 GitHub。2026-10-13 用户授权改用主流架构并开始开发，又要求“全部验证完成，推到github”；暂停后已要求继续，该验证和推送授权保持。未授权安装到日常环境。
 - 0.2.0：Electron 启动独立 FastAPI 与 TypeScript 兼容进程，实际聊天和压缩由 LangGraph StateGraph 驱动、工具经 LangChain StructuredTool 执行；原模型传输、工具安全和聊天数据库仍由 TypeScript 管理。TanStack Query 接管应用快照 / 会话列表请求，Zustand 管理工作台导航。新知识服务用 SQLAlchemy / Alembic、持久化 Qdrant、可选 Neo4j；PostgreSQL / Redis / Celery 为可选服务。职责、数据位置和迁移边界见 `docs/MODERN-STACK.md`。
 - 用户看过新增知识库面板后明确选择“撤下新面板，保留原界面”。KnowledgePanel 和设置里的新增条目已撤下；原记忆页、聊天与文件界面保持。后端知识接口与 `knowledge_search` 工具继续保留，不重新加入面板或扩大 UI 范围。
@@ -32,8 +34,8 @@
 - 输入区推理按钮左侧有上下文圆环。悬停 / 聚焦显示约用量、当前模型窗口、百分比和输出预留；统计完整有效历史、摘要、助手规则与资料、草稿和已解析附件，流式回复随长度更新。沿用字符 / 图片估算，尚未精确分词，也不把账本累计用量当作上下文；助手默认模型可继承，切换模型更新分母。
 - 功能：必做 208 项中本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1。逐项见 `docs/功能实现情况.md`，完整产品未完成，完整发布门禁关闭。
 - 界面复刻：第 1 步基础与第 3 步六步引导完成，第 2 步仍有已记录差别；现有设置共 6 页（含我的资料），第 4 步完整设置仍待用户决定。目录导航、文件工具与预览扩展不算完成该步骤。
-- 验证：248 项 Node / TypeScript 与 67 项 Python 测试全过；完整桌面 25 组 / 253 项退出 0；最终包内 10 组 / 90 项通过，127 个构建文件、20 个后端文件核对一致。旧参考仓库同 8 个历史指纹差异使 verify 非零；没有修改旧仓库或重置快照。相似度检查通过，5 条既有例外与阈值不变。
-- 最新本地产物为 `release/modern-stack/CAgent-0.2.0-Windows-x64-Setup.exe` 及更新清单、blockmap / SHA-256；大小 201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`。旧 0.1.2 安装包保持原指纹与 GitHub 预览链接。未在用户日常环境安装；0.2.0 未签名，真实虚拟机安装 / 卸载 / 升级回退仍未验。GitHub 本轮推送结果见 `docs/VALIDATION.md` 第 32 轮。
+- 0.2.0 历史验证：248 项 Node / TypeScript 与 67 项 Python 测试全过；完整桌面 25 组 / 253 项退出 0；最终包内 10 组 / 90 项通过，127 个构建文件、20 个后端文件核对一致。旧参考仓库同 8 个历史指纹差异使 verify 非零；没有修改旧仓库或重置快照。相似度检查通过，5 条既有例外与阈值不变。当前 0.2.1 结果见本节开头。
+- 已公开 0.2.0 产物为 `release/modern-stack/CAgent-0.2.0-Windows-x64-Setup.exe` 及更新清单、blockmap / SHA-256；大小 201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`。旧 0.1.2 安装包保持原指纹与 GitHub 预览链接。未在用户日常环境安装；0.2.0 未签名，真实虚拟机安装 / 卸载 / 升级回退仍未验。GitHub 推送结果见 `docs/VALIDATION.md` 第 32 轮。
 - 0.2.0 已公开至 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.0`，`draft=false` / `prerelease=true`；实现提交 `1a378bed119727c1a8cb85318a170176c21a6923` 已推送 `main`、迁移分支和 annotated tag，四个附件的 GitHub SHA-256 与本地一致。远端没有 Actions 执行记录，不声称远端 CI 已通过。
 - 设置的接口列表新增“删除接口”，确认后事务删除 URL、Key、自定义请求头和关联模型，同时清空相关会话、助手和辅助模型引用；保留聊天记录、输入草稿与其他接口。运行中的接口不能删除，失败保留配置可重试；仅清 Key 继续使用编辑接口中的现有复选框。
 - 用户仍在审阅 `docs/待实现功能清单.csv`，尚未收到排除或修改决定，未擅自缩减范围。
@@ -156,13 +158,14 @@
 
 ## 6. 下一步
 
-1. 0.2.0 验证和 GitHub 推送已完成，证据见第 31–32 轮；不要重复发布或恢复已撤下的面板。后续逐模块迁移模型适配、配置 / 会话 API、工具与业务存储，每项保留既有权限、批准、取消、数据恢复契约，验证通过再移除兼容入口。
+1. 0.2.1 启动修复本地交付已完成，证据见第 33 轮，等待用户日常覆盖安装后的反馈；未获得本轮安装 / 推送要求，不自行安装或公开修复预览。0.2.0 验证和 GitHub 推送已完成，证据见第 31–32 轮；不要重复发布或恢复已撤下的面板。后续逐模块迁移模型适配、配置 / 会话 API、工具与业务存储，每项保留既有权限、批准、取消、数据恢复契约，验证通过再移除兼容入口。
 2. 等用户交回 `docs/待实现功能清单.csv` 的决定：标“不要”的要在台账中排除（需新增排除记录方式，排除项不计入必做和发布门禁），标“修改”的记录新要求；尚未收到决定，不擅自删减。
 3. 第 3 步引导对照图待用户审阅；第 4 步完整设置由用户决定何时进入。第 2 步已记录差别保留，不改变已选的手动保存与图片。
 4. 其余功能依旧按台账补 P2 / P3 / P4，真实平台和完整产品发布验收最后补齐。框架升级不代表剩余 126 项未开始功能已经完成。
 
 ## 7. 本机文件说明（都不进 git）
 
+- 0.2.1 启动修复：`.artifacts/logs/startup-*-20261014.*` 含 RED / GREEN、verify、聚焦覆盖率、完整桌面汇总、打包日志、最终包内 5 组 / 53 项、成品指纹与签名状态。`.artifacts/startup-package-check.mjs` 解出最终 NSIS 程序并逐文件核对，解出目录见 `startup-package-content-20261014.json`，包内专项直接使用该 CAgent.exe。安装包和更新文件在 `release/startup-fix/`；源代码与测试说明见 `docs/STARTUP-AVATAR-TDD.md`。
 - 0.2.0 迁移：`modern-delivery-verify.log`、`modern-delivery-similarity.log`、`modern-final-desktop-full.log` / `modern-desktop-summary.json`、`modern-package-win.log`、`modern-packaged-*.log` / `modern-packaged-summary.json` 与 `modern-package-content.json`，均在 `.artifacts/logs/`。`.artifacts/modern-package-check.mjs` 用于字节、原生解包、更新清单与 JSX 保留检查；原记忆页截图 `.artifacts/modern-memory-desktop.png` 已查看。包内新架构用 `CAGENT_MODERN_TEST_EXE` 指向 `release/modern-stack/win-unpacked/CAgent.exe` 验收，要求打包模式。旧截图 `.artifacts/modern-knowledge-desktop.png` 是已撤下的开发面板，不能当作交付界面。
 - 0.2.0 推送：`.artifacts/logs/github-v0.2.0-draft-verified.json` / `github-v0.2.0-published-verified.json` 记录发布前后的草稿状态、tag 提交、四个附件大小与 SHA-256；`.artifacts/github-modern-verify.mjs` 为校验脚本，`.artifacts/modern-release-notes.md` 为实际公开说明。
 
@@ -195,6 +198,7 @@
 
 | 提交 | 内容 |
 |---|---|
+| `699f6b6` → `6642c9a`（2026-10-14） | 大头像导致 0.2.0 兼容服务启动失败的 RED / GREEN；0.2.1 本地安装包、249 项 Node / 67 项 Python、25 组 / 253 项桌面、最终 NSIS 解出程序 5 组 / 53 项通过；未推送或覆盖安装。 |
 | `8f6403b` | 冻结的 210 项功能规格（独立根提交） |
 | `38de016` | 本机桌面聊天主链 |
 | `a931531` | P1/P2 聊天与工作区延续 |

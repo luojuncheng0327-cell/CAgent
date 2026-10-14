@@ -6,13 +6,12 @@
 
 ## 当前结论
 
-最后更新：2026-10-13。0.2.0 接入独立 FastAPI / LangGraph / LangChain 后端与 Qdrant / 可选 Neo4j，按用户截图保留原聊天、记忆和工作台界面，撤下新增知识库面板。当前是核心架构迁移预览，完整产品仍未完成。
+最后更新：2026-10-14。0.2.1 本地修复预览解决 0.2.0 自定义头像超过 64 KiB 时的启动失败；完整偏好改从鉴权内部接口读取，保留就绪消息长度检查、原界面和数据格式。0.2.0 已公开版本的主流架构保持，完整产品仍未完成。
 
-- 格式、状态一致性、类型检查、248 项 Node / TypeScript 测试与 67 项 Python 测试（0 失败 / 跳过）、Ruff 和构建通过。`pnpm run verify` 仍退出 1：旧参考仓库的同 8 个历史文件指纹差异，未改旧仓库或重置快照。日志 `modern-delivery-verify.log`。
-- 独立性扫描没有新增应用依赖 / 导入或整文件复制问题。相似度单独检查通过，既有 5 条已审核例外、阈值与范围不变，日志 `modern-delivery-similarity.log`。
-- 完整桌面命令 25 组 / 253 项退出 0，页面错误为 0。既有引导、聊天、工具、文件编辑、附件、资料、五语、更新、模型和圆环全部保留；新增组通过后端接口验证知识服务，原记忆页明确断言没有新面板。日志 `modern-final-desktop-full.log`、汇总 `modern-desktop-summary.json`。
-- 包内 10 组 / 90 项通过，均断言 `app.isPackaged=true`：新架构 6、引导 23、执行链 11、文件操作 7、附件 9、资料 8、五语 7、更新 5、模型设置 8、圆环 6。汇总 `modern-packaged-summary.json`，全部使用隔离数据 / 本机模型夹具；更新下载和 SHA-512 实际校验，只替换最终安装调用。
-- 安装预览 `release/modern-stack/CAgent-0.2.0-Windows-x64-Setup.exe`：201611321 字节，SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`，签名 `NotSigned`。127 个构建文件、20 个后端 / 迁移文件一致，4 个原生二进制正确解包；更新清单 SHA-512 正确，旧 0.1.2 安装包指纹保持。记录 `modern-package-content.json`。主界面 JSX 与迁移前基线结构相同，原记忆页 1280×800 截图 `modern-memory-desktop.png` 已查看。
+- 0.2.1 格式、状态一致性、类型检查、249 项 Node / TypeScript 测试与 67 项 Python 测试（0 失败 / 跳过）、Ruff 和构建通过。`pnpm run verify` 仍退出 1：旧参考仓库的同 8 个历史文件指纹差异，未改旧仓库或重置快照。日志 `startup-verify-20261014.log`；相似度单独通过，日志 `startup-similarity-20261014.log`。
+- 0.2.1 完整桌面 25 组 / 253 项全部通过、页面异常 0；大头像保存及实际重启恢复纳入资料组。从最终 NSIS 安装包解出的程序另外通过 5 组 / 53 项：资料 8、新架构 6、执行链 11、引导 23、更新 5，全部要求 `app.isPackaged=true`。日志 `startup-desktop-full-20261014.log`、`startup-packaged-*-20261014.log` 与相应汇总。
+- 最新本地安装包 `release/startup-fix/CAgent-0.2.1-Windows-x64-Setup.exe`，201611280 字节，SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`，签名 `NotSigned`；127 个 dist、20 个后端 / 迁移文件一致、4 个原生二进制正确解包，安装包实际解出的 9416 个文件与构建目录逐字节核对一致。更新 SHA-512 正确，旧 0.2.0 安装包指纹不变。此修复仅本地交付，未上传 GitHub 或执行日常安装；完整 NSIS 安装 / 卸载 / 升级回退仍未验证。证据 `startup-package-content-20261014.json`。
+- 独立性扫描没有新增应用依赖 / 导入或整文件复制问题；既有 5 条相似度已审核例外、阈值与范围不变。0.2.0 架构迁移时的 25 组桌面 / 253 项与 10 组包内 / 90 项历史证据仍在第 31 轮，不当作新版或真实安装环境的重复验收。旧 0.2.0 成品记录为 `modern-package-content.json`，未改其内容。
 - 代码已推送 `main` / `codex/modern-stack`，标签 `v0.2.0` 绑定实现提交 `1a378be`。GitHub 安装预览已公开：`https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.0`，`draft=false`、`prerelease=true`；四个附件的 size、state、SHA-256 与本地一致。远端没有 Actions 执行记录，依据本机和包内证据发布预览，未安装日常程序。
 - 新后端采用独立 SQLAlchemy / Alembic 数据库与图检查点，未自动迁移原聊天数据，原模型协议及安全逻辑仍由 TypeScript 兼容进程管理；新知识库与索引不在旧中立备份内。真实 Neo4j、PostgreSQL / Redis、嵌入账号、干净虚拟机安装 / 升级 / 卸载及代码签名仍无完整证据。
 - 功能台账仍为本机已验证 32、部分实现 50、未开始 126，另有计划中 1、外部待定 1；`releaseAllowed:false` 保持。用户本轮已授权验收后推送代码与安装预览，预览上传不代表完整产品验收通过。
@@ -633,3 +632,14 @@ RED / GREEN：`c481f31` → `c4d43c0`（9 失败 → 9 通过）；`80d6f25` →
 - GitHub CLI 创建 prerelease 草稿并上传四个附件。安装包为 201611321 字节，其余为 blockmap、SHA-256 文件与 `latest.yml`；较小附件先完成，安装包完成后才核对。四个远端附件均为 `state=uploaded`，size 与 SHA-256 digest 逐项等于本地。标签解析到同一实现提交；证据 `github-v0.2.0-draft-verified.json`。
 - 核对后公开预览，并再次读取 `draft=false` / `prerelease=true`、tag 提交和四个附件。公开链接 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.0`；证据 `github-v0.2.0-published-verified.json`。公开说明包含界面保留、核心迁移、仍有 TypeScript 兼容层及实际验证边界，未声称完整产品完成。
 - 远端 Actions 执行总数仍为 0，不声称远端 CI 已通过；依靠第 31 轮本机 / 包内测试上传预览。旧参考指纹差异、未签名、真实模型 / 可选数据库 / 虚拟机验收边界保持。原未跟踪 `.pnpm-store/`、`scripts/check-knowledge-base.mjs` 及隔离诊断目录保留，未加入提交；用户日常应用未安装或替换。
+
+### 33. 0.2.0 安装后大头像启动失败与 0.2.1 本地修复（2026-10-14）
+
+- 用户提供“本机兼容服务启动失败，请检查后端依赖和数据目录权限”的截图并要求继续。安装目录为 `%LOCALAPPDATA%/Programs/CAgent`。空的独立 `CAGENT_HOME` 可启动实际已安装程序、进入首次引导；只读检查日常数据库得到 schema 2、`quick_check=ok`、偏好格式有效，无未结束任务，不读取或输出模型密钥。
+- 根因：日常偏好 JSON 为 79991 字节，其中头像字符串约 79492 字节，就绪行达到 80064 字符；`ready()` 的 65536 字符限制把合法头像误判为服务失败。隔离目录仅加入该头像即可触发已安装 0.2.0 的同一就绪行错误，未改日常资料或数据库。实际业务服务已启动，却在监督进程读取就绪行时被拒绝。
+- 先新增大头像回归并确认 RED，日志 `startup-avatar-red-20261014.log`，测试提交 `699f6b6`。最小修复：stdout 就绪行只含 kind / origin / pid；主进程就绪后访问现有鉴权 `/internal/v1/runtime` 读取完整偏好，再启动 Python。保持 64 KiB 上限、回环地址校验、私有令牌以及全部业务 API；不压缩、清空或迁移用户头像。
+- 同一集成目标 GREEN：3 项通过；真实生成、解码、保存超过 64 KiB 的 256px PNG，连续两次启动后偏好与 bootstrap 全字段一致，含头像、简介、语言、引导状态；原有 LangGraph 聊天、知识读写、端口和子进程树释放仍通过。日志 `startup-avatar-green-20261014.log`。聚焦模块行覆盖率 82.27%、分支 75.47%、函数 74.19%，3 项无跳过；未覆盖分支如实见 `docs/STARTUP-AVATAR-TDD.md` 和 `startup-coverage-20261014.log`。
+- 开发检查：`pnpm run verify` 执行到既有独立性历史指纹差异后退出 1；之前格式、状态、typecheck、249 项 Node / TypeScript、67 项 Python、Ruff 与 build 都通过。独立性没有新增导入 / 依赖 / 整文件复制违规，同 8 个旧参考文件差异保持。相似度单独通过，不改阈值或例外。25 组桌面 / 253 项全部通过、页面异常 0，资料组实际上传大头像并退出重启；日志与汇总 `startup-desktop-full-20261014.log`、`startup-desktop-summary-20261014.json`。
+- 本地 `pnpm run package:win --config.directories.output=release/startup-fix` 退出 0；Python 固定依赖导入通过。NSIS 0.2.1 安装包 201611280 字节，SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`，blockmap、SHA-256 文件、latest.yml 一并生成，更新 SHA-512 一致。签名状态 `NotSigned`（构建日志的签名步骤不能当作签名成功）。
+- `.artifacts/startup-package-check.mjs` 核对 127 个 dist、20 个 Python / 迁移文件、4 个原生解包标记；App.tsx 与修复前完全一致。实际从 NSIS 解出的 9416 个文件与 win-unpacked 一致，再使用解出目录的 CAgent.exe 跑 5 组 / 53 项包内检查：资料 8（大头像实际保存 / 重启）、新架构 6、执行链 11、引导 23、更新 5。所有断言 packaged=true，页面异常 0，数据仅临时目录 / 本机模型夹具；更新真实下载校验，仅替换最终安装调用。证据 `startup-package-content-20261014.json`、`startup-packaged-summary-20261014.json`、`startup-packaged-*-20261014.log`。
+- GREEN 实现提交 `6642c9a`，0.2.1 仅本地交付，未推送 GitHub、未修改已公开 0.2.0、未安装覆盖日常应用。旧 0.2.0 安装包仍为 SHA-256 `2ca32fa8cb8ab8b11829a3d8256fb85dd7ddd688b5f828c41111fb0f3e8d9c3a`。原未跟踪缓存 / 诊断目录 / check-knowledge-base 脚本保留。更新 `CA-BOOT-002` 的已有与证据，状态及统计保持，完整产品门禁仍关闭。此处只验证安装包载荷及应用运行，不声称 NSIS 安装 / 卸载或干净虚拟机升级回退已经通过。
