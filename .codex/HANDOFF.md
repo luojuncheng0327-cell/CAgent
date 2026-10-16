@@ -2,7 +2,7 @@
 
 给下一个接手的 AI（Codex 或 Claude）看。每轮结束时**更新**本文件的对应章节，不再追加“本轮…交接”小节：每轮的过程和证据写进 `docs/VALIDATION.md`，功能进度只改 `spec/progress.mjs`。
 
-最后更新：2026-10-16，README 产品展示改版与 6 幅原创矢量插图已按用户要求推送 GitHub `main`，提交 `57f0104`，远端提交核对一致；不在 README 中加入技术栈、开发台账或缺陷说明。0.2.1 修复代码与 GitHub 安装预览已公开，解决自定义头像超过 64 KiB 时的启动失败，保留原界面和数据；当前分支 `main`，RED `699f6b6`、GREEN `6642c9a`、标签 `v0.2.1` 绑定 `4affb1b`。验证与发布证据见 docs/VALIDATION.md 第 33–36 轮；未安装日常程序。完整产品仍未完成。
+最后更新：2026-10-16，用户让 AI 自行选择下一项（“你看着来吧”），本轮实现 CA-BOOT-002 后台服务崩溃自动重启：主进程监督整组服务，意外退出后自动重启（10 分钟内最多 3 次），窗口切到新地址并回到原会话；只在本地提交，未推送、未打包。证据见 docs/VALIDATION.md 第 37 轮。此前 README 产品展示改版与 6 幅原创矢量插图已按用户要求推送 GitHub `main`，提交 `57f0104`，远端提交核对一致；不在 README 中加入技术栈、开发台账或缺陷说明。0.2.1 修复代码与 GitHub 安装预览已公开，解决自定义头像超过 64 KiB 时的启动失败，保留原界面和数据；当前分支 `main`，RED `699f6b6`、GREEN `6642c9a`、标签 `v0.2.1` 绑定 `4affb1b`。验证与发布证据见 docs/VALIDATION.md 第 33–36 轮；未安装日常程序。完整产品仍未完成。
 
 ## 0. 接手步骤
 
@@ -21,6 +21,7 @@
 
 ## 1. 当前状态
 
+- 后台服务崩溃自动重启（2026-10-16，本地提交，未推送 / 未打包）：`src/desktop/backend-process.ts` 新增 `superviseBackend`，包住原 `startBackend`。任一服务（Python 或 TypeScript 兼容进程）意外退出时先关掉另一个、释放数据目录，再整组重启；10 分钟内最多 3 次，间隔 1 / 2 / 3 秒递增，重启失败也计数，超过才弹窗“后台服务多次意外停止”并退出。首次启动失败不重试。每次重启是新端口和新令牌，`main.ts` 收到 `restarted` 后重写 `connection.json` 并把窗口载入新地址；渲染器把当前会话写在地址 `#session=<id>`，重新载入时优先选回该会话。`startBackend` 新增 `signal`，退出应用时可取消进行中的重启。重启间隙旧页面显示原有“连接中断，正在重新连接…”；重载时跳过未保存恢复草稿的离开确认（只能写给已停止的服务）。服务丢失或正在恢复时退出不再等待草稿保存。
 - README 产品展示改版：用户明确只展示产品、可多加插图，不加技术栈或缺陷。现有品牌封面、四张能力插图、主题 / 语言横幅、真实界面截图及 Windows 下载入口；配图位于 `docs/assets/readme-*.svg`。第 35 轮安装预览链接 HTTP 200，本机 1200px / 390px / 深色 Markdown 预览检查通过；2026-10-16 按用户“推一下”要求推送 `57f0104` 至 GitHub `main`，远端完整提交号一致。未重新打包，详见第 35–36 轮。
 - 0.2.1 本地修复：0.2.0 就绪 stdout 携带完整偏好，已保存头像使约 80 KB 消息超过 64 KiB 上限而报兼容服务失败。就绪行现只传小型 ready 信息，完整偏好改走已有鉴权内部接口，头像 / 配置 / 聊天不清理、不迁移。实际带大头像连续启动、保存与真实重启恢复通过。249 项 Node / TypeScript、67 项 Python、25 组 / 253 项桌面以及最终安装包解出程序 5 组 / 53 项通过；verify 仍只因同 8 个旧参考指纹差异非零，相似度单独通过。
 - 最新本地产物 `release/startup-fix/CAgent-0.2.1-Windows-x64-Setup.exe`：201611280 字节，SHA-256 `6312b3f70c4e0347eb1a1164a055368ec4406b6a551be0e3a3d44d2487d85626`，未签名；127 个构建文件、20 个后端 / 迁移文件与 NSIS 解出的 9416 个文件一致。代码已推送 main，安装预览 `https://github.com/luojuncheng0327-cell/CAgent/releases/tag/v0.2.1` 已公开，draft=false / prerelease=true；四个附件的 GitHub size、state 和 SHA-256 与本地一致。未执行日常覆盖安装；实际 NSIS 安装 / 卸载 / 升级回退仍未验。
@@ -131,6 +132,7 @@
 ## 5. 已知限制
 
 - 架构升级是分阶段迁移：公开 API 与图编排已接入 Python，现有业务与模型协议仍经独立 TypeScript 兼容进程运行，不能声称全部业务已重写为 Python。Neo4j 当前提供有来源的实体关系写入和固定邻居查询，自动图谱抽取与融合 GraphRAG 尚未完成；真实 Neo4j / PostgreSQL / Redis 服务和嵌入账号没有联调证据。
+- 后台服务自动重启：崩溃前约半秒内尚未存成草稿的输入框文字 / 文件恢复草稿、重启间隙里新输入的内容会随页面重载丢失。Python 崩溃时进行中的回复标为失败或取消（取决于兼容服务先收到哪个信号，两者都保留部分回复）；兼容服务崩溃时下一代标为 `PROCESS_INTERRUPTED`。只在开发构建验证，包内程序的崩溃重启、主进程自身崩溃、长时间运行与其他平台未验。“连续启动两次只聚焦一个实例”仍无自动化验收，CA-BOOT-002 保持部分实现。
 - 新后端的知识文档、Qdrant / Neo4j 索引和 LangGraph 检查点不在当前中立备份中；完整备份扩展还缺。图检查点仅持久化调用与运行引用，不保存凭据、完整对话或工具参数，也不作为副作用自动重放入口。
 
 - 工具产物是原文件引用，下载须匹配生成时的 SHA-256；修改后可打开当前文件，旧版本不保证可取。每页 20 项、32 MiB 读取预算、约 5 秒协作检查，未检查项有状态。只接当前四种明确文件输出；任意命令 / 未来工具及原上传资源批量清理仍缺。元数据移除和会话删除不删磁盘文件，引用不随中立备份迁移。
@@ -159,6 +161,7 @@
 
 ## 6. 下一步
 
+0. 第 37 轮自动重启只在本地提交。用户要推送或发新预览时，先按第 3 节打包，用 `CAGENT_RESTART_TEST_EXE` 指向包内 `CAgent.exe` 跑 `node tests/desktop-restart.mjs` 补包内验证，再按既有流程上传。上一轮建议的后续候选（用户未选定）：聊天呈现补齐（代码高亮 / 公式 / 流程图需新依赖，先问用户）、新后端数据进入备份（CA-DATA-004）、插话 / 斜杠命令。
 1. 0.2.1 启动修复与 GitHub 推送已完成，证据见第 33–34 轮，等待用户日常覆盖安装后的反馈；不要重复发布或自行安装。不要恢复已撤下的面板。后续架构是否继续迁移按具体功能由用户决定；每项保留既有权限、批准、取消、数据恢复契约，验证通过再移除兼容入口。
 2. 等用户交回 `docs/待实现功能清单.csv` 的决定：标“不要”的要在台账中排除（需新增排除记录方式，排除项不计入必做和发布门禁），标“修改”的记录新要求；尚未收到决定，不擅自删减。
 3. 第 3 步引导对照图待用户审阅；第 4 步完整设置由用户决定何时进入。第 2 步已记录差别保留，不改变已选的手动保存与图片。
@@ -166,6 +169,7 @@
 
 ## 7. 本机文件说明（都不进 git）
 
+- 后台服务自动重启（第 37 轮）：`.artifacts/logs/backend-restart-red-20261016.log`（RED）、`backend-restart-verify-20261016.log`、`backend-restart-similarity-20261016.log`、`backend-restart-desktop-full-20261016.log`，以及最终构建后的专项复验 `backend-restart-final-*-20261016.log`。新桌面脚本 `tests/desktop-restart.mjs` 可用 `CAGENT_RESTART_TEST_EXE` 指向本仓库 `release/` 下包内 `CAgent.exe`，必须断言打包模式；只用临时数据和本机假模型。
 - 0.2.1 启动修复：`.artifacts/logs/startup-*-20261014.*` 含 RED / GREEN、verify、聚焦覆盖率、完整桌面汇总、打包日志、最终包内 5 组 / 53 项、成品指纹与签名状态。`.artifacts/startup-package-check.mjs` 解出最终 NSIS 程序并逐文件核对，解出目录见 `startup-package-content-20261014.json`，包内专项直接使用该 CAgent.exe。安装包和更新文件在 `release/startup-fix/`；源代码与测试说明见 `docs/STARTUP-AVATAR-TDD.md`。
 - 0.2.1 推送：`.artifacts/logs/github-v0.2.1-preflight-20261014.json`、`github-v0.2.1-draft-verified-20261014.json`、`github-v0.2.1-published-verified-20261014.json` 记录发布前、本轮草稿和公开后的附件大小 / SHA-256、标签与 main 提交、说明核对。`.artifacts/github-startup-verify.mjs` 为校验脚本，`.artifacts/startup-release-notes.md` 为实际公开说明。
 - 0.2.0 迁移：`modern-delivery-verify.log`、`modern-delivery-similarity.log`、`modern-final-desktop-full.log` / `modern-desktop-summary.json`、`modern-package-win.log`、`modern-packaged-*.log` / `modern-packaged-summary.json` 与 `modern-package-content.json`，均在 `.artifacts/logs/`。`.artifacts/modern-package-check.mjs` 用于字节、原生解包、更新清单与 JSX 保留检查；原记忆页截图 `.artifacts/modern-memory-desktop.png` 已查看。包内新架构用 `CAGENT_MODERN_TEST_EXE` 指向 `release/modern-stack/win-unpacked/CAgent.exe` 验收，要求打包模式。旧截图 `.artifacts/modern-knowledge-desktop.png` 是已撤下的开发面板，不能当作交付界面。
@@ -200,6 +204,7 @@
 
 | 提交 | 内容 |
 |---|---|
+| 第 37 轮（2026-10-16，本地） | 后台服务崩溃自动重启、窗口回到原会话；RED / GREEN 与验证见 `docs/VALIDATION.md` 第 37 轮。未推送、未打包。 |
 | `699f6b6` → `6642c9a` / `4affb1b`（2026-10-14） | 大头像导致 0.2.0 兼容服务启动失败的 RED / GREEN；0.2.1 安装包、249 项 Node / 67 项 Python、25 组 / 253 项桌面、最终 NSIS 解出程序 5 组 / 53 项通过；已推 main、v0.2.1 标签和四个预览附件，未覆盖安装。 |
 | `8f6403b` | 冻结的 210 项功能规格（独立根提交） |
 | `38de016` | 本机桌面聊天主链 |
