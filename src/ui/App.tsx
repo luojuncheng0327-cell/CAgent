@@ -388,6 +388,8 @@ export function App() {
   useEffect(() => {
     if (initial.current) return;
     initial.current = true;
+    // The desktop shell reloads with this marker after restarting its background services.
+    const remembered = location.hash.startsWith('#session=') ? location.hash.slice(9) : null;
     void (async () => {
       try {
         if (window.cagent) {
@@ -399,7 +401,9 @@ export function App() {
           await authenticate(value);
         }
         const next = await refresh();
-        let first = next.sessions.find((s) => !s.archived);
+        let first =
+          next.sessions.find((s) => s.id === remembered && !s.archived) ??
+          next.sessions.find((s) => !s.archived);
         if (!first && next.preferences.setupComplete) {
           const owner =
             next.agents.find((a) => a.id === next.preferences.primaryAgentId) ?? next.agents[0];
@@ -422,6 +426,9 @@ export function App() {
       }
     })();
   }, []);
+  useEffect(() => {
+    if (sessionId) history.replaceState(null, '', '#session=' + sessionId);
+  }, [sessionId]);
   useEffect(() => {
     if (!data) return;
     const root = document.documentElement;

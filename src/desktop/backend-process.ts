@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import { setTimeout as delay } from 'node:timers/promises';
 import { z } from 'zod';
 import type { Preferences } from '../shared/contracts.ts';
 
@@ -20,6 +21,8 @@ export interface BackendOptions {
   pythonArgs?: string[];
   onFailure?: () => void;
   diagnostic?: (text: string) => void;
+  // Abandons a pending startup: started services are stopped and the promise rejects.
+  signal?: AbortSignal;
 }
 const readySchema = z.object({
   kind: z.literal('ready'),
@@ -152,6 +155,7 @@ export function backendRuntimePaths(appDir: string, resourcesPath: string, packa
   return { backendDir, python };
 }
 export async function startBackend(options: BackendOptions) {
+  options.signal?.throwIfAborted();
   const token = randomBytes(32).toString('base64url');
   const internalToken = randomBytes(32).toString('base64url');
   const events = new EventEmitter();
@@ -186,6 +190,12 @@ export async function startBackend(options: BackendOptions) {
     });
     return child;
   };
+  // Stopping the services makes the pending readiness wait fail; the catch below reports the abort.
+  const abandon = () => {
+    closing = true;
+    for (const child of children) void stop(child);
+  };
+  options.signal?.addEventListener('abort', abandon, { once: true });
   try {
     const worker = spawnService(
       options.nodeExecutable,
@@ -245,6 +255,7 @@ export async function startBackend(options: BackendOptions) {
     };
     // Avatars can exceed the bounded readiness line; load preferences through the private API.
     preferences = (await internal('/runtime')).preferences;
+    options.signal?.throwIfAborted();
     const env: NodeJS.ProcessEnv = {
       ...process.env,
       TEMP: temporaryDir,
@@ -275,6 +286,8 @@ export async function startBackend(options: BackendOptions) {
     await internal('/configure', 'POST', { origin: backend.origin });
     const architecture = await localJson(backend.origin + '/api/v1/architecture', token);
     if (architecture.status !== 200) throw new Error('Python 后端就绪检查失败');
+    options.signal?.throwIfAborted();
+    options.signal?.removeEventListener('abort', abandon);
     startupComplete = true;
     return {
       origin: backend.origin,
@@ -292,8 +305,117 @@ export async function startBackend(options: BackendOptions) {
       },
     };
   } catch (error) {
+    options.signal?.removeEventListener('abort', abandon);
     closing = true;
     for (const child of children) await stop(child);
-    throw error;
+    throw options.signal?.aborted ? options.signal.reason : error;
   }
+}
+export type Backend = Awaited<ReturnType<typeof startBackend>>;
+export interface SupervisorOptions extends BackendOptions {
+  // Reported once, after automatic recovery stops; never for the initial startup.
+  onFailure?: () => void;
+  restartLimit?: number;
+  restartWindowMs?: number;
+  restartDelayMs?: number;
+  start?: (options: BackendOptions) => Promise<Backend>;
+}
+// Restarts the service pair after an unexpected exit. Each generation gets a new address and
+// tokens, so the window reloads; data is recovered by the services' own startup checks.
+export async function superviseBackend(options: SupervisorOptions) {
+  const {
+    onFailure,
+    restartLimit = 3,
+    restartWindowMs = 10 * 60 * 1000,
+    restartDelayMs = 1000,
+    start = startBackend,
+    ...base
+  } = options;
+  const events = new EventEmitter();
+  const stopping = new AbortController();
+  const restarts: number[] = [];
+  let current: Backend | null = null;
+  let recovery: Promise<void> | null = null;
+  let recovering = false;
+  const launch = async () => {
+    let backend: Backend | undefined;
+    backend = await start({
+      ...base,
+      signal: stopping.signal,
+      onFailure: () => {
+        // Only the serving generation can trigger recovery; replaced ones are already stopping.
+        if (!backend || current !== backend || stopping.signal.aborted) return;
+        current = null;
+        recovering = true;
+        recovery = recover(backend);
+      },
+    });
+    const owned = backend;
+    owned.events.on('preferences.changed', () => {
+      if (current === owned) events.emit('preferences.changed');
+    });
+    return owned;
+  };
+  async function recover(lost: Backend) {
+    try {
+      events.emit('restarting');
+      // The surviving service still holds the data directory and stores; release it first.
+      await lost.close().catch(() => {});
+      while (!stopping.signal.aborted) {
+        const now = Date.now();
+        while (restarts.length && now - restarts[0] > restartWindowMs) restarts.shift();
+        if (restarts.length >= restartLimit) {
+          recovering = false;
+          events.emit('stopped');
+          onFailure?.();
+          return;
+        }
+        restarts.push(now);
+        try {
+          await delay(restartDelayMs * restarts.length, undefined, { signal: stopping.signal });
+          const next = await launch();
+          if (stopping.signal.aborted) return await next.close();
+          current = last = next;
+          recovering = false;
+          events.emit('restarted');
+          return;
+        } catch {
+          // A failed attempt counts toward the limit; the loop decides whether to try again.
+        }
+      }
+    } finally {
+      recovering = false;
+    }
+  }
+  let last = await launch();
+  current = last;
+  return {
+    get origin() {
+      return last.origin;
+    },
+    get token() {
+      return last.token;
+    },
+    get workerPid() {
+      return last.workerPid;
+    },
+    get backendPid() {
+      return last.backendPid;
+    },
+    get recovering() {
+      return recovering;
+    },
+    events,
+    preferences: () => last.preferences(),
+    busy: async () => {
+      if (!current) throw new Error('后台服务暂时不可用，请稍后再试。');
+      return current.busy();
+    },
+    close: async () => {
+      stopping.abort();
+      await recovery;
+      await current?.close();
+      current = null;
+    },
+  };
 }

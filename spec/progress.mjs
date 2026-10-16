@@ -8,7 +8,7 @@
 //   not_started     未开始：只在已有零星基础时登记，证据可以为空
 // 没有登记的必做功能一律视为未开始。编号和规格来自冻结的 spec/catalog.mjs。
 
-export const asOf = '2026-10-14';
+export const asOf = '2026-10-16';
 
 export const milestone =
   'React / Electron 桌面端接入独立 FastAPI 后端与 LangGraph / LangChain 实际聊天编排；TanStack Query / Zustand 接管部分界面状态；SQLAlchemy / Alembic、持久化 Qdrant 与可选 Neo4j 知识服务支持文档导入、来源检索和聊天工具，原有模型协议与工具安全逻辑仍经 TypeScript 兼容进程运行';
@@ -123,9 +123,15 @@ item(
 item(
   'CA-BOOT-002',
   'partial',
-  [...desktop, ...modernBackend, 'docs/STARTUP-AVATAR-TDD.md'],
-  '只允许运行一个实例，再次启动会聚焦已有窗口；窗口、FastAPI 后端和 TypeScript 兼容服务分为独立进程，主进程通过私有输入管道配置并等待服务就绪。启动就绪消息不含头像等大字段，完整偏好由鉴权内部接口读取，超过 64 KiB 的自定义头像不会阻止启动。页面崩溃后自动重新载入；真实桌面聊天与正常退出后的资料、历史、知识文档恢复已验证。',
-  '后台服务意外退出会关闭应用并要求手动重开，尚无自动重启；后台服务崩溃时的完整数据恢复与长时间运行故障矩阵仍未完成。',
+  [
+    ...desktop,
+    ...modernBackend,
+    'docs/STARTUP-AVATAR-TDD.md',
+    'tests/backend-supervisor.test.ts',
+    'tests/desktop-restart.mjs',
+  ],
+  '只允许运行一个实例，再次启动会聚焦已有窗口；窗口、FastAPI 后端和 TypeScript 兼容服务分为独立进程，主进程通过私有输入管道配置并等待服务就绪。启动就绪消息不含头像等大字段，完整偏好由鉴权内部接口读取，超过 64 KiB 的自定义头像不会阻止启动。页面崩溃后自动重新载入。后台服务意外退出后自动重启整组服务（10 分钟内最多 3 次，间隔递增），窗口切到新地址并回到原来打开的会话；回复中途 Python 或兼容服务被强制结束，用户消息和已输出的部分回复保留，运行标为失败 / 中断，重启后可继续聊天、偏好不变；超过上限才提示重新打开应用。真实桌面聊天与正常退出后的资料、历史、知识文档恢复已验证。',
+  '崩溃前约半秒内尚未存成草稿的输入框文字和文件恢复草稿，以及重启间隙里新输入的内容会丢失；“连续启动两次只聚焦一个实例”还没有自动化验收；包内程序的崩溃重启、主进程自身崩溃、长时间运行故障矩阵和其他平台仍未验证。',
 );
 item(
   'CA-BOOT-003',

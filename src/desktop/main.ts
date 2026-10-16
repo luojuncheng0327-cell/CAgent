@@ -15,7 +15,7 @@ import type { IpcMainInvokeEvent, IpcMainEvent } from 'electron';
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
-import { startBackend, backendRuntimePaths } from './backend-process.ts';
+import { superviseBackend, backendRuntimePaths } from './backend-process.ts';
 import { translate } from '../shared/i18n.ts';
 import { autoUpdater } from 'electron-updater';
 import { Updates } from './updates.ts';
@@ -39,10 +39,26 @@ app.setPath('userData', path.join(home, 'desktop'));
 app.setName('CAgent');
 app.setAppUserModelId('com.chengpingan.cagent.independent');
 let window: BrowserWindow | null = null,
-  server: Awaited<ReturnType<typeof startBackend>> | null = null,
+  server: Awaited<ReturnType<typeof superviseBackend>> | null = null,
   tray: Tray | null = null,
   quitting = false,
-  shutdownReady = false;
+  shutdownReady = false,
+  // Set while the window moves to a restarted backend, and after recovery stops.
+  reconnecting = false,
+  backendLost = false;
+function writeConnection() {
+  fs.writeFileSync(
+    path.join(home, 'connection.json'),
+    JSON.stringify({
+      origin: server!.origin,
+      token: server!.token,
+      pid: process.pid,
+      backendPid: server!.backendPid,
+      workerPid: server!.workerPid,
+    }),
+    { mode: 0o600 },
+  );
+}
 let updates: Updates | null = null;
 let initialUpdateCheck: ReturnType<typeof setTimeout> | undefined;
 let periodicUpdateCheck: ReturnType<typeof setInterval> | undefined;
@@ -97,7 +113,7 @@ if (single)
     .whenReady()
     .then(async () => {
       const appDir = app.getAppPath();
-      server = await startBackend({
+      server = await superviseBackend({
         home,
         workerPath: path.join(__dirname, 'backend-worker.cjs'),
         nodeExecutable: process.execPath,
@@ -105,23 +121,29 @@ if (single)
         uiDir: path.join(__dirname, '../ui'),
         trashItem: (target) => shell.trashItem(target),
         onFailure: () => {
+          backendLost = true;
           if (!quitting) {
-            dialog.showErrorBox(t('CAgent 启动失败'), t('后端服务已停止，请重新打开应用。'));
+            dialog.showErrorBox(
+              t('CAgent 启动失败'),
+              t('后台服务多次意外停止，自动恢复未成功。请重新打开应用。'),
+            );
             app.quit();
           }
         },
       });
-      fs.writeFileSync(
-        path.join(home, 'connection.json'),
-        JSON.stringify({
-          origin: server.origin,
-          token: server.token,
-          pid: process.pid,
-          backendPid: server.backendPid,
-          workerPid: server.workerPid,
-        }),
-        { mode: 0o600 },
-      );
+      writeConnection();
+      server.events.on('restarted', () => {
+        writeConnection();
+        if (!window || window.isDestroyed()) return;
+        // Return to the open conversation on the new address; the old page cannot reach it.
+        const hash = new URL(window.webContents.getURL() || 'about:blank').hash;
+        const resume = /^#session=[0-9a-f-]{36}$/.test(hash) ? hash : '';
+        reconnecting = true;
+        void window
+          .loadURL(server!.origin + '/' + resume)
+          .catch(() => {})
+          .finally(() => (reconnecting = false));
+      });
       session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) =>
         callback(false),
       );
@@ -224,6 +246,10 @@ if (single)
       window.webContents.on('render-process-gone', () => {
         if (window && !quitting) void window.reload();
       });
+      // Unsaved recovery drafts could only be written to the stopped backend, so they cannot block.
+      window.webContents.on('will-prevent-unload', (event) => {
+        if (reconnecting) event.preventDefault();
+      });
       if (process.env.CAGENT_SMOKE !== '1') {
         tray = new Tray(icon());
         tray.setToolTip('CAgent');
@@ -275,7 +301,9 @@ app.on('before-quit', (event) => {
   if (quitting) return;
   quitting = true;
   void (async () => {
-    if (!updateInstallReady && !(await flushRenderer())) {
+    // Drafts are saved through the backend; without one, waiting cannot save them.
+    const reachable = !backendLost && !server?.recovering;
+    if (!updateInstallReady && reachable && !(await flushRenderer())) {
       quitting = false;
       window?.show();
       dialog.showErrorBox(t('草稿尚未保存'), t('退出前保存未完成。请检查当前会话后再次退出。'));
